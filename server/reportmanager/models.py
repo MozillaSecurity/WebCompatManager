@@ -14,6 +14,7 @@ from django.contrib.auth.models import User as DjangoUser
 from django.contrib.contenttypes.models import ContentType
 from django.core.validators import MaxValueValidator, MinValueValidator
 from django.db import models, transaction
+from django.db.models.functions import Length
 from django.db.models.signals import post_delete, post_save
 from django.dispatch.dispatcher import receiver
 from django.utils import timezone
@@ -32,6 +33,11 @@ else:
     from itertools import batched
 
 LOG = getLogger("reportmanager")
+
+
+# these enable `{field}__length` filtering in Django
+models.CharField.register_lookup(Length)
+models.TextField.register_lookup(Length)
 
 
 class App(models.Model):
