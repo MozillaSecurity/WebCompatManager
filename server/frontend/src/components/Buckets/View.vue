@@ -93,22 +93,57 @@
             <td>Priority</td>
             <td>{{ bucket.priority }}</td>
           </tr>
+          <tr>
+            <td>Signature</td>
+            <td>
+              <div id="signature" class="collapse">
+                <pre><code>{{ prettySignature }}</code></pre>
+              </div>
+              <button
+                aria-controls="signature"
+                aria-expanded="false"
+                class="btn btn-default btn-xs"
+                data-target="#signature"
+                data-toggle="collapse"
+              >
+                <span
+                  aria-label="Show signature field"
+                  class="bi bi-eye-fill"
+                  title="Show signature field"
+                ></span>
+                <span
+                  aria-label="Hide signature field"
+                  class="bi bi-eye-slash-fill"
+                  title="Hide signature field"
+                ></span>
+              </button>
+            </td>
+          </tr>
         </tbody>
       </table>
 
-      <strong>Signature</strong><br />
-      <pre><code>{{ prettySignature }}</code></pre>
-
       <div v-if="canEdit" class="btn-group">
-        <!--a :href="optUrl" class="btn btn-default">Optimize</a-->
-        <a :href="editUrl" class="btn btn-default">Edit</a>
-        <a :href="delUrl" class="btn btn-danger">Delete</a>
+        <a
+          aria-label="Edit bucket"
+          class="btn btn-default"
+          :href="editUrl"
+          title="Edit bucket"
+          >Edit</a
+        >
+        <a
+          aria-label="Delete bucket"
+          class="btn btn-danger"
+          :href="delUrl"
+          title="Delete bucket"
+          >Delete</a
+        >
       </div>
     </div>
   </div>
 </template>
 
 <script>
+import swal from "sweetalert";
 import {
   assignExternalBug,
   date,
@@ -119,7 +154,6 @@ import {
 import ActivityGraph from "../ActivityGraph.vue";
 import AssignBtn from "./AssignBtn.vue";
 import HideBucketBtn from "./HideBucketBtn.vue";
-import swal from "sweetalert";
 
 export default {
   components: {
@@ -217,5 +251,11 @@ export default {
 <style scoped>
 form {
   display: inline;
+}
+button[aria-expanded="true"] .bi-eye-fill {
+  display: none;
+}
+button[aria-expanded="false"] .bi-eye-slash-fill {
+  display: none;
 }
 </style>
