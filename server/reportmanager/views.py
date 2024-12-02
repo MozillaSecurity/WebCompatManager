@@ -698,6 +698,21 @@ class ReportEntryViewSet(
         OrderingFilter,
         WatchFilterReportsBackend,
     )
+    ordering_fields = (
+        "id",
+        "app__channel",
+        "app__name",
+        "app__version",
+        "breakage_category__value",
+        "bucket",
+        "comments",
+        "comments__length",
+        "details",
+        "os__name",
+        "reported_at",
+        "url",
+        "uuid",
+    )
 
     def get_serializer(self, *args, **kwds):
         self.vue = self.request.query_params.get("vue", "false").lower() not in (

@@ -6,28 +6,12 @@
       <span v-if="notifications && notifications.length">
         ({{ currentEntries }}/{{ totalEntries }})
       </span>
-      <span
-        class="step-links ml-5"
+      <PageNav
+        :initial="currentPage"
+        :pages="totalPages"
         v-if="notifications && notifications.length"
-      >
-        <a
-          v-on:click="prevPage"
-          v-show="currentPage > 1"
-          class="bi bi-caret-left-fill"
-        ></a>
-        <span class="current">
-          Page {{ currentPage }} of {{ totalPages }}.
-        </span>
-        <a
-          v-on:click="nextPage"
-          v-show="currentPage < totalPages"
-          data-toggle="tooltip"
-          data-placement="top"
-          title=""
-          class="bi bi-caret-right-fill dimgray"
-          data-original-title="Next"
-        ></a>
-      </span>
+        v-on:page-changed="currentPage = $event"
+      />
       <a
         v-if="notifications && notifications.length"
         type="button"
@@ -82,6 +66,7 @@ import { errorParser } from "../../helpers";
 import * as api from "../../api";
 import BucketHit from "./BucketHit.vue";
 import InaccessibleBug from "./InaccessibleBug.vue";
+import PageNav from "../PageNav.vue";
 
 const pageSize = 25;
 
@@ -89,6 +74,7 @@ export default {
   components: {
     BucketHit,
     InaccessibleBug,
+    PageNav,
   },
   data: () => ({
     notifications: null,
@@ -116,23 +102,10 @@ export default {
         this.totalPages = Math.max(Math.ceil(this.totalEntries / pageSize), 1);
         if (this.currentPage > this.totalPages) {
           this.currentPage = this.totalPages;
-          await this.fetchUnread();
           return;
         }
       } catch (err) {
         this.error = errorParser(err);
-      }
-    },
-    async nextPage() {
-      if (this.currentPage < this.totalPages) {
-        this.currentPage++;
-        await this.fetchUnread();
-      }
-    },
-    async prevPage() {
-      if (this.currentPage > 1) {
-        this.currentPage--;
-        await this.fetchUnread();
       }
     },
     async dismissAll() {
@@ -152,6 +125,11 @@ export default {
       );
       this.currentEntries--;
       this.totalEntries--;
+    },
+  },
+  watch: {
+    async currentPage() {
+      await this.fetchUnread();
     },
   },
 };
