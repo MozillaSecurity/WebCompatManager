@@ -100,27 +100,12 @@
         <span v-else>{{ totalEntries }} entries.</span>
       </p>
 
-      <div class="pagination">
-        <span class="step-links">
-          <a
-            v-on:click="prevPage"
-            v-show="currentPage > 1"
-            class="bi bi-caret-left-fill"
-          ></a>
-          <span class="current">
-            Page {{ currentPage }} of {{ totalPages }}.
-          </span>
-          <a
-            v-on:click="nextPage"
-            v-show="currentPage < totalPages"
-            data-toggle="tooltip"
-            data-placement="top"
-            title=""
-            class="bi bi-caret-right-fill dimgray"
-            data-original-title="Next"
-          ></a>
-        </span>
-      </div>
+      <PageNav
+        :initial="currentPage"
+        :pages="totalPages"
+        :show="5"
+        v-on:page-changed="currentPage = $event"
+      />
     </div>
     <div class="table-responsive">
       <table
@@ -256,6 +241,7 @@ import {
   parseHash,
 } from "../../helpers";
 import * as api from "../../api";
+import PageNav from "../PageNav.vue";
 import Row from "./Row.vue";
 import HelpJSONQueryPopover from "../HelpJSONQueryPopover.vue";
 import DeleteConfirmation from "./DeleteConfirmation.vue";
@@ -277,9 +263,10 @@ const validFilters = {
 export default {
   mixins: [multiSort],
   components: {
-    Row,
     ClipLoader,
     HelpJSONQueryPopover,
+    PageNav,
+    Row,
   },
   props: {
     canEdit: {
@@ -535,7 +522,6 @@ export default {
           );
           if (this.currentPage > this.totalPages) {
             this.currentPage = this.totalPages;
-            this.fetch();
             return;
           }
           this.updateHash();
@@ -566,18 +552,6 @@ export default {
       500,
       { trailing: true },
     ),
-    nextPage: function () {
-      if (this.currentPage < this.totalPages) {
-        this.currentPage++;
-        this.fetch();
-      }
-    },
-    prevPage: function () {
-      if (this.currentPage > 1) {
-        this.currentPage--;
-        this.fetch();
-      }
-    },
     removeFilter: function (key) {
       if (Object.prototype.hasOwnProperty.call(this.filters, key)) {
         delete this.filters[key];
@@ -626,6 +600,9 @@ export default {
     },
   },
   watch: {
+    currentPage() {
+      this.fetch();
+    },
     sortKeys() {
       this.fetch();
     },
