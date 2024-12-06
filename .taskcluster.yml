@@ -76,7 +76,6 @@ tasks:
                 retry npm install;
                 npm run test;
                 npm run production;
-                npm run codecov;
 
   in:
     $if: >
