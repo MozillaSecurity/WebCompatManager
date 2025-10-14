@@ -108,6 +108,11 @@ export default {
     },
   },
   watch: {
+    initial(newVal) {
+      if (newVal !== this.page) {
+        this.page = newVal;
+      }
+    },
     page() {
       this.recalculate();
     },

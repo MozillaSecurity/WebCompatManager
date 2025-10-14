@@ -92,6 +92,24 @@
               />
             </td>
           </tr>
+          <tr>
+            <td>ML Valid Probability Filter</td>
+            <td>
+              <div class="ml-filter-container">
+                <input
+                  type="range"
+                  min="0"
+                  max="1"
+                  step="0.05"
+                  v-model.number="mlValidThreshold"
+                  class="ml-slider"
+                />
+                <span class="ml-threshold-value"
+                  >≥ {{ mlValidThreshold.toFixed(2) }}</span
+                >
+              </div>
+            </td>
+          </tr>
         </tbody>
       </table>
       <div class="table-responsive">
@@ -103,6 +121,7 @@
               <th>Date Reported</th>
               <th>URL</th>
               <th>User Comments</th>
+              <th>ML Label</th>
               <th>Product</th>
               <th>ETP &amp; PBM</th>
             </tr>
@@ -194,6 +213,7 @@ export default {
       currentPage: 1,
       description: "",
       loading: true,
+      mlValidThreshold: 0.8,
       reports: null,
       sortKeys: [...defaultSortKeys],
       totalPages: 1,
@@ -247,7 +267,7 @@ export default {
         query: JSON.stringify({
           op: "AND",
           comments__length__gt: 0,
-          ml_valid_probability__gt: 0.95,
+          ml_valid_probability__gt: this.mlValidThreshold,
           bucket_id: this.bucket.id,
         }),
       };
@@ -397,6 +417,10 @@ export default {
     currentPage() {
       this.fetch();
     },
+    mlValidThreshold() {
+      this.currentPage = 1;
+      this.fetch();
+    },
     sortKeys() {
       this.fetch();
     },
@@ -413,5 +437,18 @@ button[aria-expanded="true"] .bi-eye-fill {
 }
 button[aria-expanded="false"] .bi-eye-slash-fill {
   display: none;
+}
+.ml-filter-container {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.ml-slider {
+  flex: 1;
+  max-width: 300px;
+}
+.ml-threshold-value {
+  font-weight: bold;
+  min-width: 60px;
 }
 </style>
