@@ -1,6 +1,8 @@
 # This Source Code Form is subject to the terms of the Mozilla Public
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
+import html
+
 from django.core.exceptions import MultipleObjectsReturned  # noqa
 from django.forms import widgets  # noqa
 from django.urls import reverse
@@ -17,6 +19,8 @@ from .models import (
     BugProvider,
     BugzillaTemplate,
     ReportEntry,
+    SpikeDetectionRun,
+    BucketSpike,
 )
 
 
@@ -311,3 +315,60 @@ class NotificationSerializer(serializers.ModelSerializer):
                 f"/{notification.target.external_id}"
             )
         return None
+
+
+class SpikeDetectionRunSerializer(serializers.ModelSerializer):
+    """Serializer for spike detection runs with nested spikes"""
+
+    spikes = serializers.SerializerMethodField()
+
+    class Meta:
+        model = SpikeDetectionRun
+        fields = ("id", "threshold", "short_window_start", "short_window_end", "spikes")
+
+    def get_spikes(self, obj):
+        spikes = obj.spikes.select_related("bucket").order_by("-ratio")
+        return BucketSpikeSerializer(spikes, many=True).data
+
+
+class BucketSpikeSerializer(serializers.ModelSerializer):
+    bucket_id = serializers.IntegerField(source="bucket.id")
+    bucket_domain = serializers.CharField(source="bucket.domain")
+    bucket_view_url = serializers.SerializerMethodField()
+    report_comments = serializers.SerializerMethodField()
+
+    class Meta:
+        model = BucketSpike
+        fields = (
+            "id",
+            "short_count",
+            "short_count_with_comments",
+            "short_average",
+            "long_average",
+            "ratio",
+            "bucket_id",
+            "bucket_domain",
+            "bucket_view_url",
+            "report_comments",
+        )
+
+    def get_bucket_view_url(self, obj):
+        return reverse("reportmanager:bucketview", kwargs={"sig_id": obj.bucket_id})
+
+    def get_report_comments(self, obj):
+        reports = (
+            ReportEntry.objects.filter(
+                bucket_id=obj.bucket_id,
+                reported_at__date__gte=obj.detection_run.short_window_start,
+                reported_at__date__lte=obj.detection_run.short_window_end,
+                comments_translated__isnull=False,
+            )
+            .exclude(comments_translated="")
+            .values_list("comments_translated", flat=True)
+        )
+
+        return [
+            html.unescape(comment.strip())
+            for comment in reports
+            if comment and comment.strip()
+        ]

@@ -45,6 +45,7 @@ from .models import (
     BugzillaTemplateMode,
     ReportEntry,
     ReportHit,
+    SpikeDetectionRun,
     User,
 )
 from .serializers import (
@@ -56,6 +57,7 @@ from .serializers import (
     NotificationSerializer,
     ReportEntrySerializer,
     ReportEntryVueSerializer,
+    SpikeDetectionRunSerializer,
 )
 
 if sys.version_info[:2] < (3, 12):
@@ -1345,3 +1347,26 @@ class ReportStatsViewSet(viewsets.GenericViewSet):
             },
             status=status.HTTP_200_OK,
         )
+
+
+class SpikeDetectionRunViewSet(viewsets.GenericViewSet):
+    """
+    API endpoint for spike detection runs
+    """
+
+    authentication_classes = (TokenAuthentication, SessionAuthentication)
+    serializer_class = SpikeDetectionRunSerializer
+    queryset = SpikeDetectionRun.objects.all().order_by("-short_window_end")
+
+    @action(detail=False, methods=["get"])
+    def latest(self, request):
+        """Get the latest detection run with its spikes"""
+        latest_run = self.queryset.first()
+        if not latest_run:
+            return Response(None)
+        serializer = self.get_serializer(latest_run)
+        return Response(serializer.data)
+
+
+def spike_list_view(request):
+    return render(request, "buckets/spikes.html")

@@ -48,3 +48,6 @@ export const dismissNotification = async (id) =>
 
 export const dismissAllNotifications = async () =>
   (await mainAxios.patch("/reportmanager/rest/inbox/mark_all_as_read/")).data;
+
+export const getLatestSpikeDetectionRun = async () =>
+  (await mainAxios.get("/reportmanager/rest/spike-detection-runs/latest/")).data;

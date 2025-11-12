@@ -102,3 +102,8 @@ def import_reports():
         )
 
     call_command("import_reports_from_bigquery", since=since)
+
+
+@app.task(ignore_result=True)
+def detect_bucket_spikes():
+    call_command("detect_bucket_spikes")
