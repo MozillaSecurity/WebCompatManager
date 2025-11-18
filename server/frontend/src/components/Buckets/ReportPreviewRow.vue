@@ -15,6 +15,17 @@
         >: {{ maybeTranslatedComments(report) }}
       </div>
     </td>
+    <td class="wrap-none ml-validity-col">
+      <span :class="validityClass(report.ml_valid_probability)">
+        {{ validityLabel(report.ml_valid_probability) }}
+      </span>
+      <br />
+      <small
+        >{{
+          (validityProbability(report.ml_valid_probability) * 100).toFixed(1)
+        }}%</small
+      >
+    </td>
     <td>
       <img
         v-if="report.os === 'Linux'"
@@ -112,6 +123,29 @@ export default {
 
       return report.comments;
     },
+    validityLabel(mlValidProbability) {
+      if (!mlValidProbability) {
+        return "Unknown";
+      }
+
+      return mlValidProbability >= 0.5 ? "Valid" : "Invalid";
+    },
+    validityProbability(mlValidProbability) {
+      if (!mlValidProbability) {
+        return 0;
+      }
+
+      return mlValidProbability >= 0.5
+        ? mlValidProbability
+        : 1 - mlValidProbability;
+    },
+    validityClass(mlValidProbability) {
+      if (!mlValidProbability) {
+        return "validity-unknown";
+      }
+
+      return mlValidProbability >= 0.5 ? "validity-valid" : "validity-invalid";
+    },
   },
 };
 </script>
@@ -137,5 +171,24 @@ export default {
    * this link would be `height: 100%`, but bug 1598458 is a thing.
    */
   padding-bottom: 1.2em;
+}
+
+.ml-validity-col {
+  text-align: center;
+}
+
+.validity-valid {
+  color: #28a745;
+  font-weight: bold;
+}
+
+.validity-invalid {
+  color: #dc3545;
+  font-weight: bold;
+}
+
+.validity-unknown {
+  color: #6c757d;
+  font-style: italic;
 }
 </style>
