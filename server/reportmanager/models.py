@@ -664,3 +664,32 @@ def add_default_perms(sender, instance, created, **kwargs):
             perm = Permission.objects.get(content_type=content_type, codename=perm)
             instance.user_permissions.add(perm)
             LOG.info("user %s added permission %s:%s", instance.username, model, perm)
+
+
+class SpikeDetectionRun(models.Model):
+    threshold = models.FloatField(help_text="Ratio used to mark a day as spike")
+    short_window_start = models.DateField(help_text="Start date of the short window")
+    short_window_end = models.DateField(
+        db_index=True, help_text="End date of the short window"
+    )
+
+
+class BucketSpike(models.Model):
+    detection_run = models.ForeignKey(
+        SpikeDetectionRun, on_delete=models.CASCADE, related_name="spikes"
+    )
+    bucket = models.ForeignKey("Bucket", on_delete=models.CASCADE)
+    short_count = models.IntegerField(help_text="Number of reports in the short window")
+    short_count_with_comments = models.IntegerField(
+        help_text="Number of reports with non-empty comments in the short window"
+    )
+    short_average = models.FloatField()
+    long_average = models.FloatField()
+    ratio = models.FloatField()
+
+    class Meta:
+        constraints = (
+            models.UniqueConstraint(
+                fields=["detection_run", "bucket"], name="unique_spike_per_run_bucket"
+            ),
+        )
