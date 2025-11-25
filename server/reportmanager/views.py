@@ -1395,6 +1395,7 @@ class BucketSpikeViewSet(viewsets.GenericViewSet):
                 "comments",
                 "comments_translated",
                 "bucket__domain",
+                "ml_valid_probability",
             )
             .order_by("bucket_id", "-reported_at")
         )
@@ -1413,12 +1414,19 @@ class BucketSpikeViewSet(viewsets.GenericViewSet):
             comments,
             comments_translated,
             bucket_domain,
+            ml_valid_probability,
         ) in reports:
             day = reported_at.date()
             bucket = bucket_data[bucket_id]
 
             bucket["daily"][day]["total"] += 1
-            if comments and comments.strip():
+
+            if (
+                comments
+                and comments.strip()
+                and ml_valid_probability
+                and ml_valid_probability > 0.10
+            ):
                 bucket["daily"][day]["with_comments"] += 1
 
             if bucket["domain"] is None:
@@ -1429,6 +1437,8 @@ class BucketSpikeViewSet(viewsets.GenericViewSet):
                 day >= short_window_start
                 and comments_translated
                 and comments_translated.strip()
+                and ml_valid_probability
+                and ml_valid_probability > 0.10
             ):
                 bucket["comments"].append(html.unescape(comments_translated.strip()))
 
