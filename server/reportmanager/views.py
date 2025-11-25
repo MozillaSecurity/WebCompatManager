@@ -3,7 +3,8 @@
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 import json
 import sys
-from collections import OrderedDict
+import html
+from collections import defaultdict, OrderedDict
 from datetime import datetime, timedelta
 from logging import getLogger
 
@@ -56,6 +57,7 @@ from .serializers import (
     NotificationSerializer,
     ReportEntrySerializer,
     ReportEntryVueSerializer,
+    BucketSpikeSerializer,
 )
 
 if sys.version_info[:2] < (3, 12):
@@ -1345,3 +1347,202 @@ class ReportStatsViewSet(viewsets.GenericViewSet):
             },
             status=status.HTTP_200_OK,
         )
+
+
+class BucketSpikeViewSet(viewsets.GenericViewSet):
+    """
+    API endpoint for spike detection
+    """
+
+    authentication_classes = (TokenAuthentication, SessionAuthentication)
+    serializer_class = BucketSpikeSerializer
+
+    def list(self, request):
+        short_window = request.query_params.get("short_window")
+        long_window = request.query_params.get("long_window")
+        threshold = request.query_params.get("threshold")
+        min_reports = request.query_params.get("min_reports")
+
+        return self.compute_spikes(
+            short_window=int(short_window),
+            long_window=int(long_window),
+            threshold=float(threshold),
+            min_reports=int(min_reports),
+        )
+
+    def get_end_date(self):
+        """Get the end date based on the last bucketed report
+        (instead of using today's date as reports are delayed by a day).
+        """
+        last_bucketed_report = (
+            ReportEntry.objects.filter(bucket__isnull=False)
+            .order_by("-reported_at")
+            .first()
+        )
+        return last_bucketed_report.reported_at.date() if last_bucketed_report else None
+
+    def fetch_reports_data(self, long_window_start, short_window_start, end_date):
+        reports = (
+            ReportEntry.objects.filter(
+                reported_at__date__gte=long_window_start,
+                reported_at__date__lte=end_date,
+                bucket__isnull=False,
+            )
+            .select_related("bucket")
+            .values_list(
+                "bucket_id",
+                "reported_at",
+                "comments",
+                "comments_translated",
+                "bucket__domain",
+                "ml_valid_probability",
+            )
+            .order_by("bucket_id", "-reported_at")
+        )
+
+        bucket_data = defaultdict(
+            lambda: {
+                "daily": defaultdict(lambda: {"total": 0, "with_comments": 0}),
+                "domain": None,
+                "comments": [],
+            }
+        )
+
+        for (
+            bucket_id,
+            reported_at,
+            comments,
+            comments_translated,
+            bucket_domain,
+            ml_valid_probability,
+        ) in reports:
+            day = reported_at.date()
+            bucket = bucket_data[bucket_id]
+
+            bucket["daily"][day]["total"] += 1
+
+            if (
+                comments
+                and comments.strip()
+                and ml_valid_probability
+                and ml_valid_probability > 0.10
+            ):
+                bucket["daily"][day]["with_comments"] += 1
+
+            if bucket["domain"] is None:
+                bucket["domain"] = bucket_domain
+
+            # Collect translated comments for the short window
+            if (
+                day >= short_window_start
+                and comments_translated
+                and comments_translated.strip()
+                and ml_valid_probability
+                and ml_valid_probability > 0.10
+            ):
+                bucket["comments"].append(html.unescape(comments_translated.strip()))
+
+        return bucket_data
+
+    def calculate_spike(
+        self,
+        bucket_id,
+        bucket_info,
+        short_window_start,
+        short_window,
+        long_window,
+        threshold,
+        min_reports,
+        end_date,
+    ):
+        daily_counts = bucket_info["daily"]
+
+        short_count = sum(
+            counts["total"]
+            for date, counts in daily_counts.items()
+            if date >= short_window_start
+        )
+        short_count_with_comments = sum(
+            counts["with_comments"]
+            for date, counts in daily_counts.items()
+            if date >= short_window_start
+        )
+        long_count = sum(counts["total"] for counts in daily_counts.values())
+
+        if long_count < min_reports:
+            return None
+
+        short_average = short_count / short_window
+        long_average = long_count / long_window
+
+        if long_average == 0:
+            return None
+
+        ratio = short_average / long_average
+
+        if ratio < threshold:
+            return None
+
+        return {
+            "bucket_id": bucket_id,
+            "bucket_domain": bucket_info["domain"],
+            "short_count": short_count,
+            "short_count_with_comments": short_count_with_comments,
+            "short_average": short_average,
+            "long_average": long_average,
+            "long_count": long_count,
+            "ratio": round(ratio, 3),
+            "short_window_start": short_window_start,
+            "short_window_end": end_date,
+            "report_comments": bucket_info["comments"],
+        }
+
+    def compute_spikes(self, short_window, long_window, threshold, min_reports):
+        end_date = self.get_end_date()
+        if not end_date:
+            return Response(
+                {
+                    "spikes": [],
+                    "short_window_start": None,
+                    "short_window_end": None,
+                    "threshold": threshold,
+                }
+            )
+
+        long_window_start = end_date - timedelta(days=long_window - 1)
+        short_window_start = end_date - timedelta(days=short_window - 1)
+
+        bucket_data = self.fetch_reports_data(
+            long_window_start, short_window_start, end_date
+        )
+
+        spikes_data = []
+        for bucket_id, bucket_info in bucket_data.items():
+            spike = self.calculate_spike(
+                bucket_id,
+                bucket_info,
+                short_window_start,
+                short_window,
+                long_window,
+                threshold,
+                min_reports,
+                end_date,
+            )
+            if spike:
+                spikes_data.append(spike)
+
+        spikes_data.sort(key=lambda x: x["ratio"], reverse=True)
+
+        serializer = self.get_serializer(spikes_data, many=True)
+        return Response(
+            {
+                "spikes": serializer.data,
+                "short_window_start": short_window_start,
+                "short_window_end": end_date,
+                "threshold": threshold,
+            }
+        )
+
+
+def spike_list_view(request):
+    return render(request, "buckets/spikes.html")

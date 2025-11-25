@@ -15,6 +15,7 @@ import Inbox from "./components/Notifications/Inbox.vue";
 import ProviderKey from "./components/ProviderKey.vue";
 import BucketView from "./components/Buckets/View.vue";
 import BucketList from "./components/Buckets/List.vue";
+import SpikesList from "./components/Spikes/List.vue";
 
 import "vue-popperjs/dist/vue-popper.css";
 
@@ -37,6 +38,7 @@ document.addEventListener("DOMContentLoaded", function () {
       providerkey: ProviderKey,
       bucketlist: BucketList,
       bucketview: BucketView,
+      spikeslist: SpikesList,
     },
     router,
   });

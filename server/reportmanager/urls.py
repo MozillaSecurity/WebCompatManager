@@ -15,6 +15,11 @@ router.register(
 )
 router.register(r"inbox", views.NotificationViewSet, basename="inbox")
 router.register(r"reports", views.ReportEntryViewSet, basename="reports")
+router.register(
+    r"bucket-spikes",
+    views.BucketSpikeViewSet,
+    basename="bucket-spikes",
+)
 
 app_name = "reportmanager"
 urlpatterns = [
@@ -134,6 +139,7 @@ urlpatterns = [
         r"^buckets/watch/create/$", views.bucket_watch_create, name="createbucketwatch"
     ),
     re_path(r"^buckets/create/$", views.signature_create, name="createbucket"),
+    re_path(r"^spikes/$", views.spike_list_view, name="spikes"),
     re_path(r"^stats/$", views.stats, name="stats"),
     re_path(
         r"^usersettings/$", views.UserSettingsEditView.as_view(), name="usersettings"

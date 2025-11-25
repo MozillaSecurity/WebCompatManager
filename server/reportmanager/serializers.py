@@ -311,3 +311,21 @@ class NotificationSerializer(serializers.ModelSerializer):
                 f"/{notification.target.external_id}"
             )
         return None
+
+
+class BucketSpikeSerializer(serializers.Serializer):
+    bucket_id = serializers.IntegerField()
+    bucket_domain = serializers.CharField(allow_null=True)
+    bucket_view_url = serializers.SerializerMethodField()
+    short_count = serializers.IntegerField()
+    short_count_with_comments = serializers.IntegerField()
+    short_average = serializers.FloatField()
+    long_average = serializers.FloatField()
+    long_count = serializers.IntegerField()
+    ratio = serializers.FloatField()
+    short_window_start = serializers.DateField()
+    short_window_end = serializers.DateField()
+    report_comments = serializers.ListField(child=serializers.CharField())
+
+    def get_bucket_view_url(self, obj):
+        return reverse("reportmanager:bucketview", kwargs={"sig_id": obj["bucket_id"]})
