@@ -191,3 +191,35 @@ export const multiSort = {
     },
   },
 };
+
+export class MatchObjects {
+  static ANY = {};
+
+  match(obj, signature) {
+    const objKeys = Object.keys(obj);
+    const sigKeys = Object.keys(signature);
+    // Check if signature keys are a subset of obj keys
+    for (const key of sigKeys) {
+      if (!objKeys.includes(key)) {
+        return false;
+      }
+    }
+    for (const [key, sigValue] of Object.entries(signature)) {
+      let value = obj[key];
+      if (sigValue === MatchObjects.ANY) {
+        continue;
+      }
+      if (typeof value != typeof sigValue) {
+        return false;
+      }
+      if (typeof value == "object" && value !== null) {
+        if (!this.match(value, sigValue)) {
+          return false;
+        }
+      } else if (value !== sigValue) {
+        return false;
+      }
+    }
+    return true;
+  }
+}

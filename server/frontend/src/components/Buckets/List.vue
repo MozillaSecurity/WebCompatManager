@@ -24,13 +24,38 @@
             {{ showHidden ? "Hide Triaged" : "Show Triaged" }}
           </button>
         </div>
-        <p></p>
-        <a
-          title="Show advanced query for the current search/filters"
-          class="pointer"
-          v-on:click="showAdvancedQuery"
-          >Advanced query</a
-        ><br />
+        <details>
+          <summary>Filters</summary>
+          <div class="input-group">
+            <label for="domain-filter">Domain:</label>
+            <input
+              id="domain-filter"
+              type="text"
+              placeholder="e.g., example.com (includes subdomains)"
+              v-model="domainFilter"
+              v-on:keyup.enter="updateDomainFilter"
+              :disabled="loading"
+              style="max-width: 400px"
+            />
+          </div>
+          <div class="input-group">
+            <button
+              type="button"
+              class="btn btn-secondary"
+              :disabled="loading"
+              title="Apply filters"
+              v-on:click="updateDomainFilter"
+            >
+              Apply
+            </button>
+          </div>
+          <a
+            title="Show advanced query for the current search/filters"
+            class="pointer"
+            v-on:click="showAdvancedQuery"
+            >Advanced query</a
+          >
+        </details>
       </div>
       <div v-else>
         <div v-if="canEdit" class="btn-group" role="group">
@@ -48,6 +73,9 @@
             { name: 'bug__external_type__classname', type: 'String' },
             { name: 'bug__external_type__hostname', type: 'String' },
             { name: 'description', type: 'String' },
+            { name: 'domain', type: 'String' },
+            { name: 'domain__endswith', type: 'String' },
+            { name: 'domain__isnull', type: 'Boolean' },
             { name: 'priority', type: 'Integer' },
             { name: 'signature', type: 'String' },
             { name: 'size', type: 'Integer' },
@@ -193,6 +221,7 @@ import _isEqual from "lodash/isEqual";
 import ClipLoader from "vue-spinner/src/ClipLoader.vue";
 import { errorParser, multiSort, parseHash } from "../../helpers";
 import * as api from "../../api";
+import { MatchObjects } from "../../helpers";
 import PageNav from "../PageNav.vue";
 import Row from "./Row.vue";
 import HelpJSONQueryPopover from "../HelpJSONQueryPopover.vue";
@@ -237,6 +266,18 @@ export default {
       "size",
     ];
     const defaultSortKeys = ["-size", "-latest_report"];
+    const domainFilterSignature = {
+      op: "AND",
+      1: {
+        op: "AND",
+        0: {
+          op: "OR",
+          domain: MatchObjects.ANY,
+          domain__endswith: MatchObjects.ANY,
+        },
+        domain__isnull: MatchObjects.ANY,
+      },
+    };
 
     return {
       advancedQuery: false,
@@ -244,6 +285,8 @@ export default {
       currentEntries: "?",
       currentPage: 1,
       defaultSortKeys: defaultSortKeys,
+      domainFilter: "",
+      domainFilterSignature: domainFilterSignature,
       loading: false,
       modifiedCache: {},
       pageSize: 100,
@@ -280,7 +323,15 @@ export default {
         }
       }
       if (Object.prototype.hasOwnProperty.call(hash, "query")) {
-        this.queryStr = JSON.stringify(JSON.parse(hash.query || ""), null, 2);
+        const parsedQuery = JSON.parse(hash.query || "");
+        this.queryStr = JSON.stringify(parsedQuery, null, 2);
+        // Extract domain filter if present
+        const matcher = new MatchObjects();
+        if (matcher.match(parsedQuery, this.domainFilterSignature)) {
+          this.domainFilter = parsedQuery[1][0].domain;
+        } else if (parsedQuery.domain) {
+          this.domainFilter = parsedQuery.domain;
+        }
       }
     }
     this.fetch();
@@ -345,6 +396,36 @@ export default {
         delete query["hide_until__isnull"];
         this.queryStr = JSON.stringify(query, null, 2);
       }
+      this.fetch();
+    },
+    updateDomainFilter() {
+      const domainFilter = this.domainFilter.trim();
+      let query = JSON.parse(this.queryStr);
+
+      const matcher = new MatchObjects();
+      if (matcher.match(query, this.domainFilterSignature)) {
+        query = query[0];
+      }
+
+      if (domainFilter) {
+        const domainQuery = {
+          op: "AND",
+          0: {
+            op: "OR",
+            domain: domainFilter,
+            domain__endswith: "." + domainFilter,
+          },
+          domain__isnull: false,
+        };
+
+        query = {
+          op: "AND",
+          0: query,
+          1: domainQuery,
+        };
+      }
+      this.queryStr = JSON.stringify(query, null, 2);
+
       this.fetch();
     },
     buildParams() {
@@ -438,6 +519,16 @@ export default {
 </script>
 
 <style scoped>
+details {
+  margin-top: 1.5rem;
+}
+details::details-content {
+  margin-left: 1.5rem;
+}
+summary {
+  font-weight: bold;
+  display: list-item;
+}
 .m-strong {
   margin-top: 1.5rem;
   margin-bottom: 1.5rem;
