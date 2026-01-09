@@ -79,7 +79,7 @@ class Bucket(models.Model):
     class Meta:
         constraints = (
             models.CheckConstraint(
-                check=models.Q(priority__gte=-2) & models.Q(priority__lte=2),
+                condition=models.Q(priority__gte=-2) & models.Q(priority__lte=2),
                 name="priority_range",
             ),
         )
@@ -308,7 +308,7 @@ class BucketColor(models.Model):
     class Meta:
         constraints = (
             models.CheckConstraint(
-                check=models.Q(value__gte=0) & models.Q(value__lte=0xFFFFFF),
+                condition=models.Q(value__gte=0) & models.Q(value__lte=0xFFFFFF),
                 name="value_range",
             ),
         )
