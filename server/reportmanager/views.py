@@ -1,10 +1,10 @@
 # This Source Code Form is subject to the terms of the Mozilla Public
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
+import html
 import json
 import sys
-import html
-from collections import defaultdict, OrderedDict
+from collections import OrderedDict, defaultdict
 from datetime import datetime, timedelta
 from logging import getLogger
 
@@ -50,6 +50,7 @@ from .models import (
 )
 from .serializers import (
     BucketSerializer,
+    BucketSpikeSerializer,
     BucketVueSerializer,
     BugProviderSerializer,
     BugzillaTemplateSerializer,
@@ -57,7 +58,6 @@ from .serializers import (
     NotificationSerializer,
     ReportEntrySerializer,
     ReportEntryVueSerializer,
-    BucketSpikeSerializer,
 )
 
 if sys.version_info[:2] < (3, 12):
