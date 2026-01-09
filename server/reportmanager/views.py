@@ -85,9 +85,7 @@ def bucket_watch_create(request):
             watch.save()
             break
         else:
-            BucketWatch.objects.create(
-                user=user, bucket=bucket, last_report=int(request.POST["report"])
-            )
+            BucketWatch.objects.create(user=user, bucket=bucket, last_report=int(request.POST["report"]))
         return redirect("reportmanager:bucketwatch")
     raise SuspiciousOperation()
 
@@ -252,10 +250,7 @@ def external_bug_create(request, report_id):
     if not entry.bucket:
         return render_error(
             request,
-            (
-                "Cannot create an external bug for an issue that is not associated "
-                "to a bucket/signature"
-            ),
+            ("Cannot create an external bug for an issue that is not associated " "to a bucket/signature"),
         )
 
     if request.method == "GET":
@@ -466,13 +461,9 @@ def signature_find(request, report_id):
                         c = ReportEntry.objects.filter(bucket=other_bucket).first()
                         first_entry_per_bucket_cache[other_bucket.pk] = c
                         if c:
-                            first_entry_per_bucket_cache[other_bucket.pk] = (
-                                c.get_report()
-                            )
+                            first_entry_per_bucket_cache[other_bucket.pk] = c.get_report()
 
-                    first_entry_report_info = first_entry_per_bucket_cache[
-                        other_bucket.pk
-                    ]
+                    first_entry_report_info = first_entry_per_bucket_cache[other_bucket.pk]
                     if first_entry_report_info:
                         if proposed_report_signature.matches(first_entry_report_info):
                             matches_in_other_buckets += 1
@@ -490,10 +481,7 @@ def signature_find(request, report_id):
 
                 if matches_in_other_buckets + non_matches_in_other_buckets > 0:
                     bucket.foreign_match_percentage = round(
-                        (
-                            float(matches_in_other_buckets)
-                            / (matches_in_other_buckets + non_matches_in_other_buckets)
-                        )
+                        (float(matches_in_other_buckets) / (matches_in_other_buckets + non_matches_in_other_buckets))
                         * 100,
                         2,
                     )
@@ -501,9 +489,7 @@ def signature_find(request, report_id):
                     bucket.foreign_match_percentage = 0
 
                 bucket.foreign_match_count = matches_in_other_buckets
-                bucket.foreign_match_limit_exceeded = (
-                    matches_in_other_buckets_limit_exceeded
-                )
+                bucket.foreign_match_limit_exceeded = matches_in_other_buckets_limit_exceeded
 
                 if matches_in_other_buckets == 0:
                     bucket.foreign_color = "green"
@@ -516,9 +502,7 @@ def signature_find(request, report_id):
                 # other buckets is below out limit. Otherwise, it will just distract
                 # the user.
                 if matches_in_other_buckets <= 5:
-                    bucket.link_to_others = ",".join(
-                        [str(x) for x in other_matching_bucket_ids]
-                    )
+                    bucket.link_to_others = ",".join([str(x) for x in other_matching_bucket_ids])
                     similar_buckets.append(bucket)
 
     if matching_bucket:
@@ -545,9 +529,7 @@ def signature_list(request):
         "buckets/index.html",
         {
             "providers": json.dumps(providers),
-            "activity_range": getattr(
-                django_settings, "CLEANUP_REPORTS_AFTER_DAYS", 14
-            ),
+            "activity_range": getattr(django_settings, "CLEANUP_REPORTS_AFTER_DAYS", 14),
         },
     )
 
@@ -556,18 +538,12 @@ def signature_optimize(request, sig_id):
     bucket = get_object_or_404(Bucket, pk=sig_id)
 
     # Get all unbucketed entries
-    entries = (
-        ReportEntry.objects.filter(bucket=None)
-        .order_by("-id")
-        .select_related("app", "breakage_category", "os")
-    )
+    entries = ReportEntry.objects.filter(bucket=None).order_by("-id").select_related("app", "breakage_category", "os")
 
     (optimized_signature, matching_entries) = bucket.optimize_signature(entries)
     diff = None
     if optimized_signature:
-        diff = bucket.get_signature().get_signature_unified_diff_tuples(
-            matching_entries[0].reportinfo
-        )
+        diff = bucket.get_signature().get_signature_unified_diff_tuples(matching_entries[0].reportinfo)
 
     return render(
         request,
@@ -592,9 +568,7 @@ def signature_try(request, sig_id, report_id):
     # symptoms = signature.get_symptoms_diff(entry.reportinfo)
     diff = signature.get_signature_unified_diff_tuples(entry.reportinfo)
 
-    return render(
-        request, "buckets/try.html", {"bucket": bucket, "entry": entry, "diff": diff}
-    )
+    return render(request, "buckets/try.html", {"bucket": bucket, "entry": entry, "diff": diff})
 
 
 def signature_view(request, sig_id):
@@ -610,9 +584,7 @@ def signature_view(request, sig_id):
         request,
         "buckets/view.html",
         {
-            "activity_range": getattr(
-                django_settings, "CLEANUP_REPORTS_AFTER_DAYS", 14
-            ),
+            "activity_range": getattr(django_settings, "CLEANUP_REPORTS_AFTER_DAYS", 14),
             "bucket": json.dumps(bucket, cls=JSONDateEncoder),
             "bucket_id": bucket["id"],
             "providers": json.dumps(providers),
@@ -628,9 +600,7 @@ def stats(request):
         request,
         "stats.html",
         {
-            "activity_range": getattr(
-                django_settings, "CLEANUP_REPORTS_AFTER_DAYS", 30
-            ),
+            "activity_range": getattr(django_settings, "CLEANUP_REPORTS_AFTER_DAYS", 30),
             "providers": json.dumps(providers or []),
         },
     )
@@ -824,9 +794,7 @@ class BucketViewSet(
                 BucketHit.objects.all()
                 .filter(
                     begin__gte=timezone.now()
-                    - timedelta(
-                        days=getattr(django_settings, "CLEANUP_REPORTS_AFTER_DAYS", 14)
-                    ),
+                    - timedelta(days=getattr(django_settings, "CLEANUP_REPORTS_AFTER_DAYS", 14)),
                     bucket_id__in=[bucket["id"] for bucket in response.data["results"]],
                 )
                 .order_by("begin")
@@ -840,8 +808,7 @@ class BucketViewSet(
 
             for bucket in response.data["results"]:
                 bucket["report_history"] = [
-                    {"begin": begin, "count": num}
-                    for begin, num in bucket_hits.get(bucket["id"], {}).items()
+                    {"begin": begin, "count": num} for begin, num in bucket_hits.get(bucket["id"], {}).items()
                 ]
 
         return response
@@ -857,9 +824,7 @@ class BucketViewSet(
                 BucketHit.objects.all()
                 .filter(
                     begin__gte=timezone.now()
-                    - timedelta(
-                        days=getattr(django_settings, "CLEANUP_REPORTS_AFTER_DAYS", 14)
-                    ),
+                    - timedelta(days=getattr(django_settings, "CLEANUP_REPORTS_AFTER_DAYS", 14)),
                     bucket_id=response.data["id"],
                 )
                 .order_by("begin")
@@ -927,9 +892,7 @@ class BucketViewSet(
         # Save bucket and redirect to viewing it
         if submit_save:
             if next_offset is None:
-                data["url"] = reverse(
-                    "reportmanager:bucketview", kwargs={"sig_id": bucket.pk}
-                )
+                data["url"] = reverse("reportmanager:bucketview", kwargs={"sig_id": bucket.pk})
         else:
             data["warning_message"] = "This is a preview, don't forget to save!"
 
@@ -1027,9 +990,7 @@ class BugProviderViewSet(mixins.ListModelMixin, viewsets.GenericViewSet):
     serializer_class = BugProviderSerializer
 
 
-class BugzillaTemplateViewSet(
-    mixins.ListModelMixin, mixins.RetrieveModelMixin, viewsets.GenericViewSet
-):
+class BugzillaTemplateViewSet(mixins.ListModelMixin, mixins.RetrieveModelMixin, viewsets.GenericViewSet):
     """
     API endpoint that allows viewing BugzillaTemplates
     """
@@ -1103,9 +1064,7 @@ def json_to_query(json_str):
             qobj = Q(**kwargs)
             return qobj
         elif not isinstance(obj, dict):
-            raise RuntimeError(
-                f"Invalid object type '{type(obj).__name__}' in query object"
-            )
+            raise RuntimeError(f"Invalid object type '{type(obj).__name__}' in query object")
 
         qobj = Q()
 
@@ -1213,9 +1172,7 @@ class UserSettingsEditView(UpdateView):
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        context["bugzilla_providers"] = BugProvider.objects.filter(
-            classname="BugzillaProvider"
-        )
+        context["bugzilla_providers"] = BugProvider.objects.filter(classname="BugzillaProvider")
         context["user"] = self.request.user
         return context
 
@@ -1294,24 +1251,9 @@ class ReportStatsViewSet(viewsets.GenericViewSet):
         # this gives all the bucket ids
         #   where the bucket is top10 for any period (day, week, month)
         top10s = (
-            {
-                b_id
-                for b_id, _ in sorted(
-                    totals.bucket_day.items(), key=lambda t: t[1], reverse=True
-                )[:10]
-            }
-            | {
-                b_id
-                for b_id, _ in sorted(
-                    totals.bucket_week.items(), key=lambda t: t[1], reverse=True
-                )[:10]
-            }
-            | {
-                b_id
-                for b_id, _ in sorted(
-                    totals.bucket_month.items(), key=lambda t: t[1], reverse=True
-                )[:10]
-            }
+            {b_id for b_id, _ in sorted(totals.bucket_day.items(), key=lambda t: t[1], reverse=True)[:10]}
+            | {b_id for b_id, _ in sorted(totals.bucket_week.items(), key=lambda t: t[1], reverse=True)[:10]}
+            | {b_id for b_id, _ in sorted(totals.bucket_month.items(), key=lambda t: t[1], reverse=True)[:10]}
         )
 
         frequent_buckets = {}
@@ -1375,11 +1317,7 @@ class BucketSpikeViewSet(viewsets.GenericViewSet):
         """Get the end date based on the last bucketed report
         (instead of using today's date as reports are delayed by a day).
         """
-        last_bucketed_report = (
-            ReportEntry.objects.filter(bucket__isnull=False)
-            .order_by("-reported_at")
-            .first()
-        )
+        last_bucketed_report = ReportEntry.objects.filter(bucket__isnull=False).order_by("-reported_at").first()
         return last_bucketed_report.reported_at.date() if last_bucketed_report else None
 
     def fetch_reports_data(self, long_window_start, short_window_start, end_date):
@@ -1422,12 +1360,7 @@ class BucketSpikeViewSet(viewsets.GenericViewSet):
 
             bucket["daily"][day]["total"] += 1
 
-            if (
-                comments
-                and comments.strip()
-                and ml_valid_probability
-                and ml_valid_probability > 0.10
-            ):
+            if comments and comments.strip() and ml_valid_probability and ml_valid_probability > 0.10:
                 bucket["daily"][day]["with_comments"] += 1
 
             if bucket["domain"] is None:
@@ -1458,15 +1391,9 @@ class BucketSpikeViewSet(viewsets.GenericViewSet):
     ):
         daily_counts = bucket_info["daily"]
 
-        short_count = sum(
-            counts["total"]
-            for date, counts in daily_counts.items()
-            if date >= short_window_start
-        )
+        short_count = sum(counts["total"] for date, counts in daily_counts.items() if date >= short_window_start)
         short_count_with_comments = sum(
-            counts["with_comments"]
-            for date, counts in daily_counts.items()
-            if date >= short_window_start
+            counts["with_comments"] for date, counts in daily_counts.items() if date >= short_window_start
         )
         long_count = sum(counts["total"] for counts in daily_counts.values())
 
@@ -1513,9 +1440,7 @@ class BucketSpikeViewSet(viewsets.GenericViewSet):
         long_window_start = end_date - timedelta(days=long_window - 1)
         short_window_start = end_date - timedelta(days=short_window - 1)
 
-        bucket_data = self.fetch_reports_data(
-            long_window_start, short_window_start, end_date
-        )
+        bucket_data = self.fetch_reports_data(long_window_start, short_window_start, end_date)
 
         spikes_data = []
         for bucket_id, bucket_info in bucket_data.items():

@@ -37,9 +37,7 @@ class BucketSerializer(serializers.ModelSerializer):
     )
     latest_entry_id = serializers.IntegerField(write_only=True, required=False)
     latest_report = serializers.DateTimeField(write_only=True, required=False)
-    signature = serializers.CharField(
-        style={"base_template": "textarea.html"}, required=False
-    )
+    signature = serializers.CharField(style={"base_template": "textarea.html"}, required=False)
     size = serializers.IntegerField(write_only=True, required=False)
 
     class Meta:
@@ -120,9 +118,7 @@ class BucketVueSerializer(BucketSerializer):
         return None
 
     def get_new_bug_url(self, sig):
-        return reverse(
-            "reportmanager:createbug", kwargs={"report_id": sig.latest_entry_id or 0}
-        )
+        return reverse("reportmanager:createbug", kwargs={"report_id": sig.latest_entry_id or 0})
 
     def get_view_url(self, sig):
         return reverse("reportmanager:bucketview", kwargs={"sig_id": sig.id})
@@ -185,9 +181,7 @@ class ReportEntrySerializer(serializers.ModelSerializer):
     app_name = serializers.CharField(source="app.name")
     app_channel = serializers.CharField(source="app.channel")
     app_version = serializers.CharField(source="app.version")
-    breakage_category = serializers.CharField(
-        source="breakage_category.value", allow_null=True
-    )
+    breakage_category = serializers.CharField(source="breakage_category.value", allow_null=True)
     os = serializers.CharField(source="os.name", max_length=63)
 
     class Meta:
@@ -223,9 +217,7 @@ class ReportEntrySerializer(serializers.ModelSerializer):
             channel=attrs.get("app_channel"),
             version=attrs["app_version"],
         )[0]
-        attrs["breakage_category"] = BreakageCategory.objects.get_or_create(
-            value=attrs["breakage_category"]
-        )[0]
+        attrs["breakage_category"] = BreakageCategory.objects.get_or_create(value=attrs["breakage_category"])[0]
         attrs["os"] = OS.objects.get_or_create(name=attrs["os"])[0]
 
         # Create our ReportEntry instance
@@ -259,9 +251,7 @@ class ReportEntryVueSerializer(ReportEntrySerializer):
 
     def get_sig_view_url(self, entry):
         if entry.bucket:
-            return reverse(
-                "reportmanager:bucketview", kwargs={"sig_id": entry.bucket.id}
-            )
+            return reverse("reportmanager:bucketview", kwargs={"sig_id": entry.bucket.id})
         return None
 
     def get_sig_new_url(self, entry):

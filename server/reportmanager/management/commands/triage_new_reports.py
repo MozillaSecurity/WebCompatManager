@@ -10,7 +10,5 @@ class Command(BaseCommand):
     )
 
     def handle(self, *args, **options):
-        for entry in ReportEntry.objects.filter(bucket__isnull=True).values_list(
-            "id", flat=True
-        ):
+        for entry in ReportEntry.objects.filter(bucket__isnull=True).values_list("id", flat=True):
             call_command("triage_new_report", entry)

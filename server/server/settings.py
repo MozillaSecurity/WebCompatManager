@@ -126,12 +126,8 @@ USE_OIDC = False
 
 BIGQUERY_PROJECT = "moz-fx-dev-dschubert-wckb"
 BIGQUERY_TABLE = "moz-fx-dev-dschubert-wckb.webcompat_user_reports.user_reports_prod"
-BIGQUERY_TRANSLATIONS_TABLE = (
-    "moz-fx-dev-dschubert-wckb.webcompat_user_reports.translations"
-)
-BIGQUERY_CLASSIFICATION_TABLE = (
-    "moz-fx-dev-dschubert-wckb.webcompat_user_reports.bugbug_predictions"
-)
+BIGQUERY_TRANSLATIONS_TABLE = "moz-fx-dev-dschubert-wckb.webcompat_user_reports.translations"
+BIGQUERY_CLASSIFICATION_TABLE = "moz-fx-dev-dschubert-wckb.webcompat_user_reports.bugbug_predictions"
 BIGQUERY_SERVICE_ACCOUNT = ""
 
 # Modify the way we generate our usernames, based on the email address
@@ -230,10 +226,7 @@ LOGGING = {
     "disable_existing_loggers": False,
     "formatters": {
         "verbose": {
-            "format": (
-                "[%(asctime)s] [%(levelname)s] [%(module)s] [%(process)d] [%(thread)d]:"
-                " %(message)s"
-            ),
+            "format": ("[%(asctime)s] [%(levelname)s] [%(module)s] [%(process)d] [%(thread)d]:" " %(message)s"),
         },
         "simple": {"format": "[%(asctime)s] [%(levelname)s] [%(name)s]: %(message)s"},
     },

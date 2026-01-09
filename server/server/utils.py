@@ -64,9 +64,7 @@ class RedisLock:
                     pipe.unwatch()
                     break
 
-        LOG.debug(
-            "Failed to release lock: %s(%s) != %s", self.name, self.unique_id, existing
-        )
+        LOG.debug("Failed to release lock: %s(%s) != %s", self.name, self.unique_id, existing)
         return False
 
 

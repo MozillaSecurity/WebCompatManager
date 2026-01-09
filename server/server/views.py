@@ -93,9 +93,7 @@ def json_to_query(json_str):
             qobj = Q(**kwargs)
             return qobj
         elif not isinstance(obj, dict):
-            raise RuntimeError(
-                f"Invalid object type '{type(obj).__name__}' in query object"
-            )
+            raise RuntimeError(f"Invalid object type '{type(obj).__name__}' in query object")
 
         qobj = Q()
 

@@ -9,7 +9,7 @@ import re
 import sys
 from abc import ABC, abstractmethod
 from dataclasses import dataclass
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from logging import getLogger
 from typing import TYPE_CHECKING, Any
 
@@ -99,14 +99,14 @@ class Matcher(ABC):
                 return NullMatcher()
             return ValueMatcher(obj["value"])
         if "time" in obj:
-            return TimeMatcher(isoparse(obj["time"]).replace(tzinfo=timezone.utc))
+            return TimeMatcher(isoparse(obj["time"]).replace(tzinfo=UTC))
         if "pattern" in obj:
             return PatternMatcher(obj["pattern"])
         after = before = None
         if "before" in obj:
-            before = isoparse(obj["before"]).replace(tzinfo=timezone.utc)
+            before = isoparse(obj["before"]).replace(tzinfo=UTC)
         if "after" in obj:
-            after = isoparse(obj["after"]).replace(tzinfo=timezone.utc)
+            after = isoparse(obj["after"]).replace(tzinfo=UTC)
         return TimeRangeMatcher(after, before)
 
     @abstractmethod
@@ -147,16 +147,12 @@ class TimeRangeMatcher(TimeMatcher):
     ORDER = 1
 
     def __init__(self, after: datetime | None, before: datetime | None) -> None:
-        assert (
-            after is not None or before is not None
-        ), "at least one of 'after' and 'before' must be set"
+        assert after is not None or before is not None, "at least one of 'after' and 'before' must be set"
         self.before = before
         self.after = after
 
     def matches(self, value: datetime) -> bool:  # type: ignore[override]
-        return (self.after is None or value > self.after) and (
-            self.before is None or value < self.before
-        )
+        return (self.after is None or value > self.after) and (self.before is None or value < self.before)
 
 
 @dataclass

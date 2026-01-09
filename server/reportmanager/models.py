@@ -46,11 +46,7 @@ class App(models.Model):
     version = models.CharField(max_length=127)
 
     class Meta:
-        constraints = (
-            models.UniqueConstraint(
-                fields=("channel", "name", "version"), name="unique_app"
-            ),
-        )
+        constraints = (models.UniqueConstraint(fields=("channel", "name", "version"), name="unique_app"),)
 
 
 class BreakageCategory(models.Model):
@@ -59,9 +55,7 @@ class BreakageCategory(models.Model):
 
 class Bucket(models.Model):
     bug = models.ForeignKey("Bug", null=True, on_delete=models.deletion.CASCADE)
-    color = models.ForeignKey(
-        "BucketColor", null=True, on_delete=models.deletion.CASCADE
-    )
+    color = models.ForeignKey("BucketColor", null=True, on_delete=models.deletion.CASCADE)
     description = models.TextField()
     # store the domain outside the signature only if the signature includes
     # a non-regex domain symptom and no other symptoms (for quick exclusion)
@@ -69,9 +63,7 @@ class Bucket(models.Model):
     # bucket can be hidden from view until given date, without being logged
     hide_until = models.DateTimeField(blank=True, null=True)
     # higher priority = earlier match
-    priority = models.IntegerField(
-        default=0, validators=(MinValueValidator(-2), MaxValueValidator(2))
-    )
+    priority = models.IntegerField(default=0, validators=(MinValueValidator(-2), MaxValueValidator(2)))
     # Raw signature JSON (see webcompat.models.Signature)
     signature = models.TextField()
     reassign_in_progress = models.BooleanField(default=False)
@@ -86,9 +78,7 @@ class Bucket(models.Model):
 
     @property
     def watchers(self):
-        ids = User.objects.filter(
-            bucketwatch__bucket=self, bucket_hit=True
-        ).values_list("user_id", flat=True)
+        ids = User.objects.filter(bucketwatch__bucket=self, bucket_hit=True).values_list("user_id", flat=True)
         return DjangoUser.objects.filter(id__in=ids).distinct()
 
     def get_signature(self):
@@ -205,13 +195,9 @@ class Bucket(models.Model):
                         BucketHit.increment_count(self.id, report["reported_at"])
                 ReportEntry.objects.filter(pk__in=entry_ids_batch).update(bucket=self)
             for entry_ids_batch in batched(out_list, UPDATE_BATCH_SIZE):
-                for report in ReportEntry.objects.filter(pk__in=entry_ids_batch).values(
-                    "bucket_id", "reported_at"
-                ):
+                for report in ReportEntry.objects.filter(pk__in=entry_ids_batch).values("bucket_id", "reported_at"):
                     if report["bucket_id"] is not None:
-                        BucketHit.decrement_count(
-                            report["bucket_id"], report["reported_at"]
-                        )
+                        BucketHit.decrement_count(report["bucket_id"], report["reported_at"])
                 ReportEntry.objects.filter(pk__in=entry_ids_batch).update(bucket=None)
 
         return in_list, out_list, in_list_count, out_list_count, next_offset
@@ -252,30 +238,22 @@ class Bucket(models.Model):
                     if other_bucket.pk == self.pk:
                         continue
 
-                    if (
-                        self.bug
-                        and other_bucket.bug
-                        and self.bug.pk == other_bucket.bug.pk
-                    ):
+                    if self.bug and other_bucket.bug and self.bug.pk == other_bucket.bug.pk:
                         # Allow matches in other buckets if they are both linked to the
                         # same bug
                         continue
 
                     if other_bucket.pk not in first_entry_per_bucket_cache:
-                        c = ReportEntry.objects.filter(
-                            bucket=other_bucket
-                        ).select_related("app", "breakage_category", "os")
+                        c = ReportEntry.objects.filter(bucket=other_bucket).select_related(
+                            "app", "breakage_category", "os"
+                        )
                         c = c.first()
                         first_entry_per_bucket_cache[other_bucket.pk] = c
                         if c:
-                            first_entry_per_bucket_cache[other_bucket.pk] = (
-                                c.get_report()
-                            )
+                            first_entry_per_bucket_cache[other_bucket.pk] = c.get_report()
 
                     first_entry_report = first_entry_per_bucket_cache[other_bucket.pk]
-                    if first_entry_report and optimized_signature.matches(
-                        first_entry_report
-                    ):
+                    if first_entry_report and optimized_signature.matches(first_entry_report):
                         matches_in_other_buckets = True
                         break
 
@@ -301,9 +279,7 @@ class Bucket(models.Model):
 
 class BucketColor(models.Model):
     name = models.CharField(max_length=255, unique=True)
-    value = models.IntegerField(
-        unique=True, validators=(MinValueValidator(0), MaxValueValidator(0xFFFFFF))
-    )
+    value = models.IntegerField(unique=True, validators=(MinValueValidator(0), MaxValueValidator(0xFFFFFF)))
 
     class Meta:
         constraints = (
@@ -323,9 +299,7 @@ class BugProvider(models.Model):
 
     def get_instance(self):
         # Dynamically instantiate the provider as requested
-        provider_module = __import__(
-            f"reportmanager.Bugtracker.{self.classname}", fromlist=[self.classname]
-        )
+        provider_module = __import__(f"reportmanager.Bugtracker.{self.classname}", fromlist=[self.classname])
         provider_cls = getattr(provider_module, self.classname)
         return provider_cls(self.pk, self.hostname)
 
@@ -368,9 +342,7 @@ class BucketHit(models.Model):
     @transaction.atomic
     def increment_count(cls, bucket_id, begin):
         begin = begin.replace(microsecond=0, second=0, minute=0)
-        counter, _ = cls.objects.select_for_update().get_or_create(
-            bucket_id=bucket_id, begin=begin
-        )
+        counter, _ = cls.objects.select_for_update().get_or_create(bucket_id=bucket_id, begin=begin)
         counter.count += 1
         counter.save()
 
@@ -458,9 +430,7 @@ class ReportEntryManager(models.Manager):
 
 class ReportEntry(models.Model):
     app = models.ForeignKey(App, on_delete=models.deletion.CASCADE)
-    breakage_category = models.ForeignKey(
-        BreakageCategory, null=True, on_delete=models.deletion.CASCADE
-    )
+    breakage_category = models.ForeignKey(BreakageCategory, null=True, on_delete=models.deletion.CASCADE)
     bucket = models.ForeignKey(Bucket, null=True, on_delete=models.deletion.CASCADE)
     comments = models.TextField()
     comments_translated = models.TextField(null=True)
@@ -524,11 +494,7 @@ class ReportEntry(models.Model):
                 reported_at=self.reported_at,
                 uuid=self.uuid,
                 url=urlsplit(self.url),
-                breakage_category=(
-                    self.breakage_category.value
-                    if self.breakage_category is not None
-                    else None
-                ),
+                breakage_category=(self.breakage_category.value if self.breakage_category is not None else None),
                 ml_valid_probability=self.ml_valid_probability,
             )
         return self._cached_report
@@ -657,9 +623,7 @@ def add_default_perms(sender, instance, created, **kwargs):
         for perm in getattr(settings, "DEFAULT_PERMISSIONS", []):
             model, perm = perm.split(":", 1)
             module, model = model.rsplit(".", 1)
-            module = __import__(
-                module, globals(), locals(), [model], 0
-            )  # from module import model
+            module = __import__(module, globals(), locals(), [model], 0)  # from module import model
             content_type = ContentType.objects.get_for_model(getattr(module, model))
             perm = Permission.objects.get(content_type=content_type, codename=perm)
             instance.user_permissions.add(perm)

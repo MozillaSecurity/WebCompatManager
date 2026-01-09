@@ -61,9 +61,7 @@ class Command(BaseCommand):
             "project": settings.BIGQUERY_PROJECT,
         }
         if svc_acct := getattr(settings, "BIGQUERY_SERVICE_ACCOUNT", None):
-            params["credentials"] = (
-                service_account.Credentials.from_service_account_info(svc_acct)
-            )
+            params["credentials"] = service_account.Credentials.from_service_account_info(svc_acct)
 
         client = bigquery.Client(**params)
 
@@ -83,9 +81,7 @@ class Command(BaseCommand):
                     AND r.comments IS NOT NULL
                     AND r.reported_at >= @since;""",
             job_config=bigquery.QueryJobConfig(
-                query_parameters=[
-                    bigquery.ScalarQueryParameter("since", "DATETIME", options["since"])
-                ]
+                query_parameters=[bigquery.ScalarQueryParameter("since", "DATETIME", options["since"])]
             ),
         )
 
@@ -120,9 +116,7 @@ class Command(BaseCommand):
                 ml_valid_probability=ml_valid_probability,
             )
             with suppress(IntegrityError):
-                ReportEntry.objects.create_from_report(
-                    report_obj, find_bucket_for_report(report_obj)
-                )
+                ReportEntry.objects.create_from_report(report_obj, find_bucket_for_report(report_obj))
                 created += 1
         LOG.info("imported %d report entries", created)
 

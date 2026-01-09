@@ -23,9 +23,9 @@ class Command(BaseCommand):
         entry = ReportEntry.objects.select_for_update().get(pk=options["id"])
         report_info = entry.get_report()
 
-        buckets = Bucket.objects.filter(
-            Q(domain=report_info.url.hostname) | Q(domain__isnull=True)
-        ).order_by("-priority")
+        buckets = Bucket.objects.filter(Q(domain=report_info.url.hostname) | Q(domain__isnull=True)).order_by(
+            "-priority"
+        )
 
         for bucket in buckets:
             signature = bucket.get_signature()
