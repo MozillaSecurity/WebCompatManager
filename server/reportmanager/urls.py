@@ -13,7 +13,7 @@ router.register(r"bugproviders", views.BugProviderViewSet, basename="bugprovider
 router.register(
     r"bugzilla/templates", views.BugzillaTemplateViewSet, basename="templates"
 )
-router.register(r"inbox", views.NotificationViewSet, basename="inbox")
+# router.register(r"inbox", views.NotificationViewSet, basename="inbox")
 router.register(r"reports", views.ReportEntryViewSet, basename="reports")
 router.register(
     r"bucket-spikes",

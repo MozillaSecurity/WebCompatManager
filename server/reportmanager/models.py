@@ -19,8 +19,8 @@ from django.db.models.signals import post_delete, post_save
 from django.dispatch.dispatcher import receiver
 from django.utils import timezone
 from enumfields import Enum, EnumField
-from notifications.signals import notify
 
+# from notifications.signals import notify
 from webcompat.models import Report, Signature
 from webcompat.symptoms import URLSymptom, ValueMatcher
 
@@ -575,19 +575,19 @@ def ReportEntry_save(sender, instance, created, **kwargs):
         else:
             triage = True
 
-        if instance.bucket is not None:
-            notify.send(
-                instance.bucket,
-                recipient=instance.bucket.watchers,
-                actor=instance.bucket,
-                verb="bucket_hit",
-                target=instance,
-                level="info",
-                description=(
-                    f"The bucket {instance.bucket_id} received a new report entry "
-                    f"{instance.pk}"
-                ),
-            )
+        # if instance.bucket is not None:
+        #     notify.send(
+        #         instance.bucket,
+        #         recipient=instance.bucket.watchers,
+        #         actor=instance.bucket,
+        #         verb="bucket_hit",
+        #         target=instance,
+        #         level="info",
+        #         description=(
+        #             f"The bucket {instance.bucket_id} received a new report entry "
+        #             f"{instance.pk}"
+        #         ),
+        #     )
 
     if getattr(settings, "USE_CELERY", None) and triage:
         triage_new_report.apply_async((instance.pk,), countdown=0.1)

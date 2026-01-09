@@ -4,7 +4,8 @@
 from django.core.exceptions import MultipleObjectsReturned  # noqa
 from django.forms import widgets  # noqa
 from django.urls import reverse
-from notifications.models import Notification
+
+# from notifications.models import Notification
 from rest_framework import serializers
 from rest_framework.exceptions import APIException
 
@@ -13,7 +14,6 @@ from .models import (
     App,
     BreakageCategory,
     Bucket,
-    Bug,
     BugProvider,
     BugzillaTemplate,
     ReportEntry,
@@ -271,46 +271,46 @@ class ReportEntryVueSerializer(ReportEntrySerializer):
         return reverse("reportmanager:findbuckets", kwargs={"report_id": entry.id})
 
 
-class NotificationSerializer(serializers.ModelSerializer):
-    actor_url = serializers.SerializerMethodField()
-    target_url = serializers.SerializerMethodField()
-    external_bug_url = serializers.SerializerMethodField()
-    data = serializers.JSONField()
+# class NotificationSerializer(serializers.ModelSerializer):
+#     actor_url = serializers.SerializerMethodField()
+#     target_url = serializers.SerializerMethodField()
+#     external_bug_url = serializers.SerializerMethodField()
+#     data = serializers.JSONField()
 
-    class Meta:
-        model = Notification
-        fields = (
-            "id",
-            "timestamp",
-            "data",
-            "description",
-            "verb",
-            "actor_url",
-            "target_url",
-            "external_bug_url",
-        )
+#     class Meta:
+#         model = Notification
+#         fields = (
+#             "id",
+#             "timestamp",
+#             "data",
+#             "description",
+#             "verb",
+#             "actor_url",
+#             "target_url",
+#             "external_bug_url",
+#         )
 
-    def get_actor_url(self, notification):
-        if isinstance(notification.actor, Bucket):
-            return reverse(
-                "reportmanager:bucketview", kwargs={"sig_id": notification.actor.id}
-            )
-        return None
+#     def get_actor_url(self, notification):
+#         if isinstance(notification.actor, Bucket):
+#             return reverse(
+#                 "reportmanager:bucketview", kwargs={"sig_id": notification.actor.id}
+#             )
+#         return None
 
-    def get_target_url(self, notification):
-        if isinstance(notification.target, ReportEntry):
-            return reverse(
-                "reportmanager:reportview", kwargs={"report_id": notification.target.id}
-            )
-        return None
+#     def get_target_url(self, notification):
+#         if isinstance(notification.target, ReportEntry):
+#             return reverse(
+#                 "reportmanager:reportview", kwargs={"report_id": notification.target.id}
+#             )
+#         return None
 
-    def get_external_bug_url(self, notification):
-        if isinstance(notification.target, Bug):
-            return (
-                f"https://{notification.target.external_type.hostname}"
-                f"/{notification.target.external_id}"
-            )
-        return None
+#     def get_external_bug_url(self, notification):
+#         if isinstance(notification.target, Bug):
+#             return (
+#                 f"https://{notification.target.external_type.hostname}"
+#                 f"/{notification.target.external_id}"
+#             )
+#         return None
 
 
 class BucketSpikeSerializer(serializers.Serializer):

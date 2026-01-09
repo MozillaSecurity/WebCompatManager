@@ -1,4 +1,4 @@
-{% load notifications_tags %}
+<!-- load notifications_tags -->
 {% load static %}
 
 <nav class="navbar navbar-inverse navbar-static-top" role="navigation">
@@ -31,7 +31,7 @@
                 {% if perms.reportmanager.reportmanager_visible and user.is_authenticated %}
                 <li><a href="{% url 'reportmanager:inbox' %}">
                     <i class="bi bi-bell-fill"></i>
-                    {% live_notify_badge badge_class="badge" %}
+                    <!-- live_notify_badge badge_class="badge" -->
                 </a></li>
                 {% endif %}
                 <li class="dropdown">

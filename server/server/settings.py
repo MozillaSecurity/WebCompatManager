@@ -55,7 +55,6 @@ INSTALLED_APPS = (
     # 'mozilla_django_oidc',
     "crispy_forms",
     "crispy_bootstrap3",
-    "notifications",
 )
 
 
