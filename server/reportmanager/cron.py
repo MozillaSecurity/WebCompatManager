@@ -35,8 +35,7 @@ def update_report_stats():
             break
         with transaction.atomic():
             reporthits_range = ReportHit.objects.select_for_update().filter(
-                Q(last_update__gt=period - timedelta(hours=1))
-                & Q(last_update__lte=period)
+                Q(last_update__gt=period - timedelta(hours=1)) & Q(last_update__lte=period)
             )
             hits = ReportEntry.objects.filter(
                 reported_at__gt=max(period - timedelta(hours=1), last_run),

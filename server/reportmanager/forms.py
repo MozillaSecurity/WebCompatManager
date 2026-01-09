@@ -70,10 +70,7 @@ class BugzillaTemplateBugForm(ModelForm):
         "security",
         Row(Field("security_group", wrapper_class="col-md-6")),
         Submit("submit", "Save", css_class="btn btn-danger"),
-        HTML(
-            """<a href="{% url 'reportmanager:templates' %}" class="btn btn-default">"""
-            """Cancel</a>"""
-        ),
+        HTML("""<a href="{% url 'reportmanager:templates' %}" class="btn btn-default">""" """Cancel</a>"""),
         HTML("""</div>"""),
     )
 
@@ -131,11 +128,7 @@ class BugzillaTemplateBugForm(ModelForm):
 
         widgets = MappingProxyType(
             ChainMap(
-                {
-                    field: TextInput()
-                    for field in fields
-                    if field not in {"attrs", "description", "security"}
-                },
+                {field: TextInput() for field in fields if field not in {"attrs", "description", "security"}},
                 {"attrs": Textarea(attrs={"rows": 2})},
             )
         )
@@ -148,10 +141,7 @@ class BugzillaTemplateCommentForm(ModelForm):
         "name",
         "comment",
         Submit("submit", "Save", css_class="btn btn-danger"),
-        HTML(
-            """<a href="{% url 'reportmanager:templates' %}" class="btn btn-default">"""
-            """Cancel</a>"""
-        ),
+        HTML("""<a href="{% url 'reportmanager:templates' %}" class="btn btn-default">""" """Cancel</a>"""),
         HTML("""</div>"""),
     )
 

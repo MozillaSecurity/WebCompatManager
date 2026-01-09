@@ -52,9 +52,7 @@ class CheckAppPermission(permissions.BasePermission):
                     }:
                         return True
 
-                if request.user.has_perm(
-                    f"reportmanager.{app}_write"
-                ) and request.method in {
+                if request.user.has_perm(f"reportmanager.{app}_write") and request.method in {
                     "DELETE",
                     "PATCH",
                     "POST",

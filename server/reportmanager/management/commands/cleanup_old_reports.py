@@ -22,9 +22,7 @@ class Command(BaseCommand):
 
     def handle(self, *args, **options):
         cleanup_reports_after_days = getattr(settings, "CLEANUP_REPORTS_AFTER_DAYS", 14)
-        cleanup_fixed_buckets_after_days = getattr(
-            settings, "CLEANUP_FIXED_BUCKETS_AFTER_DAYS", 3
-        )
+        cleanup_fixed_buckets_after_days = getattr(settings, "CLEANUP_FIXED_BUCKETS_AFTER_DAYS", 3)
 
         # Select all buckets that have been closed for x days
         now = timezone.now()
@@ -73,9 +71,7 @@ class Command(BaseCommand):
 
         if not options["leave_empty_buckets"]:
             # Select all buckets that are empty and delete them
-            for bucket in Bucket.objects.annotate(size=Count("reportentry")).filter(
-                size=0, bug=None
-            ):
+            for bucket in Bucket.objects.annotate(size=Count("reportentry")).filter(size=0, bug=None):
                 LOG.info("Removing empty bucket %d", bucket.id)
                 bucket.delete()
 

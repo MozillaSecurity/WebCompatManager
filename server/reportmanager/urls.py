@@ -10,10 +10,8 @@ from . import views
 router = routers.DefaultRouter()
 router.register(r"buckets", views.BucketViewSet, basename="buckets")
 router.register(r"bugproviders", views.BugProviderViewSet, basename="bugproviders")
-router.register(
-    r"bugzilla/templates", views.BugzillaTemplateViewSet, basename="templates"
-)
-router.register(r"inbox", views.NotificationViewSet, basename="inbox")
+router.register(r"bugzilla/templates", views.BugzillaTemplateViewSet, basename="templates")
+# router.register(r"inbox", views.NotificationViewSet, basename="inbox")
 router.register(r"reports", views.ReportEntryViewSet, basename="reports")
 router.register(
     r"bucket-spikes",
@@ -40,9 +38,7 @@ urlpatterns = [
         views.bug_provider_edit,
         name="bugprovideredit",
     ),
-    re_path(
-        r"^bugprovider/create/$", views.bug_provider_create, name="bugprovidercreate"
-    ),
+    re_path(r"^bugprovider/create/$", views.bug_provider_create, name="bugprovidercreate"),
     re_path(
         r"^bugzilla/templates/$",
         views.BugzillaTemplateListView.as_view(),
@@ -86,20 +82,14 @@ urlpatterns = [
         views.external_bug_create_comment,
         name="createbugcomment",
     ),
-    re_path(
-        r"^reports/(?P<report_id>\d+)/delete/$", views.report_delete, name="reportdel"
-    ),
-    re_path(
-        r"^reports/(?P<report_id>\d+)/edit/$", views.report_edit, name="reportedit"
-    ),
+    re_path(r"^reports/(?P<report_id>\d+)/delete/$", views.report_delete, name="reportdel"),
+    re_path(r"^reports/(?P<report_id>\d+)/edit/$", views.report_edit, name="reportedit"),
     re_path(
         r"^reports/(?P<report_id>\d+)/findbuckets/$",
         views.signature_find,
         name="findbuckets",
     ),
-    re_path(
-        r"^rest/api-auth/", include("rest_framework.urls", namespace="rest_framework")
-    ),
+    re_path(r"^rest/api-auth/", include("rest_framework.urls", namespace="rest_framework")),
     re_path(
         r"^rest/reports/stats/$",
         views.ReportStatsViewSet.as_view({"get": "retrieve"}),
@@ -113,12 +103,8 @@ urlpatterns = [
     re_path(r"^settings/$", views.settings, name="settings"),
     re_path(r"^buckets/$", views.signature_list, name="buckets"),
     re_path(r"^buckets/(?P<sig_id>\d+)/$", views.signature_view, name="bucketview"),
-    re_path(
-        r"^buckets/(?P<sig_id>\d+)/delete/$", views.signature_delete, name="bucketdel"
-    ),
-    re_path(
-        r"^buckets/(?P<sig_id>\d+)/edit/$", views.signature_edit, name="bucketedit"
-    ),
+    re_path(r"^buckets/(?P<sig_id>\d+)/delete/$", views.signature_delete, name="bucketdel"),
+    re_path(r"^buckets/(?P<sig_id>\d+)/edit/$", views.signature_edit, name="bucketedit"),
     re_path(
         r"^buckets/(?P<sig_id>\d+)/try/(?P<report_id>\d+)/$",
         views.signature_try,
@@ -135,14 +121,10 @@ urlpatterns = [
         views.bucket_watch_delete,
         name="bucketwatchdel",
     ),
-    re_path(
-        r"^buckets/watch/create/$", views.bucket_watch_create, name="createbucketwatch"
-    ),
+    re_path(r"^buckets/watch/create/$", views.bucket_watch_create, name="createbucketwatch"),
     re_path(r"^buckets/create/$", views.signature_create, name="createbucket"),
     re_path(r"^spikes/$", views.spike_list_view, name="spikes"),
     re_path(r"^stats/$", views.stats, name="stats"),
-    re_path(
-        r"^usersettings/$", views.UserSettingsEditView.as_view(), name="usersettings"
-    ),
+    re_path(r"^usersettings/$", views.UserSettingsEditView.as_view(), name="usersettings"),
     re_path(r"^rest/", include(router.urls)),
 ]

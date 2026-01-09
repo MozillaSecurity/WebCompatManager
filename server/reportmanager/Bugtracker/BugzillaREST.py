@@ -54,9 +54,7 @@ class BugzillaREST:
         if self.auth_token is not None:
             return True
 
-        login_url = (
-            f"{self.base_url}/login?login={self.username}&password={self.password}"
-        )
+        login_url = f"{self.base_url}/login?login={self.username}&password={self.password}"
         response = requests.get(login_url)
         json = response.json()
 
@@ -105,9 +103,7 @@ class BugzillaREST:
         if exclude_fields:
             extra_params.append(f"&exclude_fields={','.join(exclude_fields)}")
 
-        response = requests.get(
-            bug_url + "".join(extra_params), headers=self.request_headers
-        )
+        response = requests.get(bug_url + "".join(extra_params), headers=self.request_headers)
         json = response.json()
 
         if "bugs" not in json:

@@ -46,9 +46,7 @@ class RequireLoginMiddleware:
     # Docstring and original idea from https://stackoverflow.com/a/2164224
     def __init__(self, get_response):
         self.get_response = get_response
-        self.exceptions = re.compile(
-            "(" + "|".join(settings.LOGIN_REQUIRED_URLS_EXCEPTIONS) + ")"
-        )
+        self.exceptions = re.compile("(" + "|".join(settings.LOGIN_REQUIRED_URLS_EXCEPTIONS) + ")")
 
     def __call__(self, request):
         return self.get_response(request)
@@ -69,9 +67,7 @@ class RequireLoginMiddleware:
 class CheckAppPermissionsMiddleware:
     def __init__(self, get_response):
         self.get_response = get_response
-        self.exceptions = re.compile(
-            "(" + "|".join(settings.LOGIN_REQUIRED_URLS_EXCEPTIONS) + ")"
-        )
+        self.exceptions = re.compile("(" + "|".join(settings.LOGIN_REQUIRED_URLS_EXCEPTIONS) + ")")
 
     def __call__(self, request):
         return self.get_response(request)

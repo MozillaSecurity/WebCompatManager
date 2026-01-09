@@ -6,7 +6,7 @@ from __future__ import annotations
 import difflib
 import json
 from dataclasses import dataclass, field
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from logging import getLogger
 from pathlib import Path
 from typing import TYPE_CHECKING, Any
@@ -59,23 +59,13 @@ class Report:
     def load(cls, data: str) -> Report:
         result = json.loads(data)
         result["details"] = json.loads(result["details"])
-        result["reported_at"] = isoparse(result["reported_at"]).replace(
-            tzinfo=timezone.utc
-        )
+        result["reported_at"] = isoparse(result["reported_at"]).replace(tzinfo=UTC)
         result["url"] = urlsplit(result["url"])
         return cls(**result)
 
     def create_signature(self) -> Signature:
         """Create a default signature"""
-        return Signature(
-            json.dumps(
-                {
-                    "symptoms": [
-                        {"type": "url", "part": "hostname", "value": self.url.hostname}
-                    ]
-                }
-            )
-        )
+        return Signature(json.dumps({"symptoms": [{"type": "url", "part": "hostname", "value": self.url.hostname}]}))
 
 
 @dataclass
@@ -139,9 +129,7 @@ class Signature:
         symptoms_diff = self.get_symptoms_diff(report)
 
         sig_symptoms: list[dict[str, Any]] = [
-            symptom_diff.symptom.json_obj
-            for symptom_diff in symptoms_diff
-            if not symptom_diff.offending
+            symptom_diff.symptom.json_obj for symptom_diff in symptoms_diff if not symptom_diff.offending
         ]
 
         if not sig_symptoms:
@@ -154,9 +142,7 @@ class Signature:
         for symptom in self.symptoms:
             yield _DiffResult(offending=symptom.matches(report), symptom=symptom)
 
-    def get_signature_unified_diff_tuples(
-        self, report: Report
-    ) -> Iterable[tuple[str, str]]:
+    def get_signature_unified_diff_tuples(self, report: Report) -> Iterable[tuple[str, str]]:
         diff_tuples = []
 
         # the format here must match what is returned by `fit()`
