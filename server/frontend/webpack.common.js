@@ -31,7 +31,7 @@ module.exports = {
   resolve: {
     alias: {
       handlebars: "handlebars/dist/handlebars.min.js",
-      vue: "vue/dist/vue.js",
+      vue: "vue/dist/vue.esm-bundler.js",
     },
   },
 };
