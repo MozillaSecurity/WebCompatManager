@@ -1,5 +1,5 @@
-import sys
 from datetime import timedelta
+from itertools import batched
 from logging import getLogger
 
 from django.conf import settings
@@ -8,11 +8,6 @@ from django.db.models.aggregates import Count
 from django.utils import timezone
 
 from reportmanager.models import Bucket, Bug, ReportEntry
-
-if sys.version_info[:2] < (3, 12):
-    from server.utils import batched
-else:
-    from itertools import batched
 
 LOG = getLogger("reportmanager.cleanup_old_reports")
 

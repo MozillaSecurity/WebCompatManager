@@ -148,10 +148,7 @@ class Signature:
         # the format here must match what is returned by `fit()`
         old_lines = str(self).splitlines()
         new_raw_report_signature = self.fit(report)
-        if new_raw_report_signature:
-            new_lines = str(new_raw_report_signature).splitlines()
-        else:
-            new_lines = []
+        new_lines = str(new_raw_report_signature).splitlines() if new_raw_report_signature else []
         context = max(len(old_lines), len(new_lines))
 
         signature_diff = difflib.unified_diff(old_lines, new_lines, n=context)

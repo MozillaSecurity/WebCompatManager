@@ -1,15 +1,9 @@
-import sys
 from contextlib import suppress
 from logging import getLogger
 from time import sleep, time
 from uuid import uuid4
 
 from redis.exceptions import WatchError
-
-if sys.version_info[:2] < (3, 12):
-    from collections.abc import Iterable, Iterator
-    from itertools import islice
-    from typing import TypeVar
 
 LOG = getLogger("webcompatmanager.utils")
 
@@ -66,17 +60,3 @@ class RedisLock:
 
         LOG.debug("Failed to release lock: %s(%s) != %s", self.name, self.unique_id, existing)
         return False
-
-
-if sys.version_info[:2] < (3, 12):
-    # generic type for `batched` below
-    _T = TypeVar("_T")
-
-    # added to itertools in 3.12
-    def batched(iterable: Iterable[_T], n: int) -> Iterator[tuple[_T, ...]]:
-        # batched('ABCDEFG', 3) → ABC DEF G
-        if n < 1:
-            raise ValueError("n must be at least one")
-        iterator = iter(iterable)
-        while batch := tuple(islice(iterator, n)):
-            yield batch

@@ -3,9 +3,9 @@
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 import html
 import json
-import sys
 from collections import OrderedDict, defaultdict
 from datetime import datetime, timedelta
+from itertools import batched
 from logging import getLogger
 
 from dateutil.relativedelta import relativedelta
@@ -60,11 +60,6 @@ from .serializers import (
     ReportEntrySerializer,
     ReportEntryVueSerializer,
 )
-
-if sys.version_info[:2] < (3, 12):
-    from server.utils import batched
-else:
-    from itertools import batched
 
 LOG = getLogger("reportmanager.views")
 
