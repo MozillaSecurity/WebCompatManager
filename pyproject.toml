@@ -149,3 +149,17 @@ where = ["src"]
 include = ["webcompat", "webcompat.schemas"]
 
 [tool.setuptools_scm]
+
+[tool.tox]
+
+[tool.tox.env_run_base]
+runner = "uv-venv-lock-runner"
+extras = ["server", "test"]
+passenv = ["TOXENV", "CI", "TRAVIS", "TRAVIS_*", "CODECOV_*", "TWINE_*"]
+commands = [["pytest", "-v", "--cov", "{toxinidir}", "--cov-report", "term-missing", "{posargs}"]]
+
+[tool.tox.env.codecov]
+commands = [["codecov"]]
+
+[tool.tox.env.mypy]
+commands = [["mypy", "--install-types", "--non-interactive", "{posargs}"]]
