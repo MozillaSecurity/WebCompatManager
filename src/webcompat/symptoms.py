@@ -147,9 +147,9 @@ class TimeRangeMatcher(TimeMatcher):
     ORDER = 1
 
     def __init__(self, after: datetime | None, before: datetime | None) -> None:
-        assert (
-            after is not None or before is not None
-        ), "at least one of 'after' and 'before' must be set"
+        assert after is not None or before is not None, (
+            "at least one of 'after' and 'before' must be set"
+        )
         self.before = before
         self.after = after
 
