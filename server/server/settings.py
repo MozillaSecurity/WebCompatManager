@@ -55,7 +55,6 @@ INSTALLED_APPS = (
     # 'mozilla_django_oidc',
     "crispy_forms",
     "crispy_bootstrap3",
-    "notifications",
 )
 
 
@@ -318,6 +317,3 @@ EMAIL_SUBJECT_PREFIX = "[WebCompatManager] "
 EMAIL_BACKEND = "django.core.mail.backends.console.EmailBackend"
 
 DEFAULT_AUTO_FIELD = "django.db.models.AutoField"
-
-# Notifications
-DJANGO_NOTIFICATIONS_CONFIG = {"USE_JSONFIELD": True}

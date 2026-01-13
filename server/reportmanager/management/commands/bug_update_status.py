@@ -1,12 +1,9 @@
 import logging
 
 from django.conf import settings
-from django.contrib.contenttypes.models import ContentType
 from django.core.management import BaseCommand, CommandError
-from notifications.models import Notification
-from notifications.signals import notify
 
-from reportmanager.models import Bug, BugProvider, User
+from reportmanager.models import Bug, BugProvider
 
 LOG = logging.getLogger("fm.reportmanager.bug_update_status")
 
@@ -75,42 +72,3 @@ class Command(BaseCommand):
                         )
                         bug.closed = bug_status[bug_id]
                         bug.save()
-
-            bug_content_type = ContentType.objects.get(model="bug")
-            for bug_id in bug_ids:
-                if int(bug_id) not in bug_status:
-                    bugs = provider_bugs.filter(external_id=bug_id)
-                    for bug in bugs:
-                        # Listing all notifications sent to alert that this specific bug
-                        # is inaccessible
-                        sent_notifications_ids = Notification.objects.filter(
-                            verb="inaccessible_bug",
-                            actor_content_type=bug_content_type,
-                            actor_object_id=bug.id,
-                            target_content_type=bug_content_type,
-                            target_object_id=bug.id,
-                        ).values_list("id", flat=True)
-                        # Exclude users who have already receive this notification
-                        recipient = User.objects.exclude(
-                            notifications__id__in=sent_notifications_ids
-                        )
-                        if bug.bucket_set.count() == 1:
-                            bucket_desc = f"bucket {bug.bucket_set.get().id}"
-                        else:
-                            bucket_ids = ",".join(
-                                str(b.id) for b in bug.bucket_set.all()
-                            )
-                            bucket_desc = f"buckets {bucket_ids}"
-                        notify.send(
-                            bug,
-                            recipient=recipient,
-                            actor=bug,
-                            verb="inaccessible_bug",
-                            target=bug,
-                            level="info",
-                            description=(
-                                f"The external bug {bug.external_id} on "
-                                f"{provider.hostname} has become inaccessible, but is "
-                                f"in use by {bucket_desc}"
-                            ),
-                        )

@@ -10,7 +10,7 @@ from logging import getLogger
 
 from dateutil.relativedelta import relativedelta
 from django.conf import settings as django_settings
-from django.core.exceptions import FieldError, PermissionDenied, SuspiciousOperation
+from django.core.exceptions import FieldError, SuspiciousOperation
 from django.db.models import F, Q
 from django.db.models.aggregates import Count, Max
 from django.http import Http404
@@ -20,7 +20,6 @@ from django.utils import timezone
 from django.views.generic import TemplateView
 from django.views.generic.edit import CreateView, DeleteView, UpdateView
 from django.views.generic.list import ListView
-from notifications.models import Notification
 from rest_framework import mixins, status, viewsets
 from rest_framework.authentication import SessionAuthentication, TokenAuthentication
 from rest_framework.decorators import action
@@ -55,7 +54,6 @@ from .serializers import (
     BugProviderSerializer,
     BugzillaTemplateSerializer,
     InvalidArgumentException,
-    NotificationSerializer,
     ReportEntrySerializer,
     ReportEntryVueSerializer,
 )
@@ -1033,33 +1031,33 @@ class BugzillaTemplateViewSet(
     serializer_class = BugzillaTemplateSerializer
 
 
-class NotificationViewSet(mixins.ListModelMixin, viewsets.GenericViewSet):
-    """
-    API endpoint that allows listing unread Notifications
-    """
+# class NotificationViewSet(mixins.ListModelMixin, viewsets.GenericViewSet):
+#     """
+#     API endpoint that allows listing unread Notifications
+#     """
 
-    authentication_classes = (TokenAuthentication, SessionAuthentication)
-    serializer_class = NotificationSerializer
-    filter_backends = (JsonQueryFilterBackend,)
+#     authentication_classes = (TokenAuthentication, SessionAuthentication)
+#     serializer_class = NotificationSerializer
+#     filter_backends = (JsonQueryFilterBackend,)
 
-    def get_queryset(self):
-        return Notification.objects.unread().filter(recipient=self.request.user)
+#     def get_queryset(self):
+#         return Notification.objects.unread().filter(recipient=self.request.user)
 
-    @action(detail=True, methods=["patch"])
-    def mark_as_read(self, request, pk=None):
-        notification = self.get_object()
+#     @action(detail=True, methods=["patch"])
+#     def mark_as_read(self, request, pk=None):
+#         notification = self.get_object()
 
-        if notification.recipient != request.user:
-            raise PermissionDenied()
+#         if notification.recipient != request.user:
+#             raise PermissionDenied()
 
-        notification.mark_as_read()
-        return Response(status=status.HTTP_200_OK)
+#         notification.mark_as_read()
+#         return Response(status=status.HTTP_200_OK)
 
-    @action(detail=False, methods=["patch"])
-    def mark_all_as_read(self, request):
-        notifications = self.get_queryset()
-        notifications.mark_all_as_read()
-        return Response(status=status.HTTP_200_OK)
+#     @action(detail=False, methods=["patch"])
+#     def mark_all_as_read(self, request):
+#         notifications = self.get_queryset()
+#         notifications.mark_all_as_read()
+#         return Response(status=status.HTTP_200_OK)
 
 
 def json_to_query(json_str):
