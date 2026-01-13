@@ -31,7 +31,12 @@ dependencies = [
 ]
 
 [project.optional-dependencies]
-dev = ["pre-commit", "tox", "ruff==0.6.5"]
+dev = [
+    "pre-commit",
+    "tox",
+    "tox-uv",
+    "ruff==0.6.5"
+]
 docker = [
     "gunicorn~=22.0.0",
     "mozilla-django-oidc~=4.0.1",
@@ -48,6 +53,17 @@ server = [
     "pyyaml==6.0.3",
     "redis[hiredis]==7.1.0",
     "whitenoise==6.11.0",
+]
+test = [
+    "mypy",
+    "pytest",
+    "pytest-cov",
+    "pytest-mock",
+    "django-types",
+    "types-requests",
+    "djangorestframework-types",
+    "types-python-dateutil",
+    "types-jsonschema"
 ]
 
 [project.urls]
