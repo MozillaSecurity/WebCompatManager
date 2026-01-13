@@ -18,4 +18,4 @@ repos:
         entry: bash -c 'cd server/frontend && npm run lint'
         language: system
         files: ^server/frontend/.*\.(js|mjs|cjs|vue)$
-        stages: [ commit ]
+        stages: [ pre-commit ]
