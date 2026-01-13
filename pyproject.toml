@@ -35,7 +35,11 @@ dependencies = [
 dev = [
     "pre-commit",
     "tox",
-    "ruff==0.14.11"
+    "ruff==0.14.11",
+    "mypy==1.11.2",
+    "pytest",
+    "pytest-cov",
+    "pytest-mock",
 ]
 docker = [
     "gunicorn~=22.0.0",
@@ -136,3 +140,31 @@ where = ["src"]
 include = ["webcompat", "webcompat.schemas"]
 
 [tool.setuptools_scm]
+
+[tool.tox]
+envlist = ["312"]
+tox_pip_extensions_ext_venv_update = true
+skip_missing_interpreters = true
+
+[tool.tox.env_run_base]
+extras = ["dev", "server"]
+usedevelop = true
+passenv = ["TOXENV", "CI", "TRAVIS", "TRAVIS_*", "CODECOV_*", "TWINE_*"]
+install_command = ["python", "-m", "pip", "install", "-c", "{toxinidir}/requirements.txt", "{opts}", "{packages}"]
+commands = [["pytest", "-v", "--cov", "{toxinidir}", "--cov-report", "term-missing", "{posargs}"]]
+
+[tool.tox.env.codecov]
+skip_install = true
+deps = ["coverage[toml]"]
+commands = [["codecov"]]
+allowlist_externals = ["codecov"]
+
+[tool.tox.env.mypy]
+commands = [["mypy", "--install-types", "--non-interactive", "{posargs}"]]
+usedevelop = true
+
+[tool.tox.env.pypi]
+skip_install = true
+deps = ["twine", "build"]
+commands = [["python", "-m", "build"], ["twine", "upload", "--skip-existing", "dist/*"]]
+allowlist_externals = ["bash"]
