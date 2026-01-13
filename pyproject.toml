@@ -32,7 +32,11 @@ dependencies = [
 ]
 
 [project.optional-dependencies]
-dev = ["pre-commit", "tox", "ruff==0.6.5"]
+dev = [
+    "pre-commit",
+    "tox",
+    "ruff==0.14.11"
+]
 docker = [
     "gunicorn~=22.0.0",
     "mozilla-django-oidc~=4.0.1",
