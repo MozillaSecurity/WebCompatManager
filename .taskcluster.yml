@@ -31,20 +31,12 @@ tasks:
         - tox
       jobs:
         include:
-          - name: tests python 3.10 django 4.x
-            version: "3.10"
-            env:
-              TOXENV: py310
-          - name: tests python 3.11 django 4.x
-            version: "3.11"
-            env:
-              TOXENV: py311
-          - name: tests python 3.12 (no django)
+          - name: tests python 3.12
             version: "3.12"
             env:
               TOXENV: py312
           - name: linting
-            version: "3.9"
+            version: "3.12"
             script:
               - bash
               - '-xec'

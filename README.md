@@ -37,12 +37,12 @@ The server is expected to be run using [`uv`](https://docs.astral.sh/uv/)
 To setup the server, run the following commands:
 
 ```
-$ uv run -p 3.10 --extra=server server/manage.py migrate
+$ uv run -p 3.12 --extra=server server/manage.py migrate
 ```
 
 Create the webcompatmanager user.
 ```
-$ uv run -p 3.10 --extra=server server/manage.py createsuperuser
+$ uv run -p 3.12 --extra=server server/manage.py createsuperuser
 Username (leave blank to use 'user'): webcompatmanager
 Email address: webcompatmanager@internal.com
 Password:
@@ -52,7 +52,7 @@ Superuser created successfully.
 
 It is now possible to run the development server locally:
 ```
-$ uv run -p 3.10 --extra=server server/manage.py runserver
+$ uv run -p 3.12 --extra=server server/manage.py runserver
 ```
 
 Log in using the credentials created above.
@@ -69,7 +69,7 @@ with:
 
 This requires first authenticating with gcloud.
 
-```uv run -p 3.10 --extra=server server/manage.py import_reports_from_bigquery --since <date>```
+```uv run -p 3.12 --extra=server server/manage.py import_reports_from_bigquery --since <date>```
 
 
 ### Important changes in settings.py
