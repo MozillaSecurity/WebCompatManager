@@ -12,7 +12,7 @@
     <td>
       <activitygraph :data="bucket.report_history" :range="activityRange" />
     </td>
-    <td class="wrap-anywhere">{{ bucket.latest_report | date }}</td>
+    <td class="wrap-anywhere">{{ formatDate(bucket.latest_report) }}</td>
     <td>
       {{ bucket.size }}
       <span
@@ -43,9 +43,6 @@ export default {
   components: {
     activitygraph: ActivityGraph,
   },
-  filters: {
-    date: date,
-  },
   props: {
     activityRange: {
       type: Number,
@@ -65,6 +62,7 @@ export default {
     },
   },
   methods: {
+    formatDate: date,
     addFilter(key, value) {
       this.$emit("add-filter", key, value);
     },

@@ -2,7 +2,12 @@
   <div class="table">
     <div class="tr">
       <label class="td" for="provider">Bug provider</label>
-      <select class="td" name="provider" v-model="selectedProvider">
+      <select
+          v-model="selectedProvider"
+          class="td"
+          name="provider"
+          @change="$emit('update-provider', selectedProvider)"
+      >
         <option v-for="p in providers" :key="p.id" :value="p.id">
           {{ p.hostname }}
         </option>
@@ -10,25 +15,42 @@
     </div>
     <div class="tr">
       <label class="td" for="bug_id">Bug ID</label>
-      <input name="bug_id" v-model="externalBugId" maxlength="255" />
+      <input
+          v-model="externalBugId"
+          maxlength="255"
+          name="bug_id"
+          @change="$emit('update-bug', externalBugId)"
+      />
     </div>
   </div>
 </template>
 
 <script>
+import { onMounted, ref } from "vue";
+
 export default {
-  data: () => ({
-    externalBugId: null,
-    selectedProvider: null,
-  }),
   props: {
     providers: {
       type: Array,
-      default: null,
+      default: () => [],
     },
   },
-  mounted() {
-    this.selectedProvider = this.providers[0].id;
+
+  setup(props, context) {
+    const externalBugId = ref(null);
+    const selectedProvider = ref(null);
+
+    onMounted(() => {
+      if (props.providers.length > 0) {
+        selectedProvider.value = props.providers[0].id;
+        context.emit("update-provider", selectedProvider.value);
+      }
+    });
+
+    return {
+      externalBugId,
+      selectedProvider,
+    };
   },
 };
 </script>

@@ -3,44 +3,52 @@
 </template>
 
 <script>
+import swal from "sweetalert";
+import { h, ref, render } from "vue";
 import { errorParser, hideBucketUntil } from "../../helpers";
 import HideBucketBtnForm from "./HideBucketBtnForm.vue";
-import Vue from "vue";
-import swal from "sweetalert";
 
 export default {
+  components: {
+    HideBucketBtnForm,
+  },
   props: {
     bucket: {
       type: Number,
       default: null,
+      required: true,
     },
   },
   methods: {
-    link() {
-      const FormCtor = Vue.extend(HideBucketBtnForm);
-      const hideForm = new FormCtor({
-        parent: this,
-      }).$mount();
-      swal({
+    async link() {
+      const selectedTime = ref(null);
+      const container = document.createElement("div");
+
+      const formCtor = h(HideBucketBtnForm, {
+        onUpdateTime: (time) => (selectedTime.value = time),
+      });
+
+      render(formCtor, container);
+
+      const value = await swal({
         title: "Mark bucket triaged",
-        content: hideForm.$el,
+        content: container,
         buttons: true,
-      }).then((value) => {
-        if (value) {
-          hideBucketUntil(
+      });
+
+      if (value) {
+        try {
+          const data = await hideBucketUntil(
             this.bucket,
             new Date(
-              Date.now() + hideForm.selectedTime * 7 * 24 * 60 * 60 * 1000,
+              Date.now() + selectedTime.value * 7 * 24 * 60 * 60 * 1000,
             ),
-          )
-            .then((data) => {
-              window.location.href = data.url;
-            })
-            .catch((err) => {
-              swal("Oops", errorParser(err), "error");
-            });
+          );
+          window.location.href = data.url;
+        } catch (err) {
+          swal("Oops", errorParser(err), "error");
         }
-      });
+      }
     },
   },
 };

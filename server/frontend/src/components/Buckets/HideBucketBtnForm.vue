@@ -12,11 +12,12 @@
         <label class="td" for="weeks">Weeks</label>
         <input
           id="id_weeks"
+          v-model="selectedTime"
           class="td"
           type="number"
           min="1"
           max="12"
-          v-model="selectedTime"
+          @change="$emit('update-time', selectedTime)"
         />
       </div>
     </div>
@@ -24,10 +25,20 @@
 </template>
 
 <script>
+import { onMounted, ref } from "vue";
+
 export default {
-  data: () => ({
-    selectedTime: 1,
-  }),
+  setup(props, context) {
+    const selectedTime = ref(1);
+
+    onMounted(() => {
+      context.emit("update-time", selectedTime.value);
+    });
+
+    return {
+      selectedTime,
+    };
+  },
 };
 </script>
 

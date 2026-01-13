@@ -33,7 +33,7 @@
             <td v-else>
               No bug associated.
               <span v-if="bucket.hide_until"
-                >Marked triaged until {{ bucket.hide_until | date }}.</span
+                >Marked triaged until {{ formatDate(bucket.hide_until) }}.</span
               >
               <br v-if="canEdit" /><br v-if="canEdit" />
               <div v-if="canEdit" class="btn-group">
@@ -219,9 +219,6 @@ export default {
       totalPages: 1,
     };
   },
-  filters: {
-    date: date,
-  },
   props: {
     activityRange: {
       type: Number,
@@ -262,6 +259,7 @@ export default {
   },
   mounted() {},
   methods: {
+    formatDate: date,
     buildQueryParams() {
       const result = {
         query: JSON.stringify({

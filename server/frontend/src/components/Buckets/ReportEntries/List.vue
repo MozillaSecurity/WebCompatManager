@@ -19,7 +19,7 @@
           :key="entry.id"
           :class="{ odd: index % 2 === 0, even: index % 2 !== 0 }"
         >
-          <td>{{ entry.reported_at | date }}</td>
+          <td>{{ formatDate(entry.reported_at) }}</td>
           <td>
             <a :href="entry.view_url">{{ entry.uuid }}</a>
           </td>
@@ -75,10 +75,8 @@ export default {
       required: true,
     },
   },
-  filters: {
-    date: date,
-  },
   methods: {
+    formatDate: date,
     staticLogo(name) {
       return window.location.origin + "/static/img/os/" + name + ".png";
     },
