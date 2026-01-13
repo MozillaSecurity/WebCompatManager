@@ -28,7 +28,9 @@ tasks:
       script:
         - bash
         - '-xec'
-        - tox
+        - >
+          curl -LsSf https://astral.sh/uv/install.sh | sh
+          uv run --extra=dev tox
       jobs:
         include:
           - name: tests python 3.13
