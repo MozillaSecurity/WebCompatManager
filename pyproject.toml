@@ -48,7 +48,6 @@ server = [
     "djangorestframework~=3.15.1",
     "google-cloud-bigquery",
     "pyyaml",
-    "redis[hiredis]",
     "whitenoise~=6.6.0",
 ]
 

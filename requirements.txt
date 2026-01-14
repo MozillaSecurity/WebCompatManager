@@ -8,8 +8,6 @@ amqp==5.3.1
     # via kombu
 asgiref==3.8.1
     # via django
-async-timeout==5.0.1
-    # via redis
 attrs==24.2.0
     # via
     #   jsonschema
@@ -96,8 +94,6 @@ grpcio-status==1.68.1
     # via google-api-core
 gunicorn==22.0.0
     # via WebCompatManager (pyproject.toml)
-hiredis==3.1.0
-    # via redis
 idna==3.10
     # via requests
 josepy==1.14.0
@@ -150,8 +146,6 @@ python-dateutil==2.9.0.post0
 pytz==2024.2
     # via django-notifications-hq
 pyyaml==6.0.2
-    # via WebCompatManager (pyproject.toml)
-redis==5.2.0
     # via WebCompatManager (pyproject.toml)
 referencing==0.35.1
     # via
