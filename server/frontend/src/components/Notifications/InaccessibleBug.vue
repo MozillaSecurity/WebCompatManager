@@ -1,7 +1,7 @@
 <template>
   <div class="row override-row">
     <small class="col-md-1">
-      Received {{ notification.timestamp | date }}
+      Received {{ formatDate(notification.timestamp) }}
     </small>
     <span class="label label-danger">Inaccessible bug</span>
     <span class="description">
@@ -31,10 +31,10 @@ export default {
       required: true,
     },
   },
-  filters: {
-    date: date,
-  },
   methods: {
+    formatDate(datetime) {
+      return date(datetime);
+    },
     async dismiss() {
       try {
         await api.dismissNotification(this.notification.id);

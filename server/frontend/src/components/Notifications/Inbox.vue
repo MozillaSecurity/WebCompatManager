@@ -38,7 +38,7 @@
             No unread notification.
           </div>
         </div>
-        <div v-for="(notification, index) in notifications" :key="index">
+        <div v-for="notification in notifications" :key="notification.id">
           <template v-if="notification.verb === 'bucket_hit'">
             <BucketHit
               :notification="notification"

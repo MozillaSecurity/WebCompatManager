@@ -1,7 +1,7 @@
 <template>
   <div class="row override-row">
     <small class="col-md-1">
-      Received {{ notification.timestamp | formatDate }}
+      Received {{ formatDate(notification.timestamp) }}
     </small>
     <span class="label label-info">Bucket hit</span>
     <span class="description">
@@ -20,7 +20,7 @@
 </template>
 
 <script>
-import { errorParser, formatClientTimestamp } from "../../helpers";
+import { errorParser, date } from "../../helpers";
 import * as api from "../../api";
 
 export default {
@@ -30,10 +30,10 @@ export default {
       required: true,
     },
   },
-  filters: {
-    formatDate: formatClientTimestamp,
-  },
   methods: {
+    formatDate(datetime) {
+      return date(datetime);
+    },
     async dismiss() {
       try {
         await api.dismissNotification(this.notification.id);
