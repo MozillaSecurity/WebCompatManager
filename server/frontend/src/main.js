@@ -1,4 +1,5 @@
 import { createApp } from "vue";
+import FloatingVue from "floating-vue";
 
 import router from "./router.js";
 import ActivityGraph from "./components/ActivityGraph.vue";
@@ -16,7 +17,7 @@ import BucketView from "./components/Buckets/View.vue";
 import BucketList from "./components/Buckets/List.vue";
 import SpikesList from "./components/Spikes/List.vue";
 
-import "vue-popperjs/dist/vue-popper.css";
+import "floating-vue/dist/style.css";
 
 const app = createApp({
   components: {
@@ -38,6 +39,7 @@ const app = createApp({
 });
 
 app.use(router);
+app.use(FloatingVue);
 
 document.addEventListener("DOMContentLoaded", function () {
   app.mount("#app");

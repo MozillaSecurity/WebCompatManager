@@ -1,37 +1,38 @@
 <template>
-  <Popper trigger="hover" :options="{ placement: 'right' }">
-    <div class="popper">
-      <div class="pop-header">Available substitution variables</div>
-      <div class="pop-body">
-        <ul>
-          <li v-for="v in variables" :key="v">
-            <code>{{ v }}</code>
-          </li>
-        </ul>
-        <p>
-          Render them using
-          <code v-pre>{{ myvariable }}</code> (escaped HTML) <br />
-          or <code v-pre>{{{ myvariable }}}</code> (unescaped HTML).
-        </p>
-        <a class="pull-right" target="_blank" :href="documentationLink">
-          See documentation
-        </a>
+  <VMenu
+      :triggers="['hover']"
+      :distance="6"
+      placement="right"
+      class="pop-container"
+      :autoHide="false"
+      :delay="{ show: 100, hide: 100 }"
+  >
+    <i class="bi bi-question-circle-fill"></i>
+    <template #popper>
+      <div class="popper">
+        <div class="pop-header">Available substitution variables</div>
+        <div class="pop-body">
+          <ul>
+            <li v-for="v in variables" :key="v">
+              <code>{{ v }}</code>
+            </li>
+          </ul>
+          <p>
+            Render them using
+            <code v-pre>{{ myvariable }}</code> (escaped HTML) <br />
+            or <code v-pre>{{{ myvariable }}}</code> (unescaped HTML).
+          </p>
+          <a class="pull-right" target="_blank" :href="documentationLink">
+            See documentation
+          </a>
+        </div>
       </div>
-    </div>
-    <!-- eslint-disable-next-line -->
-    <span slot="reference">
-      <i class="bi bi-question-circle-fill"></i>
-    </span>
-  </Popper>
+    </template>
+  </VMenu>
 </template>
 
 <script>
-import Popper from "vue-popperjs";
-
 export default {
-  components: {
-    Popper,
-  },
   props: {
     field: {
       type: String,
@@ -70,5 +71,9 @@ export default {
 }
 .popper {
   text-align: left;
+}
+.pop-container {
+  display: inline;
+  margin-left: 0.5rem;
 }
 </style>

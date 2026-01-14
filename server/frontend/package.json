@@ -14,12 +14,12 @@
     "dependencies": {
         "axios": "^0.28.1",
         "d3": "^7.8.2",
+        "floating-vue": "^5.2.2",
         "handlebars": "^4.7.7",
         "js-base64": "^3.6.1",
         "lodash": "^4.17.21",
         "sweetalert": "^2.1.2",
         "vue": "^3.5.26",
-        "vue-popperjs": "^2.3.0",
         "vue-router": "^4.6.4",
         "vue-spinner": "^1.0.4"
     },
