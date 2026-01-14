@@ -10,8 +10,8 @@ export default {
       required: true,
     },
   },
-  watch: {
-    data: function () {
+  methods: {
+    renderGraph() {
       /*
        *Based on https://observablehq.com/@mbostock/revenue-by-music-format-1973-2018
        */
@@ -21,7 +21,7 @@ export default {
       const width = 800;
       const height = 150;
 
-      d3.select("svg").remove();
+      d3.select(this.$el).select("svg").remove();
       const svg = d3
         .select(this.$el)
         .append("svg")
@@ -137,6 +137,14 @@ export default {
       svg.append("g").call(yAxis);
       svg.append("g").call(xAxis);
     },
+  },
+  watch: {
+    data() {
+      this.renderGraph();
+    },
+  },
+  mounted() {
+    this.renderGraph();
   },
 };
 </script>
