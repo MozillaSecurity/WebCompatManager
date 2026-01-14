@@ -1,6 +1,6 @@
 <template>
   <tr>
-    <td class="wrap-normal">{{ report.reported_at | date }}</td>
+    <td class="wrap-normal">{{ formatDate(report.reported_at) }}</td>
     <td>
       <a :href="report.view_url">{{ report.uuid }}</a>
     </td>
@@ -99,7 +99,7 @@
 </template>
 
 <script>
-import { date, formatSizeFriendly } from "../../helpers";
+import { date } from "../../helpers";
 
 export default {
   props: {
@@ -108,11 +108,10 @@ export default {
       required: true,
     },
   },
-  filters: {
-    date: date,
-    formatSize: formatSizeFriendly,
-  },
   methods: {
+    formatDate(value) {
+      return date(value);
+    },
     addFilter(key, value) {
       this.$emit("add-filter", key, value);
     },

@@ -233,7 +233,7 @@ import _throttle from "lodash/throttle";
 import _isEqual from "lodash/isEqual";
 import swal from "sweetalert";
 import ClipLoader from "vue-spinner/src/ClipLoader.vue";
-import Vue from "vue";
+import { h, render } from "vue";
 import {
   errorParser,
   E_SERVER_ERROR,
@@ -451,16 +451,14 @@ export default {
     },
     deleteQuery: async function () {
       // - show confirmation modal with affected report count
-      const FormCtor = Vue.extend(DeleteConfirmation);
-      const deleteConfirmForm = new FormCtor({
-        parent: this,
-        propsData: {
-          reportCount: this.totalEntries,
-        },
-      }).$mount();
+      const container = document.createElement("div");
+      const vnode = h(DeleteConfirmation, {
+        reportCount: this.totalEntries,
+      });
+      render(vnode, container);
       const value = await swal({
         title: "Delete these reports?",
-        content: deleteConfirmForm.$el,
+        content: container.firstElementChild,
         buttons: true,
       });
       if (value) {
