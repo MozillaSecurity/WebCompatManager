@@ -1,4 +1,4 @@
-FROM node:18-alpine as frontend
+FROM node:18-alpine AS frontend
 
 COPY server/frontend /src
 RUN chown -R node:node /src
@@ -8,7 +8,7 @@ WORKDIR /src
 RUN npm install
 RUN npm run production
 
-FROM python:3.10-alpine as backend
+FROM python:3.12-alpine AS backend
 
 RUN apk add --no-cache build-base git mariadb-dev && pip install tomli
 
@@ -20,7 +20,7 @@ RUN cd /src && \
    python -c "import tomli; from itertools import chain; pyp=tomli.load(open('pyproject.toml','rb')); deps=pyp['project']['dependencies']; extras=pyp['project']['optional-dependencies']; print('\0'.join(chain(deps, extras['docker'], extras['server'])))" | xargs -0 pip wheel -q -c requirements.txt --wheel-dir /var/cache/wheels && \
    pip wheel -q --wheel-dir /var/cache/wheels wheel setuptools_scm[toml]
 
-FROM python:3.10-alpine
+FROM python:3.12-alpine
 
 RUN adduser -D worker && \
    apk add --no-cache bash git mariadb-client mariadb-connector-c openssh-client-default && \
@@ -46,11 +46,11 @@ RUN mkdir -p /data/fuzzing-tc-config && chown -R worker:worker /src /data/fuzzin
 # Note: the extras must be duplicated above in the Python
 #       script to pre-install dependencies.
 USER worker
-ENV PATH "${PATH}:/home/worker/.local/bin"
+ENV PATH="${PATH}:/home/worker/.local/bin"
 RUN pip install --no-cache-dir --no-index --find-links /var/cache/wheels --no-deps -q /src[docker,server]
 
 # Use a custom settings file that can be overwritten
-ENV DJANGO_SETTINGS_MODULE "server.settings_docker"
+ENV DJANGO_SETTINGS_MODULE="server.settings_docker"
 
 WORKDIR /src/server
 
@@ -58,6 +58,6 @@ WORKDIR /src/server
 RUN python manage.py collectstatic --no-input
 
 # Run with gunicorn, using container's port 80
-ENV PORT 80
+ENV PORT=80
 EXPOSE 80
 CMD ["gunicorn", "--bind", "0.0.0.0:80", "--error-logfile", "-", "--access-logfile", "-", "--capture-output", "server.wsgi"]

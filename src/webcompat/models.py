@@ -6,7 +6,7 @@ from __future__ import annotations
 import difflib
 import json
 from dataclasses import dataclass, field
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from logging import getLogger
 from pathlib import Path
 from typing import TYPE_CHECKING, Any
@@ -59,9 +59,7 @@ class Report:
     def load(cls, data: str) -> Report:
         result = json.loads(data)
         result["details"] = json.loads(result["details"])
-        result["reported_at"] = isoparse(result["reported_at"]).replace(
-            tzinfo=timezone.utc
-        )
+        result["reported_at"] = isoparse(result["reported_at"]).replace(tzinfo=UTC)
         result["url"] = urlsplit(result["url"])
         return cls(**result)
 
