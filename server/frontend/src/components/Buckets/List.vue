@@ -218,7 +218,7 @@
 <script>
 import _throttle from "lodash/throttle";
 import _isEqual from "lodash/isEqual";
-import ClipLoader from "vue-spinner/src/ClipLoader.vue";
+import LoadingSpinner from "../LoadingSpinner.vue";
 import { errorParser, multiSort, parseHash } from "../../helpers";
 import * as api from "../../api";
 import { MatchObjects } from "../../helpers";
@@ -229,7 +229,7 @@ import HelpJSONQueryPopover from "../HelpJSONQueryPopover.vue";
 export default {
   mixins: [multiSort],
   components: {
-    ClipLoader,
+    ClipLoader: LoadingSpinner,
     HelpJSONQueryPopover,
     PageNav,
     Row,

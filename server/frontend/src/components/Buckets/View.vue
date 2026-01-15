@@ -152,7 +152,7 @@
 
 <script>
 import _throttle from "lodash/throttle";
-import ClipLoader from "vue-spinner/src/ClipLoader.vue";
+import LoadingSpinner from "../LoadingSpinner.vue";
 import swal from "sweetalert";
 import {
   E_SERVER_ERROR,
@@ -182,7 +182,7 @@ export default {
   components: {
     activitygraph: ActivityGraph,
     assignbutton: AssignBtn,
-    ClipLoader: ClipLoader,
+    ClipLoader: LoadingSpinner,
     hidebucketbutton: HideBucketBtn,
     PageNav: PageNav,
     ReportPreviewRow: ReportPreviewRow,

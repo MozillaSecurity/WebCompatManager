@@ -232,7 +232,7 @@
 import _throttle from "lodash/throttle";
 import _isEqual from "lodash/isEqual";
 import swal from "sweetalert";
-import ClipLoader from "vue-spinner/src/ClipLoader.vue";
+import LoadingSpinner from "../LoadingSpinner.vue";
 import { h, render } from "vue";
 import {
   errorParser,
@@ -263,7 +263,7 @@ const validFilters = {
 export default {
   mixins: [multiSort],
   components: {
-    ClipLoader,
+    ClipLoader: LoadingSpinner,
     HelpJSONQueryPopover,
     PageNav,
     Row,

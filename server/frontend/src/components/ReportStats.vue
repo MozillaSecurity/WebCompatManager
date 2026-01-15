@@ -135,7 +135,7 @@
 <script>
 import _throttle from "lodash/throttle";
 import swal from "sweetalert";
-import ClipLoader from "vue-spinner/src/ClipLoader.vue";
+import LoadingSpinner from "./LoadingSpinner.vue";
 import { errorParser, E_SERVER_ERROR, multiSort } from "../helpers";
 import * as api from "../api";
 import AssignBtn from "./Buckets/AssignBtn.vue";
@@ -145,7 +145,7 @@ import ReportStatsGraph from "./ReportStatsGraph.vue";
 export default {
   mixins: [multiSort],
   components: {
-    ClipLoader,
+    ClipLoader: LoadingSpinner,
     activitygraph: ActivityGraph,
     assignbutton: AssignBtn,
     reportstatsgraph: ReportStatsGraph,
