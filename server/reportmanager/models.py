@@ -3,8 +3,8 @@
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 import json
 import re
-import sys
 from datetime import timedelta
+from itertools import batched
 from logging import getLogger
 from urllib.parse import urlsplit
 
@@ -27,10 +27,6 @@ from webcompat.symptoms import URLSymptom, ValueMatcher
 if getattr(settings, "USE_CELERY", None):
     from .tasks import triage_new_report
 
-if sys.version_info[:2] < (3, 12):
-    from server.utils import batched
-else:
-    from itertools import batched
 
 LOG = getLogger("reportmanager")
 

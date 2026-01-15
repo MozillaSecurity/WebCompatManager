@@ -9,7 +9,7 @@ import re
 import sys
 from abc import ABC, abstractmethod
 from dataclasses import dataclass
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from logging import getLogger
 from typing import TYPE_CHECKING, Any
 
@@ -99,14 +99,14 @@ class Matcher(ABC):
                 return NullMatcher()
             return ValueMatcher(obj["value"])
         if "time" in obj:
-            return TimeMatcher(isoparse(obj["time"]).replace(tzinfo=timezone.utc))
+            return TimeMatcher(isoparse(obj["time"]).replace(tzinfo=UTC))
         if "pattern" in obj:
             return PatternMatcher(obj["pattern"])
         after = before = None
         if "before" in obj:
-            before = isoparse(obj["before"]).replace(tzinfo=timezone.utc)
+            before = isoparse(obj["before"]).replace(tzinfo=UTC)
         if "after" in obj:
-            after = isoparse(obj["after"]).replace(tzinfo=timezone.utc)
+            after = isoparse(obj["after"]).replace(tzinfo=UTC)
         return TimeRangeMatcher(after, before)
 
     @abstractmethod
