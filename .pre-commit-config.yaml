@@ -3,10 +3,6 @@ repos:
     rev: v0.14.11
     hooks:
       - id: ruff-format
-  - repo: https://github.com/jschwartzentruber/taskcluster_yml_validator
-    rev: v0.0.11b
-    hooks:
-      - id: taskcluster_yml
   - repo: meta
     hooks:
       - id: check-useless-excludes
