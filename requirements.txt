@@ -43,7 +43,7 @@ cryptography==44.0.0
     #   josepy
     #   mozilla-django-oidc
     #   pyopenssl
-django==4.2.17
+django==4.2.27
     # via
     #   WebCompatManager (pyproject.toml)
     #   crispy-bootstrap3
