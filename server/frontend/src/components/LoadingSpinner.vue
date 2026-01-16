@@ -23,7 +23,7 @@ export default {
         width: this.size,
         height: this.size,
         borderColor: `${this.color} transparent transparent transparent`,
-        borderWidth: '2px',
+        borderWidth: "2px",
       };
     },
   },

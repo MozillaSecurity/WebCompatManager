@@ -5,18 +5,18 @@
       <div class="input-group">
         <input
           id="id_summary"
+          v-model="summary"
           class="form-control"
           maxlength="1023"
           name="summary"
           type="text"
-          v-model="summary"
         />
         <span class="input-group-btn">
           <button
             class="btn btn-warning"
             type="button"
             :disabled="!summary || loading"
-            v-on:click="fetchDuplicates"
+            @click="fetchDuplicates"
           >
             {{ !loading ? "Fetch similar bugs" : "Fetching bugs..." }}
           </button>
@@ -81,13 +81,26 @@ export default {
     duplicates: null,
     fetchError: false,
   }),
-  mounted() {
-    this.summary = this.initialSummary;
-  },
   computed: {
     bugzillaToken() {
       return localStorage.getItem("provider-" + this.provider.id + "-api-key");
     },
+  },
+  watch: {
+    provider: function () {
+      this.loading = false;
+      this.duplicates = null;
+      this.fetchError = false;
+    },
+    initialSummary: function () {
+      this.summary = this.initialSummary;
+    },
+    summary: function () {
+      this.$emit("update-summary", this.summary);
+    },
+  },
+  mounted() {
+    this.summary = this.initialSummary;
   },
   methods: {
     async fetchDuplicates() {
@@ -110,19 +123,6 @@ export default {
       } finally {
         this.loading = false;
       }
-    },
-  },
-  watch: {
-    provider: function () {
-      this.loading = false;
-      this.duplicates = null;
-      this.fetchError = false;
-    },
-    initialSummary: function () {
-      this.summary = this.initialSummary;
-    },
-    summary: function () {
-      this.$emit("update-summary", this.summary);
     },
   },
 };

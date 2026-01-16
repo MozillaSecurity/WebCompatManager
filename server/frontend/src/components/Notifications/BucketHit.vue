@@ -7,7 +7,7 @@
     <span class="description">
       {{ notification.description }}
     </span>
-    <button type="button" class="close" v-on:click="dismiss">
+    <button type="button" class="close" @click="dismiss">
       <span aria-hidden="true" title="Dismiss">&times;</span>
     </button>
     <div class="btn-group pull-right" role="group">

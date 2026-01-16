@@ -7,16 +7,16 @@
         ({{ currentEntries }}/{{ totalEntries }})
       </span>
       <PageNav
+        v-if="notifications && notifications.length"
         :initial="currentPage"
         :pages="totalPages"
-        v-if="notifications && notifications.length"
-        v-on:page-changed="currentPage = $event"
+        @page-changed="currentPage = $event"
       />
       <a
         v-if="notifications && notifications.length"
         type="button"
         class="text-danger pull-right"
-        v-on:click="dismissAll"
+        @click="dismissAll"
       >
         Dismiss all notifications
       </a>
@@ -42,16 +42,16 @@
           <template v-if="notification.verb === 'bucket_hit'">
             <BucketHit
               :notification="notification"
-              v-on:remove-notification="removeNotification($event)"
-              v-on:update-dismiss-error="dismissError = $event"
+              @remove-notification="removeNotification($event)"
+              @update-dismiss-error="dismissError = $event"
             />
             <hr />
           </template>
           <template v-else-if="notification.verb === 'inaccessible_bug'">
             <InaccessibleBug
               :notification="notification"
-              v-on:remove-notification="removeNotification($event)"
-              v-on:update-dismiss-error="dismissError = $event"
+              @remove-notification="removeNotification($event)"
+              @update-dismiss-error="dismissError = $event"
             />
             <hr />
           </template>
@@ -86,6 +86,11 @@ export default {
     totalEntries: "?",
     totalPages: 1,
   }),
+  watch: {
+    async currentPage() {
+      await this.fetchUnread();
+    },
+  },
   async created() {
     await this.fetchUnread();
   },
@@ -125,11 +130,6 @@ export default {
       );
       this.currentEntries--;
       this.totalEntries--;
-    },
-  },
-  watch: {
-    async currentPage() {
-      await this.fetchUnread();
     },
   },
 };

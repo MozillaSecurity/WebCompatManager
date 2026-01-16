@@ -10,8 +10,8 @@
           <label for="bp_select">Bug provider</label>
           <select
             id="bp_select"
-            class="form-control"
             v-model="selectedProvider"
+            class="form-control"
           >
             <option v-for="p in providers" :key="p.id" :value="p.id">
               {{ p.hostname }}
@@ -22,8 +22,8 @@
           <label for="bt_select">Comment template</label>
           <select
             id="bt_select"
-            class="form-control"
             v-model="selectedTemplate"
+            class="form-control"
           >
             <option v-for="t in templates" :key="t.id" :value="t.id">
               {{ t.name }}
@@ -32,14 +32,14 @@
         </div>
       </div>
 
-      <div class="alert alert-warning" role="alert" v-if="provider">
+      <div v-if="provider" class="alert alert-warning" role="alert">
         You are about to submit this comment to
         <strong>{{ provider.hostname }}</strong>
       </div>
       <hr />
 
       <h3>Publish a comment on report {{ entryId }}</h3>
-      <div class="alert alert-info" role="alert" v-if="!template">
+      <div v-if="!template" class="alert alert-info" role="alert">
         Please pick a comment template to file a new comment.
       </div>
       <form v-else>
@@ -47,22 +47,22 @@
           <div class="form-group col-md-6">
             <label for="bug_id">Bug ID*</label>
             <input
-              type="text"
               id="id_bugid"
+              v-model="externalBugId"
+              type="text"
               class="form-control"
               maxlength="255"
               name="bug_id"
-              v-model="externalBugId"
             />
           </div>
           <div class="form-group col-md-6">
             <label for="is_private">Flags</label>
             <br />
             <input
-              type="checkbox"
               id="id_private"
-              name="is_private"
               v-model="isPrivate"
+              type="checkbox"
+              name="is_private"
             />
             <span>This is a private comment.</span>
           </div>
@@ -77,9 +77,9 @@
             />
             <textarea
               id="id_comment"
+              v-model="template.comment"
               class="form-control"
               name="comment"
-              v-model="template.comment"
             ></textarea>
           </div>
           <div class="form-group col-md-6">
@@ -102,7 +102,7 @@
             class="close"
             data-dismiss="alert"
             aria-label="Close"
-            v-on:click="createError = null"
+            @click="createError = null"
           >
             <span aria-hidden="true">&times;</span>
           </button>
@@ -134,16 +134,16 @@
           <button
             type="button"
             class="btn btn-danger"
-            v-on:click="createExternalComment"
             :disabled="!bugzillaToken || submitting"
+            @click="createExternalComment"
           >
             Submit
           </button>
           <button
             type="button"
             class="btn btn-default"
-            v-on:click="goBack"
             :disabled="submitting"
+            @click="goBack"
           >
             Cancel
           </button>
@@ -224,25 +224,6 @@ export default {
       "uuid",
     ],
   }),
-  async mounted() {
-    this.entry = await api.retrieveReport(this.entryId);
-    if (this.bugId) this.externalBugId = this.bugId;
-
-    let data = await api.listBugProviders();
-    this.providers = data.results.filter(
-      (p) => p.classname === "BugzillaProvider",
-    );
-    this.provider = this.providers.find((p) => p.id === this.providerId);
-    this.selectedProvider = this.provider.id;
-
-    data = await api.listTemplates();
-    this.templates = data.results.filter((t) => t.mode === "comment");
-    this.template = this.templates.find((t) => t.id === this.templateId);
-    if (this.template) {
-      this.selectedTemplate = this.template.id;
-    }
-    this.summary = this.template.summary;
-  },
   computed: {
     commentLink() {
       return `https://${this.provider.hostname}/show_bug.cgi?id=${this.externalBugId}#c${this.createdCommentCount}`;
@@ -269,6 +250,37 @@ export default {
         return "";
       }
     },
+  },
+  watch: {
+    selectedProvider() {
+      this.provider = this.providers.find(
+        (p) => p.id === this.selectedProvider,
+      );
+    },
+    selectedTemplate() {
+      this.template = this.templates.find(
+        (t) => t.id === this.selectedTemplate,
+      );
+    },
+  },
+  async mounted() {
+    this.entry = await api.retrieveReport(this.entryId);
+    if (this.bugId) this.externalBugId = this.bugId;
+
+    let data = await api.listBugProviders();
+    this.providers = data.results.filter(
+      (p) => p.classname === "BugzillaProvider",
+    );
+    this.provider = this.providers.find((p) => p.id === this.providerId);
+    this.selectedProvider = this.provider.id;
+
+    data = await api.listTemplates();
+    this.templates = data.results.filter((t) => t.mode === "comment");
+    this.template = this.templates.find((t) => t.id === this.templateId);
+    if (this.template) {
+      this.selectedTemplate = this.template.id;
+    }
+    this.summary = this.template.summary;
   },
   methods: {
     goBack() {
@@ -332,18 +344,6 @@ export default {
       } finally {
         this.submitting = false;
       }
-    },
-  },
-  watch: {
-    selectedProvider() {
-      this.provider = this.providers.find(
-        (p) => p.id === this.selectedProvider,
-      );
-    },
-    selectedTemplate() {
-      this.template = this.templates.find(
-        (t) => t.id === this.selectedTemplate,
-      );
     },
   },
 };

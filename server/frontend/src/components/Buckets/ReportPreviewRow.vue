@@ -1,5 +1,5 @@
 <template>
-  <tr v-on:click="report.view_url">
+  <tr @click="report.view_url">
     <td class="wrap-normal">
       {{ formatShorterDate(report.reported_at) }}<br />
       (<a :href="report.view_url">Full details</a>)
@@ -65,7 +65,7 @@
       {{
         humanBool(
           report.details.boolean
-            ?.broken_site_report_tab_info_antitracking_is_private_browsing
+            ?.broken_site_report_tab_info_antitracking_is_private_browsing,
         )
       }}<br />
 
@@ -79,7 +79,7 @@
       {{
         humanBool(
           report.details.boolean
-            ?.broken_site_report_tab_info_antitracking_has_tracking_content_blocked
+            ?.broken_site_report_tab_info_antitracking_has_tracking_content_blocked,
         )
       }}
     </td>

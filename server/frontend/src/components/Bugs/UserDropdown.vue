@@ -2,12 +2,12 @@
   <div>
     <input
       :id="inputId"
+      v-model="value"
       class="form-control dropdown-toggle"
       maxlength="1023"
       :name="inputName"
       type="text"
       data-toggle="dropdown"
-      v-model="value"
     />
     <ul class="dropdown dropdown-menu" aria-labelledby="inputId">
       <template v-if="loading">
@@ -30,7 +30,7 @@
           <li
             v-for="user in suggestedUsers"
             :key="user.id"
-            v-on:click="updateValue(user.email)"
+            @click="updateValue(user.email)"
           >
             <div>
               <img
@@ -89,6 +89,19 @@ export default {
     suggestedUsers: null,
     loading: false,
   }),
+  watch: {
+    initialValue: function () {
+      this.value = this.initialValue;
+    },
+    value: function () {
+      this.$emit("update-value", this.value);
+      if (this.value !== this.initialValue) {
+        this.suggestedUsers = null;
+        this.loading = true;
+        this.debouncedFetch();
+      }
+    },
+  },
   mounted() {
     this.value = this.initialValue;
     this.debouncedFetch = _debounce(this.fetchSuggestedUsers, 1000);
@@ -120,19 +133,6 @@ export default {
         this.suggestedUsers = data.users;
       } finally {
         this.loading = false;
-      }
-    },
-  },
-  watch: {
-    initialValue: function () {
-      this.value = this.initialValue;
-    },
-    value: function () {
-      this.$emit("update-value", this.value);
-      if (this.value !== this.initialValue) {
-        this.suggestedUsers = null;
-        this.loading = true;
-        this.debouncedFetch();
       }
     },
   },

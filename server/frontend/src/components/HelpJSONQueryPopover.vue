@@ -1,5 +1,11 @@
 <template>
-  <VMenu :triggers="['hover']" :distance="6" placement="right" class="pop-container" :delay="{ show: 100, hide: 100 }">
+  <VMenu
+    :triggers="['hover']"
+    :distance="6"
+    placement="right"
+    class="pop-container"
+    :delay="{ show: 100, hide: 100 }"
+  >
     <i class="bi bi-question-circle-fill"></i>
     <template #popper>
       <div class="popper">
@@ -9,13 +15,13 @@
             Query Structure
             <button
               class="btn btn-default btn-xs pull-right ml-8"
-              v-on:click="showQuery = !showQuery"
+              @click="showQuery = !showQuery"
             >
-              <i class="bi bi-dash" v-if="showQuery"></i>
-              <i class="bi bi-plus" v-else></i>
+              <i v-if="showQuery" class="bi bi-dash"></i>
+              <i v-else class="bi bi-plus"></i>
             </button>
           </h4>
-          <div class="pop-list mt-1" v-if="showQuery">
+          <div v-if="showQuery" class="pop-list mt-1">
             <p>
               Queries are JSON objects representing an SQL
               <code>WHERE</code> clause. Each query object can have these
@@ -23,8 +29,8 @@
             </p>
             <ul>
               <li>
-                <code>op</code> (required), the logical operation to apply between
-                other key/values in this object. Value must be one of:
+                <code>op</code> (required), the logical operation to apply
+                between other key/values in this object. Value must be one of:
                 <code>AND</code>, <code>OR</code>, or
                 <code>NOT</code>
               </li>
@@ -42,13 +48,13 @@
             Available parameters
             <button
               class="btn btn-default btn-xs pull-right ml-8"
-              v-on:click="showParams = !showParams"
+              @click="showParams = !showParams"
             >
-              <i class="bi bi-dash" v-if="showParams"></i>
-              <i class="bi bi-plus" v-else></i>
+              <i v-if="showParams" class="bi bi-dash"></i>
+              <i v-else class="bi bi-plus"></i>
             </button>
           </h4>
-          <div class="pop-list mt-1" v-if="showParams">
+          <div v-if="showParams" class="pop-list mt-1">
             <p v-for="param in parameters" :key="param.name">
               <code>{{ param.name }}</code>
               : {{ param.type }}
@@ -59,13 +65,13 @@
             Parameter suffixes
             <button
               class="btn btn-default btn-xs pull-right ml-8"
-              v-on:click="showOps = !showOps"
+              @click="showOps = !showOps"
             >
-              <i class="bi bi-dash" v-if="showOps"></i>
-              <i class="bi bi-plus" v-else></i>
+              <i v-if="showOps" class="bi bi-dash"></i>
+              <i v-else class="bi bi-plus"></i>
             </button>
           </h4>
-          <div class="pop-list mt-1" v-if="showOps">
+          <div v-if="showOps" class="pop-list mt-1">
             <p><code>__contains</code>: String</p>
             <p><code>__in</code>: Iterable</p>
             <p><code>__gt</code>: Integer</p>

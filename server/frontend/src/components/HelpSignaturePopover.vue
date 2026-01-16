@@ -1,5 +1,11 @@
 <template>
-  <VMenu :triggers="['hover']" :distance="6" placement="auto-start" class="pop-container" :delay="{ show: 100, hide: 100 }">
+  <VMenu
+    :triggers="['hover']"
+    :distance="6"
+    placement="auto-start"
+    class="pop-container"
+    :delay="{ show: 100, hide: 100 }"
+  >
     <i class="bi bi-question-circle-fill"></i>
     <template #popper>
       <div class="popper">
@@ -33,8 +39,8 @@
                 expression to match (exactly). This must be a string.
               </li>
               <li>
-                <code>part</code> (only with <code>type: url</code>), the part of
-                the URL to match. Value must be one of: <code>scheme</code>,
+                <code>part</code> (only with <code>type: url</code>), the part
+                of the URL to match. Value must be one of: <code>scheme</code>,
                 <code>netloc</code>, <code>path</code>, <code>query</code>,
                 <code>fragment</code>, <code>username</code>,
                 <code>password</code>, <code>hostname</code>, or

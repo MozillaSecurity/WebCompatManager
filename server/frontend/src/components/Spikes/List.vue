@@ -11,9 +11,9 @@
                 <strong>{{ minCommentsFilter }}</strong></label
               >
               <input
+                v-model.number="minCommentsFilter"
                 type="range"
                 class="form-control-range"
-                v-model.number="minCommentsFilter"
                 :min="0"
                 :max="maxCommentsCount"
                 step="1"
@@ -26,13 +26,13 @@
                 >Short Window (days): <strong>{{ shortWindow }}</strong></label
               >
               <input
+                v-model.number="shortWindow"
                 type="range"
                 class="form-control-range"
-                v-model.number="shortWindow"
                 :min="1"
                 :max="14"
                 step="1"
-                v-on:change="reloadSpikes"
+                @change="reloadSpikes"
               />
             </div>
           </div>
@@ -42,13 +42,13 @@
                 >Long Window (days): <strong>{{ longWindow }}</strong></label
               >
               <input
+                v-model.number="longWindow"
                 type="range"
                 class="form-control-range"
-                v-model.number="longWindow"
                 :min="7"
                 :max="90"
                 step="1"
-                v-on:change="reloadSpikes"
+                @change="reloadSpikes"
               />
             </div>
           </div>

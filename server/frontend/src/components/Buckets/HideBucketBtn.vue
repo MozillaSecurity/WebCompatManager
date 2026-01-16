@@ -1,5 +1,5 @@
 <template>
-  <a class="btn btn-default" v-on:click="link">Mark triaged</a>
+  <a class="btn btn-default" @click="link">Mark triaged</a>
 </template>
 
 <script>
@@ -9,9 +9,6 @@ import { errorParser, hideBucketUntil } from "../../helpers";
 import HideBucketBtnForm from "./HideBucketBtnForm.vue";
 
 export default {
-  components: {
-    HideBucketBtnForm,
-  },
   props: {
     bucket: {
       type: Number,
@@ -40,9 +37,7 @@ export default {
         try {
           const data = await hideBucketUntil(
             this.bucket,
-            new Date(
-              Date.now() + selectedTime.value * 7 * 24 * 60 * 60 * 1000,
-            ),
+            new Date(Date.now() + selectedTime.value * 7 * 24 * 60 * 60 * 1000),
           );
           window.location.href = data.url;
         } catch (err) {

@@ -19,67 +19,67 @@
         <thead>
           <tr>
             <th
-              v-on:click.exact="sortBy('id')"
-              v-on:click.ctrl.exact="addSort('id')"
               :class="{
                 active: sortKeys.includes('id') || sortKeys.includes('-id'),
               }"
+              @click.exact="sortBy('id')"
+              @click.ctrl.exact="addSort('id')"
             >
               Bucket
             </th>
             <th
-              v-on:click.exact="sortBy('description')"
-              v-on:click.ctrl.exact="addSort('description')"
               :class="{
                 active:
                   sortKeys.includes('description') ||
                   sortKeys.includes('description'),
               }"
+              @click.exact="sortBy('description')"
+              @click.ctrl.exact="addSort('description')"
             >
               Short Description
             </th>
             <th>Activity</th>
             <th
-              v-on:click.exact="sortBy('counts[0]')"
-              v-on:click.ctrl.exact="addSort('counts[0]')"
               :class="{
                 active:
                   sortKeys.includes('counts[0]') ||
                   sortKeys.includes('-counts[0]'),
               }"
+              @click.exact="sortBy('counts[0]')"
+              @click.ctrl.exact="addSort('counts[0]')"
             >
               Reports (last day)
             </th>
             <th
-              v-on:click.exact="sortBy('counts[1]')"
-              v-on:click.ctrl.exact="addSort('counts[1]')"
               :class="{
                 active:
                   sortKeys.includes('counts[1]') ||
                   sortKeys.includes('-counts[1]'),
               }"
+              @click.exact="sortBy('counts[1]')"
+              @click.ctrl.exact="addSort('counts[1]')"
             >
               Reports (last week)
             </th>
             <th
-              v-on:click.exact="sortBy('counts[2]')"
-              v-on:click.ctrl.exact="addSort('counts[2]')"
               :class="{
                 active:
                   sortKeys.includes('counts[2]') ||
                   sortKeys.includes('-counts[2]'),
               }"
+              @click.exact="sortBy('counts[2]')"
+              @click.ctrl.exact="addSort('counts[2]')"
             >
               Reports (last month)
             </th>
             <th
-              v-on:click.exact="sortBy('bug__external_id')"
-              v-on:click.ctrl.exact="addSort('bug__external_id')"
               :class="{
                 active:
                   sortKeys.includes('bug__external_id') ||
                   sortKeys.includes('-bug__external_id'),
               }"
+              @click.exact="sortBy('bug__external_id')"
+              @click.ctrl.exact="addSort('bug__external_id')"
             >
               External Bug
             </th>
@@ -91,7 +91,7 @@
               <ClipLoader class="m-strong" :color="'black'" :size="'50px'" />
             </td>
           </tr>
-          <tr v-else v-for="bucket of sortedBucketData" :key="bucket.id">
+          <tr v-for="bucket of sortedBucketData" v-else :key="bucket.id">
             <td>
               <a title="View bucket" :href="bucket.view_url">{{ bucket.id }}</a>
             </td>
@@ -143,12 +143,26 @@ import ActivityGraph from "./ActivityGraph.vue";
 import ReportStatsGraph from "./ReportStatsGraph.vue";
 
 export default {
-  mixins: [multiSort],
   components: {
     ClipLoader: LoadingSpinner,
     activitygraph: ActivityGraph,
     assignbutton: AssignBtn,
     reportstatsgraph: ReportStatsGraph,
+  },
+  mixins: [multiSort],
+  props: {
+    activityRange: {
+      type: Number,
+      required: true,
+    },
+    canEdit: {
+      type: Boolean,
+      required: true,
+    },
+    providers: {
+      type: Array,
+      required: true,
+    },
   },
   data: function () {
     const defaultSortKeys = ["-counts[0]"];
@@ -172,27 +186,13 @@ export default {
       validSortKeys: validSortKeys,
     };
   },
-  created: function () {
-    this.fetch();
-  },
-  props: {
-    activityRange: {
-      type: Number,
-      required: true,
-    },
-    canEdit: {
-      type: Boolean,
-      required: true,
-    },
-    providers: {
-      type: Array,
-      required: true,
-    },
-  },
   computed: {
     sortedBucketData: function () {
       return this.sortData(this.bucketData);
     },
+  },
+  created: function () {
+    this.fetch();
   },
   methods: {
     // get stats
@@ -236,7 +236,7 @@ export default {
             this.loading = false;
           } else {
             // if the page loaded, but the fetch failed, either the network went away or we need to refresh auth
-            // eslint-disable-next-line no-console
+
             console.debug(errorParser(err));
             this.$router.go(0);
             return;

@@ -1,11 +1,11 @@
 <template>
   <VMenu
-      :triggers="['hover']"
-      :distance="6"
-      placement="right"
-      class="pop-container"
-      :autoHide="false"
-      :delay="{ show: 100, hide: 100 }"
+    :triggers="['hover']"
+    :distance="6"
+    placement="right"
+    class="pop-container"
+    :auto-hide="false"
+    :delay="{ show: 100, hide: 100 }"
   >
     <i class="bi bi-question-circle-fill"></i>
     <template #popper>

@@ -1,5 +1,5 @@
 <template>
-  <a class="btn btn-default" v-on:click="link">Assign an existing bug</a>
+  <a class="btn btn-default" @click="link">Assign an existing bug</a>
 </template>
 
 <script>
@@ -9,9 +9,6 @@ import { assignExternalBug, errorParser } from "../../helpers";
 import AssignBtnForm from "./AssignBtnForm.vue";
 
 export default {
-  components: {
-    AssignBtnForm,
-  },
   props: {
     bucket: {
       type: Number,
@@ -51,9 +48,9 @@ export default {
       if (value) {
         try {
           const data = await assignExternalBug(
-              this.bucket,
-              externalBugId.value,
-              selectedProvider.value,
+            this.bucket,
+            externalBugId.value,
+            selectedProvider.value,
           );
           window.location.href = data.url;
         } catch (err) {

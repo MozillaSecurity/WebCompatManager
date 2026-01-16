@@ -3,10 +3,10 @@
     <div class="tr">
       <label class="td" for="provider">Bug provider</label>
       <select
-          v-model="selectedProvider"
-          class="td"
-          name="provider"
-          @change="$emit('update-provider', selectedProvider)"
+        v-model="selectedProvider"
+        class="td"
+        name="provider"
+        @change="$emit('update-provider', selectedProvider)"
       >
         <option v-for="p in providers" :key="p.id" :value="p.id">
           {{ p.hostname }}
@@ -16,10 +16,10 @@
     <div class="tr">
       <label class="td" for="bug_id">Bug ID</label>
       <input
-          v-model="externalBugId"
-          maxlength="255"
-          name="bug_id"
-          @change="$emit('update-bug', externalBugId)"
+        v-model="externalBugId"
+        maxlength="255"
+        name="bug_id"
+        @change="$emit('update-bug', externalBugId)"
       />
     </div>
   </div>

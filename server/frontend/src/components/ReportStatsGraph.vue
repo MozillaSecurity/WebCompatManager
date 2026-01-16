@@ -10,6 +10,14 @@ export default {
       required: true,
     },
   },
+  watch: {
+    data() {
+      this.renderGraph();
+    },
+  },
+  mounted() {
+    this.renderGraph();
+  },
   methods: {
     renderGraph() {
       /*
@@ -137,14 +145,6 @@ export default {
       svg.append("g").call(yAxis);
       svg.append("g").call(xAxis);
     },
-  },
-  watch: {
-    data() {
-      this.renderGraph();
-    },
-  },
-  mounted() {
-    this.renderGraph();
   },
 };
 </script>

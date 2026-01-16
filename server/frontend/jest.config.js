@@ -14,9 +14,7 @@ module.exports = {
     d3: "<rootDir>/node_modules/d3/dist/d3.min.js",
     "\\.(css|less|scss|sass)$": "jest-transform-stub",
   },
-  transformIgnorePatterns: [
-    "/node_modules/(?!floating-vue)",
-  ],
+  transformIgnorePatterns: ["/node_modules/(?!floating-vue)"],
   transform: {
     "^.+\\.vue$": "@vue/vue3-jest",
     "^.+\\.(js)$": "babel-jest",

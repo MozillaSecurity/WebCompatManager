@@ -10,8 +10,8 @@
           <label for="bp_select">Bug provider</label>
           <select
             id="bp_select"
-            class="form-control"
             v-model="selectedProvider"
+            class="form-control"
           >
             <option v-for="p in providers" :key="p.id" :value="p.id">
               {{ p.hostname }}
@@ -22,8 +22,8 @@
           <label for="bt_select">Bug template</label>
           <select
             id="bt_select"
-            class="form-control"
             v-model="selectedTemplate"
+            class="form-control"
           >
             <option v-for="t in templates" :key="t.id" :value="t.id">
               {{ t.name }}
@@ -32,23 +32,23 @@
         </div>
       </div>
 
-      <div class="alert alert-warning" role="alert" v-if="provider">
+      <div v-if="provider" class="alert alert-warning" role="alert">
         You are about to submit this bug to
         <strong>{{ provider.hostname }}</strong>
       </div>
       <hr />
 
       <h3>Create a bug for report {{ entryId }}</h3>
-      <div class="alert alert-info" role="alert" v-if="!template">
+      <div v-if="!template" class="alert alert-info" role="alert">
         Please pick a bug template to file a new bug.
       </div>
       <form v-else>
         <SummaryInput
           v-if="provider"
           :initial-summary="summary"
-          v-on:update-summary="summary = $event"
           :bucket-id="bucketId"
           :provider="provider"
+          @update-summary="summary = $event"
         />
 
         <div class="row">
@@ -56,9 +56,9 @@
             v-if="provider"
             :provider-hostname="provider.hostname"
             :template-product="template.product"
-            v-on:update-product="product = $event"
             :template-component="template.component"
-            v-on:update-component="component = $event"
+            @update-product="product = $event"
+            @update-component="component = $event"
           />
         </div>
 
@@ -67,22 +67,22 @@
             <label for="op_sys">OS</label>
             <input
               id="id_op_sys"
+              v-model="opSys"
               class="form-control"
               maxlength="1023"
               name="op_sys"
               type="text"
-              v-model="opSys"
             />
           </div>
           <div class="form-group col-md-6">
             <label for="platform">Platform</label>
             <input
               id="id_platform"
+              v-model="platform"
               class="form-control"
               maxlength="1023"
               name="platform"
               type="text"
-              v-model="platform"
             />
           </div>
         </div>
@@ -98,16 +98,16 @@
               :bugzilla-token="bugzillaToken"
               :initial-value="template.cc"
               :multiple="true"
-              v-on:update-value="template.cc = $event"
+              @update-value="template.cc = $event"
             />
             <input
               v-else
               id="id_cc"
+              v-model="template.cc"
               class="form-control"
               maxlength="1023"
               name="cc"
               type="text"
-              v-model="template.cc"
             />
           </div>
           <div class="form-group col-md-6">
@@ -119,16 +119,16 @@
               :provider="provider"
               :bugzilla-token="bugzillaToken"
               :initial-value="template.assigned_to"
-              v-on:update-value="template.assigned_to = $event"
+              @update-value="template.assigned_to = $event"
             />
             <input
               v-else
               id="id_assigned_to"
+              v-model="template.assigned_to"
               class="form-control"
               maxlength="1023"
               name="assigned_to"
               type="text"
-              v-model="template.assigned_to"
             />
           </div>
         </div>
@@ -138,22 +138,22 @@
             <label for="priority">Priority</label>
             <input
               id="id_priority"
+              v-model="template.priority"
               class="form-control"
               maxlength="1023"
               name="priority"
               type="text"
-              v-model="template.priority"
             />
           </div>
           <div class="form-group col-md-6">
             <label for="severity">Severity</label>
             <input
               id="id_severity"
+              v-model="template.severity"
               class="form-control"
               maxlength="1023"
               name="severity"
               type="text"
-              v-model="template.severity"
             />
           </div>
         </div>
@@ -163,11 +163,11 @@
             <label for="alias">Alias</label>
             <input
               id="id_alias"
+              v-model="template.alias"
               class="form-control"
               maxlength="1023"
               name="alias"
               type="text"
-              v-model="template.alias"
             />
           </div>
           <div class="form-group col-md-6">
@@ -179,16 +179,16 @@
               :provider="provider"
               :bugzilla-token="bugzillaToken"
               :initial-value="template.qa_contact"
-              v-on:update-value="template.qa_contact = $event"
+              @update-value="template.qa_contact = $event"
             />
             <input
               v-else
               id="id_qa_contact"
+              v-model="template.qa_contact"
               class="form-control"
               maxlength="1023"
               name="qa_contact"
               type="text"
-              v-model="template.qa_contact"
             />
           </div>
         </div>
@@ -198,22 +198,22 @@
             <label for="status">Status</label>
             <input
               id="id_status"
+              v-model="template.status"
               class="form-control"
               maxlength="1023"
               name="status"
               type="text"
-              v-model="template.status"
             />
           </div>
           <div class="form-group col-md-6">
             <label for="resolution">Resolution</label>
             <input
               id="id_resolution"
+              v-model="template.resolution"
               class="form-control"
               maxlength="1023"
               name="resolution"
               type="text"
-              v-model="template.resolution"
             />
           </div>
         </div>
@@ -223,22 +223,22 @@
             <label for="version">Version</label>
             <input
               id="id_version"
+              v-model="template.version"
               class="form-control"
               maxlength="1023"
               name="version"
               type="text"
-              v-model="template.version"
             />
           </div>
           <div class="form-group col-md-6">
             <label for="target_milestone">Target milestone</label>
             <input
               id="id_target_milestone"
+              v-model="template.target_milestone"
               class="form-control"
               maxlength="1023"
               name="target_milestone"
               type="text"
-              v-model="template.target_milestone"
             />
           </div>
         </div>
@@ -247,22 +247,22 @@
             <label for="dependson">Depends On</label>
             <input
               id="id_dependson"
+              v-model="template.dependson"
               class="form-control"
               maxlength="1023"
               name="dependson"
               type="text"
-              v-model="template.dependson"
             />
           </div>
           <div class="form-group col-md-6">
             <label for="blocks">Blocks</label>
             <input
               id="id_blocks"
+              v-model="template.blocks"
               class="form-control"
               maxlength="1023"
               name="blocks"
               type="text"
-              v-model="template.blocks"
             />
           </div>
         </div>
@@ -276,11 +276,11 @@
             />
             <input
               id="id_whiteboard"
+              v-model="template.whiteboard"
               class="form-control"
               maxlength="1023"
               name="whiteboard"
               type="text"
-              v-model="template.whiteboard"
             />
           </div>
           <div class="form-group col-md-6">
@@ -304,11 +304,11 @@
             />
             <input
               id="id_keywords"
+              v-model="template.keywords"
               class="form-control"
               maxlength="1023"
               name="keywords"
               type="text"
-              v-model="template.keywords"
             />
           </div>
           <div class="form-group col-md-6">
@@ -332,9 +332,9 @@
             />
             <textarea
               id="id_attrs"
+              v-model="template.attrs"
               class="form-control"
               name="attrs"
-              v-model="template.attrs"
             ></textarea>
           </div>
           <div class="form-group col-md-6">
@@ -358,9 +358,9 @@
             />
             <textarea
               id="id_description"
+              v-model="template.description"
               class="form-control"
               name="description"
-              v-model="template.description"
             ></textarea>
           </div>
           <div class="form-group col-md-6">
@@ -381,10 +381,10 @@
         <div class="row">
           <div class="form-group col-md-6">
             <input
-              type="checkbox"
               id="id_security"
-              name="security"
               v-model="template.security"
+              type="checkbox"
+              name="security"
             />
             <span>This is a security bug.</span>
           </div>
@@ -395,12 +395,12 @@
               Security Group (default is core-security)
             </label>
             <input
+              id="id_security_group"
+              v-model="template.security_group"
               type="text"
               class="form-control"
               maxlength="1023"
-              id="id_security_group"
               name="security_group"
-              v-model="template.security_group"
               :disabled="!template.security"
             />
           </div>
@@ -413,7 +413,7 @@
             class="close"
             data-dismiss="alert"
             aria-label="Close"
-            v-on:click="createError = null"
+            @click="createError = null"
           >
             <span aria-hidden="true">&times;</span>
           </button>
@@ -437,7 +437,7 @@
             class="close"
             data-dismiss="alert"
             aria-label="Close"
-            v-on:click="assignError = null"
+            @click="assignError = null"
           >
             <span aria-hidden="true">&times;</span>
           </button>
@@ -455,16 +455,16 @@
           <button
             type="button"
             class="btn btn-danger"
-            v-on:click="createExternalBug"
             :disabled="!bugzillaToken || submitting"
+            @click="createExternalBug"
           >
             Submit
           </button>
           <button
             type="button"
             class="btn btn-default"
-            v-on:click="goBack"
             :disabled="submitting"
+            @click="goBack"
           >
             Cancel
           </button>
@@ -552,24 +552,6 @@ export default {
       "uuid",
     ],
   }),
-  async mounted() {
-    this.entry = await api.retrieveReport(this.entryId);
-
-    let data = await api.listBugProviders();
-    this.providers = data.results.filter(
-      (p) => p.classname === "BugzillaProvider",
-    );
-    this.provider = this.providers.find((p) => p.id === this.providerId);
-    this.selectedProvider = this.provider.id;
-
-    data = await api.listTemplates();
-    this.templates = data.results.filter((t) => t.mode === "bug");
-    this.template = this.templates.find((t) => t.id === this.templateId);
-    if (this.template) {
-      this.selectedTemplate = this.template.id;
-      this.updateFields();
-    }
-  },
   computed: {
     bugLink() {
       return `https://${this.provider.hostname}/${this.createdBugId}`;
@@ -621,6 +603,37 @@ export default {
         return "";
       }
     },
+  },
+  watch: {
+    selectedProvider() {
+      this.provider = this.providers.find(
+        (p) => p.id === this.selectedProvider,
+      );
+    },
+    selectedTemplate() {
+      this.template = this.templates.find(
+        (t) => t.id === this.selectedTemplate,
+      );
+      this.updateFields();
+    },
+  },
+  async mounted() {
+    this.entry = await api.retrieveReport(this.entryId);
+
+    let data = await api.listBugProviders();
+    this.providers = data.results.filter(
+      (p) => p.classname === "BugzillaProvider",
+    );
+    this.provider = this.providers.find((p) => p.id === this.providerId);
+    this.selectedProvider = this.provider.id;
+
+    data = await api.listTemplates();
+    this.templates = data.results.filter((t) => t.mode === "bug");
+    this.template = this.templates.find((t) => t.id === this.templateId);
+    if (this.template) {
+      this.selectedTemplate = this.template.id;
+      this.updateFields();
+    }
   },
   methods: {
     goBack() {
@@ -736,19 +749,6 @@ export default {
       } catch (err) {
         this.assignError = errorParser(err);
       }
-    },
-  },
-  watch: {
-    selectedProvider() {
-      this.provider = this.providers.find(
-        (p) => p.id === this.selectedProvider,
-      );
-    },
-    selectedTemplate() {
-      this.template = this.templates.find(
-        (t) => t.id === this.selectedTemplate,
-      );
-      this.updateFields();
     },
   },
 };

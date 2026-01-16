@@ -1,6 +1,5 @@
 import { nextTick } from "vue";
 import { createRouter, createWebHistory } from "vue-router";
-import { fireEvent } from "@testing-library/vue";
 import { render } from "@testing-library/vue";
 import { mount } from "@vue/test-utils";
 import Stats from "../src/components/ReportStats.vue";
@@ -133,17 +132,17 @@ test("stats are sortable", async () => {
       const currentParams = currentHash ? currentHash.split(",") : [];
 
       const otherParams = currentParams
-          .filter((param) => {
-            if (!param.startsWith("sort=")) return true;
-            const existingSortKey = param.split("=")[1].replace(/^-/, "");
-            return existingSortKey !== newSortKey;
-          })
-          .map((param) => {
-            if (param.startsWith("sort=")) {
-              return param.slice(5);
-            }
-            return param;
-          });
+        .filter((param) => {
+          if (!param.startsWith("sort=")) return true;
+          const existingSortKey = param.split("=")[1].replace(/^-/, "");
+          return existingSortKey !== newSortKey;
+        })
+        .map((param) => {
+          if (param.startsWith("sort=")) {
+            return param.slice(5);
+          }
+          return param;
+        });
 
       // Combine the new sort with existing parameters
       route.hash = "#" + [newHash, ...otherParams].filter(Boolean).join(",");

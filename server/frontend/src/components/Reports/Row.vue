@@ -22,7 +22,7 @@
       <a
         title="Add to search"
         class="add-filter"
-        v-on:click="addFilter('app__name', report.app_name)"
+        @click="addFilter('app__name', report.app_name)"
         >{{ report.app_name }}</a
       >
     </td>
@@ -31,7 +31,7 @@
         <a
           title="Add to search"
           class="add-filter"
-          v-on:click="addFilter('app__channel', report.app_channel)"
+          @click="addFilter('app__channel', report.app_channel)"
           >{{ report.app_channel }}</a
         >
       </span>
@@ -41,7 +41,7 @@
         <a
           title="Add to search"
           class="add-filter"
-          v-on:click="addFilter('app__version', report.app_version)"
+          @click="addFilter('app__version', report.app_version)"
           >{{ report.app_version }}</a
         >
       </span>
@@ -51,7 +51,7 @@
         <a
           title="Add to search"
           class="add-filter"
-          v-on:click="
+          @click="
             addFilter('breakage_category__value', report.breakage_category)
           "
           >{{ report.breakage_category }}</a
@@ -62,7 +62,7 @@
       <a
         title="Add to search"
         class="add-filter"
-        v-on:click="addFilter('os__name', report.os)"
+        @click="addFilter('os__name', report.os)"
       >
         <img
           v-if="report.os === 'Linux'"

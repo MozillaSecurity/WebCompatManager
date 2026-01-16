@@ -5,10 +5,10 @@
       {{ bucketId ? "Edit Bucket" : "New Bucket" }}
     </div>
     <div class="panel-body">
-      <div class="alert alert-info" role="alert" v-if="loading === 'preview'">
+      <div v-if="loading === 'preview'" class="alert alert-info" role="alert">
         Loading preview...
       </div>
-      <div class="alert alert-warning" role="alert" v-if="warning">
+      <div v-if="warning" class="alert alert-warning" role="alert">
         {{ warning }}
       </div>
 
@@ -25,14 +25,14 @@
         <span class="badge">{{ outListCount }}</span>
       </p>
 
-      <form v-on:submit.prevent="">
+      <form @submit.prevent="">
         <label for="id_bucketDescription">Description</label><br />
         <input
           id="id_bucketDescription"
+          v-model="bucket.description"
           class="form-control"
           maxlength="1023"
           type="text"
-          v-model="bucket.description"
         />
         <br />
 
@@ -40,13 +40,13 @@
         <HelpSignaturePopover /><br />
         <textarea
           id="id_signature"
+          v-model="bucket.signature"
           class="form-control"
           spellcheck="false"
-          v-model="bucket.signature"
         ></textarea>
 
         <div class="field">
-          <input type="checkbox" id="id_reassign" v-model="reassign" />
+          <input id="id_reassign" v-model="reassign" type="checkbox" />
           <label for="id_reassign">
             Reassign matching reports (reports in this bucket and lower-priority
             buckets will be reassigned)
@@ -55,46 +55,46 @@
         <label for="id_priority">Priority</label>
         <input
           id="id_priority"
+          v-model="bucket.priority"
           class="form-inline"
           type="number"
           min="-2"
           max="2"
-          v-model="bucket.priority"
         />
         <br /><br />
 
-        <div class="btn-group" v-if="bucketId">
+        <div v-if="bucketId" class="btn-group">
           <button
             type="submit"
             class="btn btn-success"
-            v-on:click="create_or_update(true)"
             :disabled="loading"
+            @click="create_or_update(true)"
           >
             {{ loading === "save" ? "Saving..." : "Save" }}
           </button>
           <button
             type="submit"
             class="btn btn-default"
-            v-on:click="create_or_update(false)"
             :disabled="loading"
+            @click="create_or_update(false)"
           >
             {{ loading === "preview" ? "Loading preview..." : "Preview" }}
           </button>
         </div>
-        <div class="btn-group" v-else>
+        <div v-else class="btn-group">
           <button
             type="submit"
             class="btn btn-success"
-            v-on:click="create_or_update(true)"
             :disabled="loading"
+            @click="create_or_update(true)"
           >
             {{ loading === "create" ? "Creating..." : "Create" }}
           </button>
           <button
             type="submit"
             class="btn btn-default"
-            v-on:click="create_or_update(false)"
             :disabled="loading"
+            @click="create_or_update(false)"
           >
             {{ loading === "preview" ? "Loading preview..." : "Preview" }}
           </button>
