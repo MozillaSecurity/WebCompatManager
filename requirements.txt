@@ -51,7 +51,6 @@ django==4.2.17
     #   crispy-bootstrap3
     #   django-crispy-forms
     #   django-model-utils
-    #   django-notifications-hq
     #   djangorestframework
     #   jsonfield
     #   mozilla-django-oidc
@@ -60,10 +59,6 @@ django-crispy-forms==2.3
     #   WebCompatManager (pyproject.toml)
     #   crispy-bootstrap3
 django-enumfields==2.1.1
-    # via WebCompatManager (pyproject.toml)
-django-model-utils==5.0.0
-    # via django-notifications-hq
-django-notifications-hq==1.8.3
     # via WebCompatManager (pyproject.toml)
 djangorestframework==3.15.2
     # via WebCompatManager (pyproject.toml)
@@ -102,8 +97,6 @@ idna==3.10
     # via requests
 josepy==1.14.0
     # via mozilla-django-oidc
-jsonfield==3.1.0
-    # via django-notifications-hq
 jsonpath-ng==1.7.0
     # via WebCompatManager (pyproject.toml)
 jsonschema==4.23.0
@@ -147,8 +140,6 @@ python-dateutil==2.9.0.post0
     #   WebCompatManager (pyproject.toml)
     #   celery
     #   google-cloud-bigquery
-pytz==2024.2
-    # via django-notifications-hq
 pyyaml==6.0.2
     # via WebCompatManager (pyproject.toml)
 redis==5.2.0
@@ -172,8 +163,6 @@ six==1.17.0
     # via python-dateutil
 sqlparse==0.5.2
     # via django
-swapper==1.4.0
-    # via django-notifications-hq
 typing-extensions==4.12.2
     # via
     #   asgiref
