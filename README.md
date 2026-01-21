@@ -7,9 +7,9 @@
 WebCompatManager is a dashboard for analysing Brokemn Site Reporter
 reports and other web compatibility issues.
 
-# Local Development
+## Local Development
 
-The server part of WebCompatManager is a Django application, with a vuew frontend.
+The server part of WebCompatManager is a Django application, with a vue frontend.
 
 ### Frontend
 
@@ -56,6 +56,19 @@ $ uv run -p 3.12 --extra=server server/manage.py runserver
 ```
 
 Log in using the credentials created above.
+
+### Tests
+
+Lints are run with pre-commit. This can be installed as a Git hook, or run manually using:
+
+```
+uv run --extra=dev -p 3.12 pre-commit run --all
+```
+
+Tests are run using tox:
+```
+uv run --extra=dev -p 3.12 tox
+```
 
 ### Redis
 
