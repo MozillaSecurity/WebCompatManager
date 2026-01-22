@@ -7,7 +7,7 @@ from django.conf import settings
 from rest_framework import permissions
 
 if getattr(settings, "USE_OIDC", False):
-    from mozilla_django_oidc.auth import OIDCAuthenticationBackend
+    from mozilla_django_oidc.auth import OIDCAuthenticationBackend  # type: ignore
 
     def generate_username(email):
         # Using Python 3 and Django 1.11, usernames can contain alphanumeric
