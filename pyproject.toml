@@ -85,6 +85,8 @@ omit = [
     "*/.eggs/*",
 ]
 
+[tool.mypy]
+
 [tool.pytest.ini_options]
 log_level = "DEBUG"
 DJANGO_SETTINGS_MODULE = "server.settings_test"
@@ -147,7 +149,7 @@ include = ["webcompat", "webcompat.schemas"]
 [tool.setuptools_scm]
 
 [tool.tox]
-envlist = ["312"]
+envlist = ["312", "mypy"]
 tox_pip_extensions_ext_venv_update = true
 skip_missing_interpreters = true
 
@@ -165,7 +167,7 @@ commands = [["codecov"]]
 allowlist_externals = ["codecov"]
 
 [tool.tox.env.mypy]
-commands = [["mypy", "--install-types", "--non-interactive", "{posargs}"]]
+commands = [["mypy", "{posargs}"]]
 usedevelop = true
 
 [tool.tox.env.pypi]
