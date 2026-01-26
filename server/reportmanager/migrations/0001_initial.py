@@ -341,7 +341,7 @@ class Migration(migrations.Migration):
         migrations.AddConstraint(
             model_name="bucketcolor",
             constraint=models.CheckConstraint(
-                check=models.Q(("value__gte", 0), ("value__lte", 16777215)),
+                condition=models.Q(("value__gte", 0), ("value__lte", 16777215)),
                 name="value_range",
             ),
         ),
@@ -372,7 +372,7 @@ class Migration(migrations.Migration):
         migrations.AddConstraint(
             model_name="bucket",
             constraint=models.CheckConstraint(
-                check=models.Q(("priority__gte", -2), ("priority__lte", 2)),
+                condition=models.Q(("priority__gte", -2), ("priority__lte", 2)),
                 name="priority_range",
             ),
         ),
