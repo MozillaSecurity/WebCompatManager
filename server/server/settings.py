@@ -254,6 +254,10 @@ LOGGING = {
             "level": "WARNING",
         },
     },
+    "root": {
+        "handlers": ["console"],
+        "level": "INFO",
+    },
 }
 
 # Setup CSRF trusted origins explicitly as it's needed from Django 4
