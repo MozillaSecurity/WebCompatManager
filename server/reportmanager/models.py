@@ -400,6 +400,27 @@ class BucketWatch(models.Model):
     last_report: models.IntegerField = models.IntegerField(default=0)
 
 
+class Cluster(models.Model):
+    """Represents a similarity-based cluster of reports within a domain.
+
+    Clusters are created by the similarity clustering algorithm and group
+    reports that have semantically similar comments.
+    """
+
+    domain: models.CharField = models.CharField(max_length=255)
+    centroid: models.ForeignKey = models.ForeignKey(
+        "ReportEntry",
+        null=True,
+        on_delete=models.deletion.SET_NULL,
+        related_name="centroid_of",
+    )
+
+    class Meta:
+        indexes = [
+            models.Index(fields=["domain"]),
+        ]
+
+
 class OS(models.Model):
     name: models.CharField = models.CharField(max_length=63, unique=True)
 
@@ -481,6 +502,9 @@ class ReportEntry(models.Model):
     url: models.URLField = models.URLField(max_length=8192)
     uuid: models.UUIDField = models.UUIDField(unique=True)
     ml_valid_probability: models.FloatField = models.FloatField(null=True)
+    cluster: models.ForeignKey = models.ForeignKey(
+        Cluster, null=True, on_delete=models.deletion.SET_NULL
+    )
 
     objects = ReportEntryManager()
 
@@ -540,6 +564,9 @@ class ReportEntry(models.Model):
                     else None
                 ),
                 ml_valid_probability=self.ml_valid_probability,
+                cluster_id=(
+                    str(self.cluster_id) if self.cluster_id is not None else None
+                ),
             )
         return self._cached_report
 
