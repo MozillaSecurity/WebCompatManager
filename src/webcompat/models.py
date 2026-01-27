@@ -54,6 +54,7 @@ class Report:
     app_channel: str | None = None
     breakage_category: str | None = None
     ml_valid_probability: float | None = None
+    cluster_id: str | None = None
 
     @classmethod
     def load(cls, data: str) -> Report:
