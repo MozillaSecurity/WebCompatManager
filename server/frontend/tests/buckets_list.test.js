@@ -1,15 +1,10 @@
 import { nextTick } from "vue";
-import { createLocalVue } from "@vue/test-utils";
-import VueRouter from "vue-router";
+import { createRouter, createWebHistory } from "vue-router";
 import { render } from "@testing-library/vue";
 import List from "../src/components/Buckets/List.vue";
 import { listBuckets } from "../src/api.js";
 import { emptyBuckets, buckets } from "./fixtures.js";
 import "lodash/throttle";
-
-const localVue = createLocalVue();
-localVue.use(VueRouter);
-const router = new VueRouter();
 
 // This line will mock all calls to functions in ../src/api.js
 jest.mock("../src/api.js");
@@ -25,10 +20,15 @@ const defaultQueryStr = `{
 }`;
 
 test("bucket list has no buckets", async () => {
+  const router = createRouter({
+    history: createWebHistory(),
+    routes: [],
+  });
   listBuckets.mockResolvedValue(emptyBuckets);
   await render(List, {
-    localVue,
-    router,
+    global: {
+      plugins: [router],
+    },
     props: {
       canEdit: true,
       providers: [],
@@ -54,10 +54,15 @@ test("bucket list has no buckets", async () => {
 });
 
 test("bucket list has two buckets", async () => {
+  const router = createRouter({
+    history: createWebHistory(),
+    routes: [],
+  });
   listBuckets.mockResolvedValue(buckets);
   const { getByText } = await render(List, {
-    localVue,
-    router,
+    global: {
+      plugins: [router],
+    },
     props: {
       canEdit: true,
       providers: [],

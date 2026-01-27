@@ -19,7 +19,7 @@
           :key="entry.id"
           :class="{ odd: index % 2 === 0, even: index % 2 !== 0 }"
         >
-          <td>{{ entry.reported_at | date }}</td>
+          <td>{{ formatDate(entry.reported_at) }}</td>
           <td>
             <a :href="entry.view_url">{{ entry.uuid }}</a>
           </td>
@@ -30,32 +30,32 @@
           <td>{{ entry.breakage_category }}</td>
           <td>
             <img
+              v-if="entry.os === 'Linux'"
               width="16px"
               height="16px"
               alt="Linux"
               :src="staticLogo('linux')"
-              v-if="entry.os === 'Linux'"
             />
             <img
+              v-else-if="entry.os === 'Mac'"
               width="16px"
               height="16px"
               alt="macOS"
               :src="staticLogo('macosx')"
-              v-else-if="entry.os === 'Mac'"
             />
             <img
+              v-else-if="entry.os === 'Windows'"
               width="16px"
               height="16px"
               alt="Windows"
               :src="staticLogo('windows')"
-              v-else-if="entry.os === 'Windows'"
             />
             <img
+              v-else-if="entry.os === 'Android'"
               width="16px"
               height="16px"
               alt="Android"
               :src="staticLogo('android')"
-              v-else-if="entry.os === 'Android'"
             />
             <template v-else>{{ entry.os }}</template>
           </td>
@@ -75,10 +75,8 @@ export default {
       required: true,
     },
   },
-  filters: {
-    date: date,
-  },
   methods: {
+    formatDate: date,
     staticLogo(name) {
       return window.location.origin + "/static/img/os/" + name + ".png";
     },

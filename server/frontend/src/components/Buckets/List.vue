@@ -4,14 +4,14 @@
     <div class="panel-body">
       <div v-if="!advancedQuery">
         <div class="btn-group" role="group">
-          <a :href="createBucketUrl" class="btn btn-success" v-if="canEdit"
+          <a v-if="canEdit" :href="createBucketUrl" class="btn btn-success"
             >Create bucket</a
           >
           <button
             type="button"
             class="btn btn-default"
             :disabled="loading"
-            v-on:click="updateShowLogged"
+            @click="updateShowLogged"
           >
             {{ showLogged ? "Hide Logged" : "Show Logged" }}
           </button>
@@ -19,7 +19,7 @@
             type="button"
             class="btn btn-default"
             :disabled="loading"
-            v-on:click="updateShowHidden"
+            @click="updateShowHidden"
           >
             {{ showHidden ? "Hide Triaged" : "Show Triaged" }}
           </button>
@@ -30,12 +30,12 @@
             <label for="domain-filter">Domain:</label>
             <input
               id="domain-filter"
+              v-model="domainFilter"
               type="text"
               placeholder="e.g., example.com (includes subdomains)"
-              v-model="domainFilter"
-              v-on:keyup.enter="updateDomainFilter"
               :disabled="loading"
               style="max-width: 400px"
+              @keyup.enter="updateDomainFilter"
             />
           </div>
           <div class="input-group">
@@ -44,7 +44,7 @@
               class="btn btn-secondary"
               :disabled="loading"
               title="Apply filters"
-              v-on:click="updateDomainFilter"
+              @click="updateDomainFilter"
             >
               Apply
             </button>
@@ -52,7 +52,7 @@
           <a
             title="Show advanced query for the current search/filters"
             class="pointer"
-            v-on:click="showAdvancedQuery"
+            @click="showAdvancedQuery"
             >Advanced query</a
           >
         </details>
@@ -83,22 +83,22 @@
         />
         <textarea
           id="id_query"
+          v-model="queryStr"
           class="form-control"
           name="query"
           spellcheck="false"
           :rows="(queryStr.match(/\n/g) || '').length + 1"
-          v-model="queryStr"
         ></textarea>
         <br v-if="queryError" />
         <div v-if="queryError" class="alert alert-warning" role="alert">
           {{ queryError }}
         </div>
-        <a class="pointer" v-on:click="hideAdvancedQuery">Hide advanced query</a
+        <a class="pointer" @click="hideAdvancedQuery">Hide advanced query</a
         ><br />
         <button
-          v-on:click="fetch"
           :disabled="!modified || loading"
           :title="queryButtonTitle"
+          @click="fetch"
         >
           Query
         </button>
@@ -122,7 +122,7 @@
         :initial="currentPage"
         :pages="totalPages"
         :show="5"
-        v-on:page-changed="currentPage = $event"
+        @page-changed="currentPage = $event"
       />
     </div>
     <div class="table-responsive">
@@ -130,65 +130,65 @@
         <thead>
           <tr>
             <th
-              v-on:click.exact="sortBy('id')"
-              v-on:click.ctrl.exact="addSort('id')"
               :class="{
                 active: sortKeys.includes('id') || sortKeys.includes('-id'),
               }"
+              @click.exact="sortBy('id')"
+              @click.ctrl.exact="addSort('id')"
             >
               ID
             </th>
             <th
-              v-on:click.exact="sortBy('description')"
-              v-on:click.ctrl.exact="addSort('description')"
               :class="{
                 active:
                   sortKeys.includes('description') ||
                   sortKeys.includes('-description'),
               }"
+              @click.exact="sortBy('description')"
+              @click.ctrl.exact="addSort('description')"
             >
               Description
             </th>
             <th
-              v-on:click.exact="sortBy('priority')"
-              v-on:click.ctrl.exact="addSort('priority')"
               :class="{
                 active:
                   sortKeys.includes('priority') ||
                   sortKeys.includes('-priority'),
               }"
+              @click.exact="sortBy('priority')"
+              @click.ctrl.exact="addSort('priority')"
             >
               Priority
             </th>
             <th>Activity</th>
             <th
-              v-on:click.exact="sortBy('latest_report')"
-              v-on:click.ctrl.exact="addSort('latest_report')"
               :class="{
                 active:
                   sortKeys.includes('latest_report') ||
                   sortKeys.includes('-latest_report'),
               }"
+              @click.exact="sortBy('latest_report')"
+              @click.ctrl.exact="addSort('latest_report')"
             >
               Latest Report
             </th>
             <th
-              v-on:click.exact="sortBy('size')"
-              v-on:click.ctrl.exact="addSort('size')"
               :class="{
                 active: sortKeys.includes('size') || sortKeys.includes('-size'),
               }"
+              @click.exact="sortBy('size')"
+              @click.ctrl.exact="addSort('size')"
             >
               Size
             </th>
             <th
-              v-on:click.exact="sortBy('bug__external_id')"
-              v-on:click.ctrl.exact="addSort('bug__external_id')"
               :class="{
                 active:
                   sortKeys.includes('bug__external_id') ||
                   sortKeys.includes('-bug__external_id'),
               }"
+              @click.exact="sortBy('bug__external_id')"
+              @click.ctrl.exact="addSort('bug__external_id')"
             >
               Details
             </th>
@@ -202,12 +202,12 @@
           </tr>
           <Row
             v-for="bucket in orderedBuckets"
+            v-else
+            :key="bucket.id"
             :activity-range="activityRange"
             :can-edit="canEdit"
-            :key="bucket.id"
             :providers="providers"
             :bucket="bucket"
-            v-else
           />
         </tbody>
       </table>
@@ -218,7 +218,7 @@
 <script>
 import _throttle from "lodash/throttle";
 import _isEqual from "lodash/isEqual";
-import ClipLoader from "vue-spinner/src/ClipLoader.vue";
+import LoadingSpinner from "../LoadingSpinner.vue";
 import { errorParser, multiSort, parseHash } from "../../helpers";
 import * as api from "../../api";
 import { MatchObjects } from "../../helpers";
@@ -227,13 +227,13 @@ import Row from "./Row.vue";
 import HelpJSONQueryPopover from "../HelpJSONQueryPopover.vue";
 
 export default {
-  mixins: [multiSort],
   components: {
-    ClipLoader,
+    ClipLoader: LoadingSpinner,
     HelpJSONQueryPopover,
     PageNav,
     Row,
   },
+  mixins: [multiSort],
   props: {
     activityRange: {
       type: Number,
@@ -303,45 +303,12 @@ export default {
       validSortKeys: validSortKeys,
     };
   },
-  created() {
-    if (this.$route.query.all)
-      this.queryStr = JSON.stringify({ op: "AND" }, null, 2);
-    if (this.$route.query.ids)
-      this.queryStr = JSON.stringify(
-        { op: "AND", id__in: this.$route.query.ids.split(",") },
-        null,
-        2,
-      );
-    if (this.$route.hash.startsWith("#")) {
-      const hash = parseHash(this.$route.hash);
-      if (Object.prototype.hasOwnProperty.call(hash, "page")) {
-        try {
-          this.currentPage = Number.parseInt(hash.page, 10);
-        } catch (e) {
-          // eslint-disable-next-line no-console
-          console.debug(`parsing '#page=\\d+': ${e}`);
-        }
-      }
-      if (Object.prototype.hasOwnProperty.call(hash, "query")) {
-        const parsedQuery = JSON.parse(hash.query || "");
-        this.queryStr = JSON.stringify(parsedQuery, null, 2);
-        // Extract domain filter if present
-        const matcher = new MatchObjects();
-        if (matcher.match(parsedQuery, this.domainFilterSignature)) {
-          this.domainFilter = parsedQuery[1][0].domain;
-        } else if (parsedQuery.domain) {
-          this.domainFilter = parsedQuery.domain;
-        }
-      }
-    }
-    this.fetch();
-  },
   computed: {
     modified() {
       const queryStr = (() => {
         try {
           return JSON.parse(this.queryStr);
-        } catch (e) {} // eslint-disable-line no-empty
+        } catch (e) {} // eslint-disable-line no-unused-vars, no-empty
       })();
       return !_isEqual(queryStr, this.modifiedCache.queryStr);
     },
@@ -359,6 +326,38 @@ export default {
     showHidden() {
       return !this.queryStr.includes('"hide_until__isnull": true');
     },
+  },
+  created() {
+    if (this.$route.query.all)
+      this.queryStr = JSON.stringify({ op: "AND" }, null, 2);
+    if (this.$route.query.ids)
+      this.queryStr = JSON.stringify(
+        { op: "AND", id__in: this.$route.query.ids.split(",") },
+        null,
+        2,
+      );
+    if (this.$route.hash.startsWith("#")) {
+      const hash = parseHash(this.$route.hash);
+      if (Object.prototype.hasOwnProperty.call(hash, "page")) {
+        try {
+          this.currentPage = Number.parseInt(hash.page, 10);
+        } catch (e) {
+          console.debug(`parsing '#page=\\d+': ${e}`);
+        }
+      }
+      if (Object.prototype.hasOwnProperty.call(hash, "query")) {
+        const parsedQuery = JSON.parse(hash.query || "");
+        this.queryStr = JSON.stringify(parsedQuery, null, 2);
+        // Extract domain filter if present
+        const matcher = new MatchObjects();
+        if (matcher.match(parsedQuery, this.domainFilterSignature)) {
+          this.domainFilter = parsedQuery[1][0].domain;
+        } else if (parsedQuery.domain) {
+          this.domainFilter = parsedQuery.domain;
+        }
+      }
+    }
+    this.fetch();
   },
   methods: {
     hideAdvancedQuery() {
@@ -442,7 +441,7 @@ export default {
       try {
         // ignore query errors
         this.modifiedCache.queryStr = JSON.parse(this.queryStr);
-      } catch (e) {} // eslint-disable-line no-empty
+      } catch (e) {} // eslint-disable-line no-unused-vars, no-empty
     },
     fetch: _throttle(
       async function () {
@@ -475,7 +474,7 @@ export default {
           } else {
             // if the page loaded, but the fetch failed, either the network went away or
             // we need to refresh auth
-            // eslint-disable-next-line no-console
+
             console.debug(errorParser(err));
             this.$router.go(0);
             return;

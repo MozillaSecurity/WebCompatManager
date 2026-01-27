@@ -4,17 +4,17 @@
     <div class="form-inline mt-light">
       <div class="input-group">
         <input
+          v-model="key"
           type="text"
           class="form-control"
           placeholder="API key..."
-          v-model="key"
         />
         <span class="input-group-btn">
           <button
             type="button"
             class="btn btn-success"
             :disabled="loading"
-            v-on:click="saveKey"
+            @click="saveKey"
           >
             {{ !loading ? "Save" : "Saving..." }}
           </button>
@@ -23,23 +23,23 @@
       <button
         type="button"
         class="btn btn-danger"
-        v-on:click="removeKey"
         title="Remove key"
+        @click="removeKey"
       >
         <span class="bi bi-trash-fill" aria-hidden="true"></span>
       </button>
       <br />
       <div
+        v-if="success"
         class="alert alert-success alert-dismissible mt-strong"
         role="alert"
-        v-if="success"
       >
         <button
           type="button"
           class="close"
           data-dismiss="alert"
           aria-label="Close"
-          v-on:click="success = null"
+          @click="success = null"
         >
           <span aria-hidden="true">&times;</span>
         </button>
@@ -48,16 +48,16 @@
         correctly saved.
       </div>
       <div
+        v-if="error"
         class="alert alert-danger alert-dismissible mt-strong"
         role="alert"
-        v-if="error"
       >
         <button
           type="button"
           class="close"
           data-dismiss="alert"
           aria-label="Close"
-          v-on:click="error = null"
+          @click="error = null"
         >
           <span aria-hidden="true">&times;</span>
         </button>
@@ -91,10 +91,6 @@ export default {
     error: null,
     success: null,
   }),
-  mounted() {
-    const storedKey = localStorage.getItem(this.localStorageKey);
-    if (storedKey) this.key = storedKey;
-  },
   computed: {
     localStorageKey() {
       return "provider-" + this.providerId + "-api-key";
@@ -104,6 +100,10 @@ export default {
         ? this.success.real_name
         : this.success.nick;
     },
+  },
+  mounted() {
+    const storedKey = localStorage.getItem(this.localStorageKey);
+    if (storedKey) this.key = storedKey;
   },
   methods: {
     async saveKey() {

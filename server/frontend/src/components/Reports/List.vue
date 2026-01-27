@@ -18,11 +18,11 @@
         />
         <textarea
           id="id_query"
+          v-model="advancedQueryStr"
           class="form-control"
           name="query"
           spellcheck="false"
           :rows="(advancedQueryStr.match(/\n/g) || '').length + 1"
-          v-model="advancedQueryStr"
         ></textarea
         ><br />
         <pre
@@ -36,17 +36,17 @@
         <label for="id_search">Search Text</label>:
         <input
           id="id_search"
+          v-model="searchStr"
           type="text"
           name="search"
           autocomplete="off"
-          v-model="searchStr"
         /><br />
       </span>
       <span v-if="advancedQuery">
         <a
           title="Discard query and start over in simple mode"
           class="pointer"
-          v-on:click="resetQueryToggleAdvanced"
+          @click="resetQueryToggleAdvanced"
           >Reset to simple search</a
         ><br />
       </span>
@@ -54,27 +54,27 @@
         <span v-for="(value, key) in filters" :key="key">
           {{ validFilters[key] }}:
           <span class="monospace">{{ value }}</span>
-          <i v-on:click="removeFilter(key)" class="bi bi-x"></i><br />
+          <i class="bi bi-x" @click="removeFilter(key)"></i><br />
         </span>
         <a
           title="Show the full query for the current search/filters"
           class="pointer"
-          v-on:click="convertFiltersToAdvancedQuery"
+          @click="convertFiltersToAdvancedQuery"
           >Advanced query</a
         ><br />
       </span>
       <button
-        v-on:click="fetch"
         :disabled="!modified || loading"
         :title="queryButtonTitle"
+        @click="fetch"
       >
         Query
       </button>
       <button
         v-if="canEdit"
-        v-on:click="deleteQuery"
         :disabled="modified || loading || !haveResults"
         :title="deleteButtonTitle"
+        @click="deleteQuery"
       >
         Delete
       </button>
@@ -104,7 +104,7 @@
         :initial="currentPage"
         :pages="totalPages"
         :show="5"
-        v-on:page-changed="currentPage = $event"
+        @page-changed="currentPage = $event"
       />
     </div>
     <div class="table-responsive">
@@ -114,96 +114,96 @@
         <thead>
           <tr>
             <th
-              v-on:click.exact="sortBy('reported_at')"
-              v-on:click.ctrl.exact="addSort('reported_at')"
               :class="{
                 active:
                   sortKeys.includes('reported_at') ||
                   sortKeys.includes('-reported_at'),
               }"
+              @click.exact="sortBy('reported_at')"
+              @click.ctrl.exact="addSort('reported_at')"
             >
               Date Reported
             </th>
             <th
-              v-on:click.exact="sortBy('uuid')"
-              v-on:click.ctrl.exact="addSort('uuid')"
               :class="{
                 active: sortKeys.includes('uuid') || sortKeys.includes('-uuid'),
               }"
+              @click.exact="sortBy('uuid')"
+              @click.ctrl.exact="addSort('uuid')"
             >
               UUID
             </th>
             <th
-              v-on:click.exact="sortBy('bucket')"
-              v-on:click.ctrl.exact="addSort('bucket')"
               :class="{
                 active:
                   sortKeys.includes('bucket') || sortKeys.includes('-bucket'),
               }"
+              @click.exact="sortBy('bucket')"
+              @click.ctrl.exact="addSort('bucket')"
             >
               Bucket
             </th>
             <th
-              v-on:click.exact="sortBy('url')"
-              v-on:click.ctrl.exact="addSort('url')"
               :class="{
                 active: sortKeys.includes('url') || sortKeys.includes('-url'),
               }"
+              @click.exact="sortBy('url')"
+              @click.ctrl.exact="addSort('url')"
             >
               URL
             </th>
             <th
-              v-on:click.exact="sortBy('app__name')"
-              v-on:click.ctrl.exact="addSort('app__name')"
               :class="{
                 active:
                   sortKeys.includes('app__name') ||
                   sortKeys.includes('-app__name'),
               }"
+              @click.exact="sortBy('app__name')"
+              @click.ctrl.exact="addSort('app__name')"
             >
               App
             </th>
             <th
-              v-on:click.exact="sortBy('app__channel')"
-              v-on:click.ctrl.exact="addSort('app__channel')"
               :class="{
                 active:
                   sortKeys.includes('app__channel') ||
                   sortKeys.includes('-app__channel'),
               }"
+              @click.exact="sortBy('app__channel')"
+              @click.ctrl.exact="addSort('app__channel')"
             >
               Channel
             </th>
             <th
-              v-on:click.exact="sortBy('app__version')"
-              v-on:click.ctrl.exact="addSort('app__version')"
               :class="{
                 active:
                   sortKeys.includes('app__version') ||
                   sortKeys.includes('-app__version'),
               }"
+              @click.exact="sortBy('app__version')"
+              @click.ctrl.exact="addSort('app__version')"
             >
               Version
             </th>
             <th
-              v-on:click.exact="sortBy('breakage_category__value')"
-              v-on:click.ctrl.exact="addSort('breakage_category__value')"
               :class="{
                 active:
                   sortKeys.includes('breakage_category__value') ||
                   sortKeys.includes('-breakage_category__value'),
               }"
+              @click.exact="sortBy('breakage_category__value')"
+              @click.ctrl.exact="addSort('breakage_category__value')"
             >
               Breakage Category
             </th>
             <th
-              v-on:click.exact="sortBy('os__name')"
-              v-on:click.ctrl.exact="addSort('os__name')"
               :class="{
                 active:
                   sortKeys.includes('os__name') ||
                   sortKeys.includes('-os__name'),
               }"
+              @click.exact="sortBy('os__name')"
+              @click.ctrl.exact="addSort('os__name')"
             >
               OS
             </th>
@@ -217,10 +217,10 @@
           </tr>
           <Row
             v-for="report in reports"
+            v-else
             :key="report.id"
             :report="report"
-            v-on:add-filter="addFilter"
-            v-else
+            @add-filter="addFilter"
           />
         </tbody>
       </table>
@@ -232,8 +232,8 @@
 import _throttle from "lodash/throttle";
 import _isEqual from "lodash/isEqual";
 import swal from "sweetalert";
-import ClipLoader from "vue-spinner/src/ClipLoader.vue";
-import Vue from "vue";
+import LoadingSpinner from "../LoadingSpinner.vue";
+import { h, render } from "vue";
 import {
   errorParser,
   E_SERVER_ERROR,
@@ -261,13 +261,13 @@ const validFilters = {
 };
 
 export default {
-  mixins: [multiSort],
   components: {
-    ClipLoader,
+    ClipLoader: LoadingSpinner,
     HelpJSONQueryPopover,
     PageNav,
     Row,
   },
+  mixins: [multiSort],
   props: {
     canEdit: {
       type: Boolean,
@@ -316,6 +316,42 @@ export default {
       validSortKeys: validSortKeys,
     };
   },
+  computed: {
+    modified() {
+      if (this.advancedQuery) {
+        const queryStr = (() => {
+          try {
+            return JSON.parse(this.advancedQueryStr);
+          } catch (e) {} // eslint-disable-line no-unused-vars, no-empty
+        })();
+        if (!_isEqual(queryStr, this.cachedAdvancedQueryStr)) {
+          console.debug("modified because query differs (advanced)");
+          return true;
+        } else {
+          console.debug("not modified (advanced)");
+          return false;
+        }
+      }
+      if (this.searchStr.trim() !== this.cachedSearchStr) {
+        console.debug("modified because query differs (basic)");
+        return true;
+      }
+
+      console.debug("not modified (basic)");
+      return false;
+    },
+    deleteButtonTitle() {
+      if (!this.haveResults) return "No results";
+      if (this.loading) return "Operation in progress";
+      if (this.modified) return "Query is modified";
+      return "Delete reports matching current query";
+    },
+    queryButtonTitle() {
+      if (this.loading) return "Operation in progress";
+      if (!this.modified) return "Results match current query";
+      return "Submit query";
+    },
+  },
   created: function () {
     if (this.$route.query.q) this.searchStr = this.$route.query.q;
     if (this.$route.hash.startsWith("#")) {
@@ -324,7 +360,6 @@ export default {
         try {
           this.currentPage = Number.parseInt(hash.page, 10);
         } catch (e) {
-          // eslint-disable-next-line no-console
           console.debug(`parsing '#page=\\d+': ${e}`);
         }
       }
@@ -346,45 +381,6 @@ export default {
       }
     }
     this.fetch();
-  },
-  computed: {
-    modified() {
-      if (this.advancedQuery) {
-        const queryStr = (() => {
-          try {
-            return JSON.parse(this.advancedQueryStr);
-          } catch (e) {} // eslint-disable-line no-empty
-        })();
-        if (!_isEqual(queryStr, this.cachedAdvancedQueryStr)) {
-          // eslint-disable-next-line no-console
-          console.debug("modified because query differs (advanced)");
-          return true;
-        } else {
-          // eslint-disable-next-line no-console
-          console.debug("not modified (advanced)");
-          return false;
-        }
-      }
-      if (this.searchStr.trim() !== this.cachedSearchStr) {
-        // eslint-disable-next-line no-console
-        console.debug("modified because query differs (basic)");
-        return true;
-      }
-      // eslint-disable-next-line no-console
-      console.debug("not modified (basic)");
-      return false;
-    },
-    deleteButtonTitle() {
-      if (!this.haveResults) return "No results";
-      if (this.loading) return "Operation in progress";
-      if (this.modified) return "Query is modified";
-      return "Delete reports matching current query";
-    },
-    queryButtonTitle() {
-      if (this.loading) return "Operation in progress";
-      if (!this.modified) return "Results match current query";
-      return "Submit query";
-    },
   },
   methods: {
     addFilter: function (key, value) {
@@ -417,12 +413,11 @@ export default {
       return result;
     },
     updateModifiedCache() {
-      // eslint-disable-next-line no-console
       console.debug("update modified cache");
       try {
         // ignore query errors
         this.cachedAdvancedQueryStr = JSON.parse(this.advancedQueryStr);
-      } catch (e) {} // eslint-disable-line no-empty
+      } catch (e) {} // eslint-disable-line no-unused-vars, no-empty
       this.cachedSearchStr = this.searchStr.trim();
     },
     buildSimpleQuery: function () {
@@ -451,16 +446,14 @@ export default {
     },
     deleteQuery: async function () {
       // - show confirmation modal with affected report count
-      const FormCtor = Vue.extend(DeleteConfirmation);
-      const deleteConfirmForm = new FormCtor({
-        parent: this,
-        propsData: {
-          reportCount: this.totalEntries,
-        },
-      }).$mount();
+      const container = document.createElement("div");
+      const vnode = h(DeleteConfirmation, {
+        reportCount: this.totalEntries,
+      });
+      render(vnode, container);
       const value = await swal({
         title: "Delete these reports?",
-        content: deleteConfirmForm.$el,
+        content: container.firstElementChild,
         buttons: true,
       });
       if (value) {
@@ -484,7 +477,6 @@ export default {
               if (this.advancedQuery) {
                 this.advancedQueryError = err.response.data.detail;
               } else {
-                // eslint-disable-next-line no-console
                 console.debug(err.response.data);
                 swal("Oops", E_SERVER_ERROR, "error");
               }
@@ -492,7 +484,7 @@ export default {
               break;
             } else {
               // if the page loaded, but the fetch failed, either the network went away or we need to refresh auth
-              // eslint-disable-next-line no-console
+
               console.debug(errorParser(err));
               this.$router.go(0);
               return;
@@ -534,14 +526,13 @@ export default {
             if (this.advancedQuery) {
               this.advancedQueryError = err.response.data.detail;
             } else {
-              // eslint-disable-next-line no-console
               console.debug(err.response.data);
               swal("Oops", E_SERVER_ERROR, "error");
             }
             this.loading = false;
           } else {
             // if the page loaded, but the fetch failed, either the network went away or we need to refresh auth
-            // eslint-disable-next-line no-console
+
             console.debug(errorParser(err));
             this.$router.go(0);
             return;

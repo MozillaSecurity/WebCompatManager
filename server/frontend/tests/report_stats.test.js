@@ -1,7 +1,7 @@
 import { nextTick } from "vue";
-import { createLocalVue, createWrapper } from "@vue/test-utils";
-import VueRouter from "vue-router";
+import { createRouter, createWebHistory } from "vue-router";
 import { render } from "@testing-library/vue";
+import { mount } from "@vue/test-utils";
 import Stats from "../src/components/ReportStats.vue";
 import { reportStats, listBuckets } from "../src/api.js";
 import { emptyReportStats, reportStatsData, buckets } from "./fixtures.js";
@@ -15,18 +15,19 @@ jest.mock("lodash/throttle", () => jest.fn((fn) => fn));
 afterEach(jest.resetAllMocks);
 
 test("empty stats doesn't break", async () => {
-  const localVue = createLocalVue();
-  localVue.use(VueRouter);
-  const router = new VueRouter();
+  const router = createRouter({
+    history: createWebHistory(),
+    routes: [],
+  });
 
   reportStats.mockResolvedValue(emptyReportStats);
   await render(Stats, {
-    localVue,
-    router,
+    global: {
+      plugins: [router],
+    },
     props: {
       providers: [],
       canEdit: true,
-      createBucketUrl: "",
       activityRange: 14,
     },
   });
@@ -42,19 +43,20 @@ test("empty stats doesn't break", async () => {
 });
 
 test("stats are shown", async () => {
-  const localVue = createLocalVue();
-  localVue.use(VueRouter);
-  const router = new VueRouter();
+  const router = createRouter({
+    history: createWebHistory(),
+    routes: [],
+  });
 
   reportStats.mockResolvedValue(reportStatsData);
   listBuckets.mockResolvedValue(buckets);
   const { getByText } = await render(Stats, {
-    localVue,
-    router,
+    global: {
+      plugins: [router],
+    },
     props: {
       providers: [],
       canEdit: true,
-      createBucketUrl: "",
       activityRange: 14,
     },
   });
@@ -80,14 +82,15 @@ test("stats are shown", async () => {
 test("stats use hash params", async () => {
   reportStats.mockResolvedValue(reportStatsData);
   listBuckets.mockResolvedValue(buckets);
-  const localVue = createLocalVue();
-  const $route = { path: "/stats", hash: "#sort=id&alltools=1" };
-  const $router = [];
+  const router = createRouter({
+    history: createWebHistory(),
+    routes: [],
+  });
+  // Set initial route with hash
+  router.push({ path: "/stats", hash: "#sort=id&alltools=1" });
   await render(Stats, {
-    localVue,
-    mocks: {
-      $route,
-      $router,
+    global: {
+      plugins: [router],
     },
     props: {
       providers: [],
@@ -111,19 +114,58 @@ test("stats use hash params", async () => {
 test("stats are sortable", async () => {
   reportStats.mockResolvedValue(reportStatsData);
   listBuckets.mockResolvedValue(buckets);
-  const localVue = createLocalVue();
-  localVue.use(VueRouter);
-  const router = new VueRouter();
-  await render(Stats, {
-    localVue,
-    router,
+
+  const route = {
+    hash: "",
+  };
+
+  // Create a mock router with push method
+  const router = {
+    push: jest.fn((value) => {
+      const newHash = value.hash.slice(1);
+      const currentHash = route.hash.slice(1);
+
+      // Get the new sort parameter (e.g., "id" or "-id")
+      const newSortParam = newHash.split("=")[1];
+      const newSortKey = newSortParam.replace(/^-/, "");
+
+      const currentParams = currentHash ? currentHash.split(",") : [];
+
+      const otherParams = currentParams
+        .filter((param) => {
+          if (!param.startsWith("sort=")) return true;
+          const existingSortKey = param.split("=")[1].replace(/^-/, "");
+          return existingSortKey !== newSortKey;
+        })
+        .map((param) => {
+          if (param.startsWith("sort=")) {
+            return param.slice(5);
+          }
+          return param;
+        });
+
+      // Combine the new sort with existing parameters
+      route.hash = "#" + [newHash, ...otherParams].filter(Boolean).join(",");
+    }),
+  };
+
+  const wrapper = mount(Stats, {
     props: {
+      restricted: false,
       providers: [],
-      canEdit: true,
-      createBucketUrl: "",
       activityRange: 14,
     },
+    global: {
+      stubs: {
+        RouterLink: true,
+      },
+      mocks: {
+        $route: route,
+        $router: router,
+      },
+    },
   });
+
   await nextTick();
 
   expect(reportStats).toHaveBeenCalledTimes(1);
@@ -132,38 +174,37 @@ test("stats are sortable", async () => {
   await nextTick();
   await nextTick();
 
-  let rows = document.querySelectorAll("tbody tr");
+  let rows = wrapper.findAll("tbody tr");
   expect(rows.length).toBe(2);
   // sorted by daily count by default
-  expect(rows[0].querySelector("td").textContent).toBe("2");
-  expect(rows[1].querySelector("td").textContent).toBe("1");
-  expect(router.currentRoute.hash).toBe("");
+  expect(rows[0].find("td").text()).toBe("2");
+  expect(rows[1].find("td").text()).toBe("1");
+  expect(route.hash).toBe("");
 
-  await createWrapper(document.querySelector("thead th")).trigger("click");
+  await wrapper.find("thead tr th").trigger("click");
   await nextTick();
 
-  rows = document.querySelectorAll("tbody tr");
+  rows = wrapper.findAll("tbody tr");
   expect(rows.length).toBe(2);
   // sorted by id now
-  expect(rows[0].querySelector("td").textContent).toBe("2");
-  expect(rows[1].querySelector("td").textContent).toBe("1");
-  expect(router.currentRoute.hash).toBe("#sort=-id");
+  expect(rows[0].find("td").text()).toBe("2");
+  expect(rows[1].find("td").text()).toBe("1");
+  expect(router.push).toHaveBeenCalledTimes(1);
+  expect(route.hash).toBe("#sort=-id");
 
-  await createWrapper(document.querySelector("thead th")).trigger("click");
+  await wrapper.find("thead th").trigger("click");
   await nextTick();
 
-  rows = document.querySelectorAll("tbody tr");
+  rows = wrapper.findAll("tbody tr");
   expect(rows.length).toBe(2);
   // sorted by -id now
-  expect(rows[0].querySelector("td").textContent).toBe("1");
-  expect(rows[1].querySelector("td").textContent).toBe("2");
-  expect(router.currentRoute.hash).toBe("#sort=id");
+  expect(rows[0].find("td").text()).toBe("1");
+  expect(rows[1].find("td").text()).toBe("2");
+  expect(route.hash).toBe("#sort=id");
 
-  await createWrapper(document.querySelector("thead th + th")).trigger(
-    "click",
-    { ctrlKey: true },
-  );
+  await wrapper.find("thead th + th").trigger("click", { key: "Control" });
+
   await nextTick();
 
-  expect(router.currentRoute.hash).toBe("#sort=-description,id");
+  expect(route.hash).toBe("#sort=-description,id");
 });

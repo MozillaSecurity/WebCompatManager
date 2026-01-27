@@ -6,22 +6,22 @@
           aria-label="Previous page"
           class="bi bi-caret-left-fill"
           title="Previous page"
-          v-on:click="prevPage"
+          @click="prevPage"
         ></a>
       </li>
       <li v-if="showBegin">
         <a
           aria-label="Navigate to first page"
           title="First page"
-          v-on:click="gotoPage(1)"
+          @click="gotoPage(1)"
           >…</a
         >
       </li>
-      <li :class="{ active: page === pn }" :key="pn" v-for="pn in pagesShown">
+      <li v-for="pn in pagesShown" :key="pn" :class="{ active: page === pn }">
         <a
           :aria-label="`Navigate to page ${pn}`"
           :title="`Page ${pn}`"
-          v-on:click="gotoPage(pn)"
+          @click="gotoPage(pn)"
           >{{ pn }}</a
         >
       </li>
@@ -29,7 +29,7 @@
         <a
           aria-label="Navigate to last page"
           title="Last page"
-          v-on:click="gotoPage(pages)"
+          @click="gotoPage(pages)"
           >…</a
         >
       </li>
@@ -38,7 +38,7 @@
           aria-label="Next page"
           class="bi bi-caret-right-fill"
           title="Next page"
-          v-on:click="nextPage"
+          @click="nextPage"
         ></a>
       </li>
     </ul>
@@ -70,6 +70,22 @@ export default {
       showBegin: false,
       showEnd: false,
     };
+  },
+  watch: {
+    initial(newVal) {
+      if (newVal !== this.page) {
+        this.page = newVal;
+      }
+    },
+    page() {
+      this.recalculate();
+    },
+    pages() {
+      this.recalculate();
+    },
+  },
+  mounted: function () {
+    this.recalculate();
   },
   methods: {
     gotoPage: function (pn) {
@@ -106,22 +122,6 @@ export default {
         this.showEnd = false;
       }
     },
-  },
-  watch: {
-    initial(newVal) {
-      if (newVal !== this.page) {
-        this.page = newVal;
-      }
-    },
-    page() {
-      this.recalculate();
-    },
-    pages() {
-      this.recalculate();
-    },
-  },
-  mounted: function () {
-    this.recalculate();
   },
 };
 </script>

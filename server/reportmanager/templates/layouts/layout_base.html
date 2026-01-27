@@ -17,7 +17,6 @@
   <link rel="stylesheet" href="//fonts.googleapis.com/css2?family=Source+Code+Pro:wght@400;600;700&family=Open+Sans:wght@400;600;700&display=swap">
   <link rel="stylesheet" href="//cdnjs.cloudflare.com/ajax/libs/bootstrap-icons/1.5.0/font/bootstrap-icons.min.css" integrity="sha512-xnP2tOaCJnzp2d2IqKFcxuOiVCbuessxM6wuiolT9eeEJCyy0Vhcwa4zQvdrZNVqlqaxXhHqsSV1Ww7T2jSCUQ==" crossorigin="anonymous" referrerpolicy="no-referrer" />
   <link rel="stylesheet" href="//cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/3.4.1/css/bootstrap.min.css" integrity="sha512-Dop/vW3iOtayerlYAqCgkVr2aTr2ErwwTYOvRFUpzl2VhCMJyjQF0Q9TjUXIo6JhuM/3i0vVEt2e/7QQmnHQqw==" crossorigin="anonymous" referrerpolicy="no-referrer" />
-  <link rel="stylesheet" href="//cdnjs.cloudflare.com/ajax/libs/bootstrap-vue/2.4.2/bootstrap-vue.min.css" integrity="sha512-UvMFR4bP1NuYl34MonQQInQ6Z0Gy91dO7kKk63XmiMDUT6FjRv6QQwU9hHJeZPaSCKecUta8MMcK+QKrrAjtfg==" crossorigin="anonymous" referrerpolicy="no-referrer" />
   <link rel="stylesheet" href="{% static 'css/default.css' %}">
   <link rel="stylesheet" href="{% static 'main.css' %}">
 {% block css.shared %}{% endblock css.shared %}
@@ -32,7 +31,6 @@
   <script src="//cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/3.4.1/js/bootstrap.min.js" integrity="sha512-oBTprMeNEKCnqfuqKd6sbvFzmFQtlXS3e0C/RGFV0hD6QzhHV+ODfaQbAlmY6/q0ubbwlAM/nCJjkrgA3waLzg==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
   <script src="{% static 'js/params.js' %}"/></script>
   <script src="{% static 'js/cookie-csrf.js' %}"/></script>
-  <script src="{% static 'js/vuejs-slider.js' %}"/></script>
 
   <script>
   (() => {
@@ -74,8 +72,6 @@
   })()
   </script>
 
-{% block js.custom %}{% endblock js.custom %}
-  <script src="//cdnjs.cloudflare.com/ajax/libs/bootstrap-vue/2.4.2/bootstrap-vue.min.js" integrity="sha512-1qfIh9meb1zaCdssZjWByH/3tEpO18bb+3LJeluOpDH4an1q+StF/iPZb5aVxlYTpWdfrmmrtY8GDQbc3z5aQw==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
 {% endblock js%}
 {% if debug %}
   <script>

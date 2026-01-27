@@ -16,7 +16,7 @@ export default [
     },
   },
   pluginJs.configs.recommended,
-  ...pluginVue.configs["flat/vue2-strongly-recommended"],
+  ...pluginVue.configs["flat/strongly-recommended"],
   pluginPrettier,
   {
     rules: {
@@ -32,7 +32,7 @@ export default [
       "vue/max-attributes-per-line": 0,
       "vue/multi-word-component-names": 0,
       "vue/singleline-html-element-content-newline": 0,
-      "vue/v-on-style": [2, "longform"],
+      "vue/require-explicit-emits": 0,
     },
   },
 ];

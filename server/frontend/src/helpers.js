@@ -130,7 +130,7 @@ export const multiSort = {
           if (this.validSortKeys.includes(realKey)) {
             return true;
           }
-          // eslint-disable-next-line no-console
+
           console.debug(`parsing '#sort=\\s+': unrecognized key '${realKey}'`);
           return false;
         });

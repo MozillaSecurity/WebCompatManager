@@ -1,5 +1,5 @@
-import Vue from "vue";
-import VueRouter from "vue-router";
+import { createApp } from "vue";
+import FloatingVue from "floating-vue";
 
 import router from "./router.js";
 import ActivityGraph from "./components/ActivityGraph.vue";
@@ -17,29 +17,30 @@ import BucketView from "./components/Buckets/View.vue";
 import BucketList from "./components/Buckets/List.vue";
 import SpikesList from "./components/Spikes/List.vue";
 
-import "vue-popperjs/dist/vue-popper.css";
+import "floating-vue/dist/style.css";
 
-Vue.use(VueRouter);
+const app = createApp({
+  components: {
+    activitygraph: ActivityGraph,
+    assignbutton: AssignBtn,
+    bugpublicationform: BugPublicationForm,
+    commentpublicationform: CommentPublicationForm,
+    reportslist: ReportsList,
+    reportstats: ReportStats,
+    reportstatsgraph: ReportStatsGraph,
+    createoredit: CreateOrEdit,
+    inbox: Inbox,
+    ppcselect: FullPPCSelect,
+    providerkey: ProviderKey,
+    bucketlist: BucketList,
+    bucketview: BucketView,
+    spikeslist: SpikesList,
+  },
+});
+
+app.use(router);
+app.use(FloatingVue);
 
 document.addEventListener("DOMContentLoaded", function () {
-  new Vue({
-    el: "#app",
-    components: {
-      activitygraph: ActivityGraph,
-      assignbutton: AssignBtn,
-      bugpublicationform: BugPublicationForm,
-      commentpublicationform: CommentPublicationForm,
-      reportslist: ReportsList,
-      reportstats: ReportStats,
-      reportstatsgraph: ReportStatsGraph,
-      createoredit: CreateOrEdit,
-      inbox: Inbox,
-      ppcselect: FullPPCSelect,
-      providerkey: ProviderKey,
-      bucketlist: BucketList,
-      bucketview: BucketView,
-      spikeslist: SpikesList,
-    },
-    router,
-  });
+  app.mount("#app");
 });

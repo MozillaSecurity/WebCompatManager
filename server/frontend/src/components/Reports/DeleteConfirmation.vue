@@ -1,11 +1,15 @@
 <template>
   <table>
-    <tr>
-      <th>Reports Affected</th>
-    </tr>
-    <tr>
-      <td>{{ reportCount }}</td>
-    </tr>
+    <thead>
+      <tr>
+        <th>Reports Affected</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td>{{ reportCount }}</td>
+      </tr>
+    </tbody>
   </table>
 </template>
 

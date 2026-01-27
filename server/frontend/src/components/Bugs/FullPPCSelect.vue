@@ -2,7 +2,7 @@
   <div class="row">
     <div class="form-group col-md-4">
       <label for="bp_select">Provider</label>
-      <select id="bp_select" class="form-control" v-model="selectedProvider">
+      <select id="bp_select" v-model="selectedProvider" class="form-control">
         <option v-for="p in providers" :key="p.id" :value="p.id">
           {{ p.hostname }}
         </option>
@@ -49,6 +49,14 @@ export default {
     providerHostname: "",
     provider: null,
   }),
+  watch: {
+    selectedProvider() {
+      this.provider = this.providers.find(
+        (p) => p.id === this.selectedProvider,
+      );
+      this.providerHostname = this.provider.hostname;
+    },
+  },
   async mounted() {
     let data = await api.listBugProviders();
     this.providers = data.results.filter(
@@ -63,14 +71,6 @@ export default {
       this.selectedProvider = this.provider.id;
       this.providerHostname = this.provider.hostname;
     }
-  },
-  watch: {
-    selectedProvider() {
-      this.provider = this.providers.find(
-        (p) => p.id === this.selectedProvider,
-      );
-      this.providerHostname = this.provider.hostname;
-    },
   },
 };
 </script>

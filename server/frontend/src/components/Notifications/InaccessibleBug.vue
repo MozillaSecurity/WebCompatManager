@@ -1,13 +1,13 @@
 <template>
   <div class="row override-row">
     <small class="col-md-1">
-      Received {{ notification.timestamp | date }}
+      Received {{ formatDate(notification.timestamp) }}
     </small>
     <span class="label label-danger">Inaccessible bug</span>
     <span class="description">
       {{ notification.description }}
     </span>
-    <button type="button" class="close" v-on:click="dismiss">
+    <button type="button" class="close" @click="dismiss">
       <span aria-hidden="true" title="Dismiss">&times;</span>
     </button>
     <a
@@ -31,10 +31,10 @@ export default {
       required: true,
     },
   },
-  filters: {
-    date: date,
-  },
   methods: {
+    formatDate(datetime) {
+      return date(datetime);
+    },
     async dismiss() {
       try {
         await api.dismissNotification(this.notification.id);

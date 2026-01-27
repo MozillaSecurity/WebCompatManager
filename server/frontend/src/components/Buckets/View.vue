@@ -27,13 +27,13 @@
               </span>
               <br v-if="canEdit" /><br v-if="canEdit" />
               <div v-if="canEdit" class="btn-group">
-                <a v-on:click="unlink" class="btn btn-danger">Unlink</a>
+                <a class="btn btn-danger" @click="unlink">Unlink</a>
               </div>
             </td>
             <td v-else>
               No bug associated.
               <span v-if="bucket.hide_until"
-                >Marked triaged until {{ bucket.hide_until | date }}.</span
+                >Marked triaged until {{ formatDate(bucket.hide_until) }}.</span
               >
               <br v-if="canEdit" /><br v-if="canEdit" />
               <div v-if="canEdit" class="btn-group">
@@ -42,21 +42,18 @@
                   v-if="!bucket.hide_until"
                   :bucket="bucket.id"
                 />
-                <a v-else v-on:click="unhide" class="btn btn-default"
+                <a v-else class="btn btn-default" @click="unhide"
                   >Unmark triaged</a
                 >
               </div>
               <br v-if="canEdit" /><br v-if="canEdit" />
               <div v-if="canEdit" class="btn-group">
-                <a
-                  class="btn btn-success"
-                  v-on:click="prepareSiteReport(reports)"
-                >
+                <a class="btn btn-success" @click="prepareSiteReport(reports)">
                   Prepare new Site Report bug
                 </a>
                 <a
                   class="btn btn-success"
-                  v-on:click="prepareETPStrictReport(reports)"
+                  @click="prepareETPStrictReport(reports)"
                 >
                   Prepare new ETP Strict bug
                 </a>
@@ -97,11 +94,11 @@
             <td>
               <div class="ml-filter-container">
                 <input
+                  v-model.number="mlValidThreshold"
                   type="range"
                   min="0"
                   max="1"
                   step="0.05"
-                  v-model.number="mlValidThreshold"
                   class="ml-slider"
                 />
                 <span class="ml-threshold-value"
@@ -134,9 +131,9 @@
             </tr>
             <ReportPreviewRow
               v-for="report in reports"
+              v-else
               :key="report.id"
               :report="report"
-              v-else
             />
           </tbody>
         </table>
@@ -144,7 +141,7 @@
       <PageNav
         :initial="currentPage"
         :pages="totalPages"
-        v-on:page-changed="currentPage = $event"
+        @page-changed="currentPage = $event"
       />
     </div>
   </div>
@@ -152,7 +149,7 @@
 
 <script>
 import _throttle from "lodash/throttle";
-import ClipLoader from "vue-spinner/src/ClipLoader.vue";
+import LoadingSpinner from "../LoadingSpinner.vue";
 import swal from "sweetalert";
 import {
   E_SERVER_ERROR,
@@ -182,45 +179,10 @@ export default {
   components: {
     activitygraph: ActivityGraph,
     assignbutton: AssignBtn,
-    ClipLoader: ClipLoader,
+    ClipLoader: LoadingSpinner,
     hidebucketbutton: HideBucketBtn,
     PageNav: PageNav,
     ReportPreviewRow: ReportPreviewRow,
-  },
-  computed: {
-    prettySignature() {
-      return jsonPretty(this.bucket.signature);
-    },
-  },
-  created: function () {
-    if (this.$route.hash.startsWith("#")) {
-      const hash = parseHash(this.$route.hash);
-      if (Object.prototype.hasOwnProperty.call(hash, "page")) {
-        try {
-          this.currentPage = Number.parseInt(hash.page, 10);
-        } catch (e) {
-          // eslint-disable-next-line no-console
-          console.debug(`parsing '#page=\\d+': ${e}`);
-        }
-      }
-    }
-    this.fetch();
-  },
-  data: function () {
-    const defaultSortKeys = ["-reported_at"];
-    return {
-      currentEntries: "?",
-      currentPage: 1,
-      description: "",
-      loading: true,
-      mlValidThreshold: 0.8,
-      reports: null,
-      sortKeys: [...defaultSortKeys],
-      totalPages: 1,
-    };
-  },
-  filters: {
-    date: date,
   },
   props: {
     activityRange: {
@@ -260,8 +222,40 @@ export default {
       required: true,
     },
   },
+  data: function () {
+    const defaultSortKeys = ["-reported_at"];
+    return {
+      currentEntries: "?",
+      currentPage: 1,
+      description: "",
+      loading: true,
+      mlValidThreshold: 0.8,
+      reports: null,
+      sortKeys: [...defaultSortKeys],
+      totalPages: 1,
+    };
+  },
+  computed: {
+    prettySignature() {
+      return jsonPretty(this.bucket.signature);
+    },
+  },
+  created: function () {
+    if (this.$route.hash.startsWith("#")) {
+      const hash = parseHash(this.$route.hash);
+      if (Object.prototype.hasOwnProperty.call(hash, "page")) {
+        try {
+          this.currentPage = Number.parseInt(hash.page, 10);
+        } catch (e) {
+          console.debug(`parsing '#page=\\d+': ${e}`);
+        }
+      }
+    }
+    this.fetch();
+  },
   mounted() {},
   methods: {
+    formatDate: date,
     buildQueryParams() {
       const result = {
         query: JSON.stringify({
@@ -330,13 +324,12 @@ export default {
             err.response.status === 400 &&
             err.response.data
           ) {
-            // eslint-disable-next-line no-console
             console.debug(err.response.data);
             swal("Oops", E_SERVER_ERROR, "error");
             this.loading = false;
           } else {
             // if the page loaded, but the fetch failed, either the network went away or we need to refresh auth
-            // eslint-disable-next-line no-console
+
             console.debug(errorParser(err));
             this.$router.go(0);
             return;

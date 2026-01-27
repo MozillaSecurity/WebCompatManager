@@ -6,5 +6,6 @@
 <reportstats
   :activity-range="{{ activity_range }}"
   :providers="{{ providers }}"
+  :can-edit="{% if perms.reportmanager.reportmanager_write %}true{% else %}false{% endif %}"
   />
 {% endblock body_content %}

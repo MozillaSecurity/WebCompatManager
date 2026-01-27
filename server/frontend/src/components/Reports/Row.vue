@@ -1,6 +1,6 @@
 <template>
   <tr>
-    <td class="wrap-normal">{{ report.reported_at | date }}</td>
+    <td class="wrap-normal">{{ formatDate(report.reported_at) }}</td>
     <td>
       <a :href="report.view_url">{{ report.uuid }}</a>
     </td>
@@ -22,7 +22,7 @@
       <a
         title="Add to search"
         class="add-filter"
-        v-on:click="addFilter('app__name', report.app_name)"
+        @click="addFilter('app__name', report.app_name)"
         >{{ report.app_name }}</a
       >
     </td>
@@ -31,7 +31,7 @@
         <a
           title="Add to search"
           class="add-filter"
-          v-on:click="addFilter('app__channel', report.app_channel)"
+          @click="addFilter('app__channel', report.app_channel)"
           >{{ report.app_channel }}</a
         >
       </span>
@@ -41,7 +41,7 @@
         <a
           title="Add to search"
           class="add-filter"
-          v-on:click="addFilter('app__version', report.app_version)"
+          @click="addFilter('app__version', report.app_version)"
           >{{ report.app_version }}</a
         >
       </span>
@@ -51,7 +51,7 @@
         <a
           title="Add to search"
           class="add-filter"
-          v-on:click="
+          @click="
             addFilter('breakage_category__value', report.breakage_category)
           "
           >{{ report.breakage_category }}</a
@@ -62,7 +62,7 @@
       <a
         title="Add to search"
         class="add-filter"
-        v-on:click="addFilter('os__name', report.os)"
+        @click="addFilter('os__name', report.os)"
       >
         <img
           v-if="report.os === 'Linux'"
@@ -99,7 +99,7 @@
 </template>
 
 <script>
-import { date, formatSizeFriendly } from "../../helpers";
+import { date } from "../../helpers";
 
 export default {
   props: {
@@ -108,11 +108,10 @@ export default {
       required: true,
     },
   },
-  filters: {
-    date: date,
-    formatSize: formatSizeFriendly,
-  },
   methods: {
+    formatDate(value) {
+      return date(value);
+    },
     addFilter(key, value) {
       this.$emit("add-filter", key, value);
     },

@@ -1,7 +1,7 @@
 <template>
   <div>
     <div>
-      <div class="form-group" :class="styleClass" v-if="!fetchError">
+      <div v-if="!fetchError" class="form-group" :class="styleClass">
         <label for="product">Product*</label>
         <div class="input-group">
           <span class="input-group-btn">
@@ -10,16 +10,16 @@
               class="btn btn-secondary"
               :disabled="!providerHostname"
               title="Refresh product list"
-              v-on:click="refreshProducts"
+              @click="refreshProducts"
             >
               &orarr;
             </button>
           </span>
           <select
             id="product"
+            v-model="selectedProduct"
             name="product"
             class="form-control"
-            v-model="selectedProduct"
             :disabled="!providerHostname"
           >
             <option
@@ -39,23 +39,23 @@
           </select>
         </div>
       </div>
-      <div class="form-group" :class="styleClass" v-else>
+      <div v-else class="form-group" :class="styleClass">
         <label for="product">Product*</label>
         <input
-          type="text"
           id="product"
+          type="text"
           name="product"
           class="form-control"
           :value="templateProduct"
         />
       </div>
-      <div class="form-group" :class="styleClass" v-if="!fetchError">
+      <div v-if="!fetchError" class="form-group" :class="styleClass">
         <label for="component">Component*</label>
         <select
           id="component"
+          v-model="selectedComponent"
           name="component"
           class="form-control"
-          v-model="selectedComponent"
           :disabled="!selectedProduct"
         >
           <option
@@ -67,11 +67,11 @@
           </option>
         </select>
       </div>
-      <div class="form-group" :class="styleClass" v-else>
+      <div v-else class="form-group" :class="styleClass">
         <label for="component">Component*</label>
         <input
-          type="text"
           id="component"
+          type="text"
           name="component"
           class="form-control"
           :value="templateComponent"
@@ -124,9 +124,6 @@ export default {
     selectedProduct: "",
     selectedComponent: "",
   }),
-  async mounted() {
-    this.assignProducts();
-  },
   computed: {
     localStorageKey() {
       if (!this.providerHostname) return null;
@@ -137,6 +134,36 @@ export default {
       return this.products.find((p) => p.name === this.selectedProduct)
         .components;
     },
+  },
+  watch: {
+    providerHostname: function () {
+      this.fetchError = false;
+      this.products = [];
+      this.selectedProduct = "";
+      this.selectedComponent = "";
+      this.assignProducts();
+    },
+    templateProduct: function (newVal, oldVal) {
+      if (newVal !== oldVal) {
+        this.selectedProduct = "";
+        this.assignProducts();
+      }
+    },
+    templateComponent: function (newVal, oldVal) {
+      if (newVal !== oldVal) {
+        this.selectedComponent = "";
+        this.assignProducts();
+      }
+    },
+    selectedProduct: function () {
+      this.$emit("update-product", this.selectedProduct);
+    },
+    selectedComponent: function () {
+      this.$emit("update-component", this.selectedComponent);
+    },
+  },
+  async mounted() {
+    this.assignProducts();
   },
   methods: {
     async assignProducts() {
@@ -203,33 +230,6 @@ export default {
         this.fetchError = true;
         return [];
       }
-    },
-  },
-  watch: {
-    providerHostname: function () {
-      this.fetchError = false;
-      this.products = [];
-      this.selectedProduct = "";
-      this.selectedComponent = "";
-      this.assignProducts();
-    },
-    templateProduct: function (newVal, oldVal) {
-      if (newVal !== oldVal) {
-        this.selectedProduct = "";
-        this.assignProducts();
-      }
-    },
-    templateComponent: function (newVal, oldVal) {
-      if (newVal !== oldVal) {
-        this.selectedComponent = "";
-        this.assignProducts();
-      }
-    },
-    selectedProduct: function () {
-      this.$emit("update-product", this.selectedProduct);
-    },
-    selectedComponent: function () {
-      this.$emit("update-component", this.selectedComponent);
     },
   },
 };

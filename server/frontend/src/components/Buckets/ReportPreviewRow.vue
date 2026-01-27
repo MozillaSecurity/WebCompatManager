@@ -1,7 +1,7 @@
 <template>
-  <tr v-on:click="report.view_url">
+  <tr @click="report.view_url">
     <td class="wrap-normal">
-      {{ report.reported_at | shorterDate }}<br />
+      {{ formatShorterDate(report.reported_at) }}<br />
       (<a :href="report.view_url">Full details</a>)
     </td>
     <td class="url-col">
@@ -63,22 +63,24 @@
     <td>
       PBM:
       {{
-        report.details.boolean
-          .broken_site_report_tab_info_antitracking_is_private_browsing
-          | humanBool
+        humanBool(
+          report.details.boolean
+            ?.broken_site_report_tab_info_antitracking_is_private_browsing,
+        )
       }}<br />
 
       Blocklist:
       {{
         report.details.string
-          .broken_site_report_tab_info_antitracking_block_list || "n/a"
+          ?.broken_site_report_tab_info_antitracking_block_list || "n/a"
       }}<br />
 
       Any content blocked:
       {{
-        report.details.boolean
-          .broken_site_report_tab_info_antitracking_has_tracking_content_blocked
-          | humanBool
+        humanBool(
+          report.details.boolean
+            ?.broken_site_report_tab_info_antitracking_has_tracking_content_blocked,
+        )
       }}
     </td>
   </tr>
@@ -94,17 +96,14 @@ export default {
       required: true,
     },
   },
-  filters: {
-    shorterDate: shorterDate,
-    humanBool: (value) => {
+  methods: {
+    formatShorterDate: shorterDate,
+    humanBool(value) {
       if (value === undefined || value === null) {
         return "n/a";
       }
-
       return value ? "yes" : "no";
     },
-  },
-  methods: {
     staticLogo(name) {
       return window.location.origin + "/static/img/os/" + name + ".png";
     },
