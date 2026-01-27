@@ -43,6 +43,7 @@ django==6.0.1
     # via
     #   crispy-bootstrap3
     #   django-crispy-forms
+    #   django-stubs-ext
     #   djangorestframework
     #   mozilla-django-oidc
     #   webcompatmanager
@@ -50,7 +51,7 @@ django-crispy-forms==2.5
     # via
     #   crispy-bootstrap3
     #   webcompatmanager
-django-enumfields==2.1.1
+django-stubs-ext==5.2.9
     # via webcompatmanager
 djangorestframework==3.16.1
     # via webcompatmanager
@@ -153,7 +154,9 @@ six==1.17.0
 sqlparse==0.5.3
     # via django
 typing-extensions==4.15.0
-    # via referencing
+    # via
+    #   django-stubs-ext
+    #   referencing
 tzdata==2025.3
     # via
     #   django

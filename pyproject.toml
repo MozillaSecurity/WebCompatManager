@@ -34,12 +34,17 @@ dependencies = [
 [project.optional-dependencies]
 dev = [
     "pre-commit",
-    "tox",
+    "tox==4.34.1",
     "ruff==0.14.11",
-    "mypy==1.11.2",
-    "pytest",
-    "pytest-cov",
-    "pytest-mock",
+    "mypy==1.19.1",
+    "pytest==9.0.2",
+    "pytest-cov==7.0.0",
+    "pytest-mock==3.15.1",
+    "celery-types==0.24.0",
+    "django-stubs==5.2.9",
+    "djangorestframework-types==0.9.0",
+    "types-requests==2.32.4.20260107",
+    "types-python-dateutil==2.9.0.20251115",
 ]
 docker = [
     "gunicorn~=22.0.0",
@@ -51,7 +56,7 @@ server = [
     "crispy-bootstrap3==2024.1",
     "django==6.0.1",
     "django-crispy-forms==2.5",
-    "django-enumfields==2.1.1",
+    "django_stubs_ext==5.2.9",
     "djangorestframework==3.16.1",
     "google-cloud-bigquery==3.40.0",
     "pyyaml==6.0.3",
@@ -79,6 +84,8 @@ omit = [
     "*/.tox/*",
     "*/.eggs/*",
 ]
+
+[tool.mypy]
 
 [tool.pytest.ini_options]
 log_level = "DEBUG"
@@ -142,7 +149,7 @@ include = ["webcompat", "webcompat.schemas"]
 [tool.setuptools_scm]
 
 [tool.tox]
-envlist = ["312"]
+envlist = ["312", "mypy"]
 tox_pip_extensions_ext_venv_update = true
 skip_missing_interpreters = true
 
@@ -160,7 +167,7 @@ commands = [["codecov"]]
 allowlist_externals = ["codecov"]
 
 [tool.tox.env.mypy]
-commands = [["mypy", "--install-types", "--non-interactive", "{posargs}"]]
+commands = [["mypy", "{posargs}"]]
 usedevelop = true
 
 [tool.tox.env.pypi]

@@ -18,7 +18,7 @@ from django.db.models.functions import Length
 from django.db.models.signals import post_delete, post_save
 from django.dispatch.dispatcher import receiver
 from django.utils import timezone
-from enumfields import Enum, EnumField
+from django_stubs_ext.db.models import TypedModelMeta
 
 from webcompat.models import Report, Signature
 from webcompat.symptoms import URLSymptom, ValueMatcher
@@ -36,11 +36,11 @@ models.TextField.register_lookup(Length)
 
 
 class App(models.Model):
-    channel = models.CharField(max_length=63, null=True)
-    name = models.CharField(max_length=63)
-    version = models.CharField(max_length=127)
+    channel: models.CharField = models.CharField(max_length=63, null=True)
+    name: models.CharField = models.CharField(max_length=63)
+    version: models.CharField = models.CharField(max_length=127)
 
-    class Meta:
+    class Meta(TypedModelMeta):
         constraints = (
             models.UniqueConstraint(
                 fields=("channel", "name", "version"), name="unique_app"
@@ -49,29 +49,32 @@ class App(models.Model):
 
 
 class BreakageCategory(models.Model):
-    value = models.CharField(max_length=63, unique=True)
+    value: models.CharField = models.CharField(max_length=63, unique=True)
 
 
 class Bucket(models.Model):
-    bug = models.ForeignKey("Bug", null=True, on_delete=models.deletion.CASCADE)
-    color = models.ForeignKey(
+    id: models.AutoField = models.AutoField(primary_key=True)
+    bug: models.ForeignKey = models.ForeignKey(
+        "Bug", null=True, on_delete=models.deletion.CASCADE
+    )
+    color: models.ForeignKey = models.ForeignKey(
         "BucketColor", null=True, on_delete=models.deletion.CASCADE
     )
-    description = models.TextField()
+    description: models.TextField = models.TextField()
     # store the domain outside the signature only if the signature includes
     # a non-regex domain symptom and no other symptoms (for quick exclusion)
-    domain = models.CharField(max_length=255, null=True)
+    domain: models.CharField = models.CharField(max_length=255, null=True)
     # bucket can be hidden from view until given date, without being logged
-    hide_until = models.DateTimeField(blank=True, null=True)
+    hide_until: models.DateTimeField = models.DateTimeField(blank=True, null=True)
     # higher priority = earlier match
-    priority = models.IntegerField(
+    priority: models.IntegerField = models.IntegerField(
         default=0, validators=(MinValueValidator(-2), MaxValueValidator(2))
     )
     # Raw signature JSON (see webcompat.models.Signature)
-    signature = models.TextField()
-    reassign_in_progress = models.BooleanField(default=False)
+    signature: models.TextField = models.TextField()
+    reassign_in_progress: models.BooleanField = models.BooleanField(default=False)
 
-    class Meta:
+    class Meta(TypedModelMeta):
         constraints = (
             models.CheckConstraint(
                 condition=models.Q(priority__gte=-2) & models.Q(priority__lte=2),
@@ -295,12 +298,12 @@ class Bucket(models.Model):
 
 
 class BucketColor(models.Model):
-    name = models.CharField(max_length=255, unique=True)
-    value = models.IntegerField(
+    name: models.CharField = models.CharField(max_length=255, unique=True)
+    value: models.IntegerField = models.IntegerField(
         unique=True, validators=(MinValueValidator(0), MaxValueValidator(0xFFFFFF))
     )
 
-    class Meta:
+    class Meta(TypedModelMeta):
         constraints = (
             models.CheckConstraint(
                 condition=models.Q(value__gte=0) & models.Q(value__lte=0xFFFFFF),
@@ -310,11 +313,11 @@ class BucketColor(models.Model):
 
 
 class BugProvider(models.Model):
-    classname = models.CharField(max_length=255, blank=False)
-    hostname = models.CharField(max_length=255, blank=False)
+    classname: models.CharField = models.CharField(max_length=255, blank=False)
+    hostname: models.CharField = models.CharField(max_length=255, blank=False)
 
     # This is used to annotate bugs with the URL linking to them
-    url_template = models.CharField(max_length=1023, blank=False)
+    url_template: models.CharField = models.CharField(max_length=1023, blank=False)
 
     def get_instance(self):
         # Dynamically instantiate the provider as requested
@@ -329,9 +332,11 @@ class BugProvider(models.Model):
 
 
 class Bug(models.Model):
-    external_id = models.CharField(max_length=255, blank=True)
-    external_type = models.ForeignKey(BugProvider, on_delete=models.deletion.CASCADE)
-    closed = models.DateTimeField(blank=True, null=True)
+    external_id: models.CharField = models.CharField(max_length=255, blank=True)
+    external_type: models.ForeignKey = models.ForeignKey(
+        BugProvider, on_delete=models.deletion.CASCADE
+    )
+    closed: models.DateTimeField = models.DateTimeField(blank=True, null=True)
 
 
 def buckethit_default_range_begin():
@@ -339,9 +344,13 @@ def buckethit_default_range_begin():
 
 
 class BucketHit(models.Model):
-    bucket = models.ForeignKey(Bucket, on_delete=models.deletion.CASCADE)
-    begin = models.DateTimeField(default=buckethit_default_range_begin)
-    count = models.IntegerField(default=0)
+    bucket: models.ForeignKey = models.ForeignKey(
+        Bucket, on_delete=models.deletion.CASCADE
+    )
+    begin: models.DateTimeField = models.DateTimeField(
+        default=buckethit_default_range_begin
+    )
+    count: models.IntegerField = models.IntegerField(default=0)
 
     @classmethod
     @transaction.atomic
@@ -369,7 +378,7 @@ class BucketHit(models.Model):
         counter.count += 1
         counter.save()
 
-    class Meta:
+    class Meta(TypedModelMeta):
         constraints = (
             models.UniqueConstraint(
                 fields=["bucket", "begin"],
@@ -379,21 +388,25 @@ class BucketHit(models.Model):
 
 
 class BucketWatch(models.Model):
-    user = models.ForeignKey("User", on_delete=models.deletion.CASCADE)
-    bucket = models.ForeignKey(Bucket, on_delete=models.deletion.CASCADE)
+    user: models.ForeignKey = models.ForeignKey(
+        "User", on_delete=models.deletion.CASCADE
+    )
+    bucket: models.ForeignKey = models.ForeignKey(
+        Bucket, on_delete=models.deletion.CASCADE
+    )
     # This is the primary key of last crash marked viewed by the user
     # Store as an integer to prevent problems if the particular crash
     # is deleted later. We only care about its place in the ordering.
-    last_report = models.IntegerField(default=0)
+    last_report: models.IntegerField = models.IntegerField(default=0)
 
 
 class OS(models.Model):
-    name = models.CharField(max_length=63, unique=True)
+    name: models.CharField = models.CharField(max_length=63, unique=True)
 
 
 class ReportHit(models.Model):
-    last_update = models.DateTimeField(default=timezone.now)
-    count = models.BigIntegerField(default=0)
+    last_update: models.DateTimeField = models.DateTimeField(default=timezone.now)
+    count: models.BigIntegerField = models.BigIntegerField(default=0)
 
     @staticmethod
     def get_period(time):
@@ -411,7 +424,7 @@ class ReportHit(models.Model):
             microseconds=-time.microsecond,
         )
 
-    class Meta:
+    class Meta(TypedModelMeta):
         constraints = (
             models.UniqueConstraint(
                 fields=["last_update"],
@@ -452,20 +465,22 @@ class ReportEntryManager(models.Manager):
 
 
 class ReportEntry(models.Model):
-    app = models.ForeignKey(App, on_delete=models.deletion.CASCADE)
-    breakage_category = models.ForeignKey(
+    app: models.ForeignKey = models.ForeignKey(App, on_delete=models.deletion.CASCADE)
+    breakage_category: models.ForeignKey = models.ForeignKey(
         BreakageCategory, null=True, on_delete=models.deletion.CASCADE
     )
-    bucket = models.ForeignKey(Bucket, null=True, on_delete=models.deletion.CASCADE)
-    comments = models.TextField()
-    comments_translated = models.TextField(null=True)
-    comments_original_language = models.TextField(null=True)
-    details = models.JSONField()
-    os = models.ForeignKey(OS, on_delete=models.deletion.CASCADE)
-    reported_at = models.DateTimeField()
-    url = models.URLField(max_length=8192)
-    uuid = models.UUIDField(unique=True)
-    ml_valid_probability = models.FloatField(null=True)
+    bucket: models.ForeignKey = models.ForeignKey(
+        Bucket, null=True, on_delete=models.deletion.CASCADE
+    )
+    comments: models.TextField = models.TextField()
+    comments_translated: models.TextField = models.TextField(null=True)
+    comments_original_language: models.TextField = models.TextField(null=True)
+    details: models.JSONField = models.JSONField()
+    os: models.ForeignKey = models.ForeignKey(OS, on_delete=models.deletion.CASCADE)
+    reported_at: models.DateTimeField = models.DateTimeField()
+    url: models.URLField = models.URLField(max_length=8192)
+    uuid: models.UUIDField = models.UUIDField(unique=True)
+    ml_valid_probability: models.FloatField = models.FloatField(null=True)
 
     objects = ReportEntryManager()
 
@@ -574,43 +589,45 @@ def ReportEntry_save(sender, instance, created, **kwargs):
         triage_new_report.apply_async((instance.pk,), countdown=0.1)
 
 
-class BugzillaTemplateMode(Enum):
+class BugzillaTemplateMode(models.TextChoices):
     Bug = "bug"
     Comment = "comment"
 
 
 class BugzillaTemplate(models.Model):
-    mode = EnumField(BugzillaTemplateMode, max_length=30)
-    name = models.TextField()
-    product = models.TextField()
-    component = models.TextField()
-    summary = models.TextField(blank=True)
-    version = models.TextField()
-    description = models.TextField(blank=True)
-    whiteboard = models.TextField(blank=True)
-    keywords = models.TextField(blank=True)
-    op_sys = models.TextField(blank=True)
-    platform = models.TextField(blank=True)
-    priority = models.TextField(blank=True)
-    severity = models.TextField(blank=True)
-    alias = models.TextField(blank=True)
-    cc = models.TextField(blank=True)
-    assigned_to = models.TextField(blank=True)
-    qa_contact = models.TextField(blank=True)
-    target_milestone = models.TextField(blank=True)
-    attrs = models.TextField(blank=True)
-    security = models.BooleanField(blank=False, default=False)
-    security_group = models.TextField(blank=True)
-    comment = models.TextField(blank=True)
-    blocks = models.TextField(blank=True)
-    dependson = models.TextField(blank=True)
+    mode: models.TextField = models.TextField(
+        choices=BugzillaTemplateMode, max_length=30
+    )
+    name: models.TextField = models.TextField()
+    product: models.TextField = models.TextField()
+    component: models.TextField = models.TextField()
+    summary: models.TextField = models.TextField(blank=True)
+    version: models.TextField = models.TextField()
+    description: models.TextField = models.TextField(blank=True)
+    whiteboard: models.TextField = models.TextField(blank=True)
+    keywords: models.TextField = models.TextField(blank=True)
+    op_sys: models.TextField = models.TextField(blank=True)
+    platform: models.TextField = models.TextField(blank=True)
+    priority: models.TextField = models.TextField(blank=True)
+    severity: models.TextField = models.TextField(blank=True)
+    alias: models.TextField = models.TextField(blank=True)
+    cc: models.TextField = models.TextField(blank=True)
+    assigned_to: models.TextField = models.TextField(blank=True)
+    qa_contact: models.TextField = models.TextField(blank=True)
+    target_milestone: models.TextField = models.TextField(blank=True)
+    attrs: models.TextField = models.TextField(blank=True)
+    security: models.BooleanField = models.BooleanField(blank=False, default=False)
+    security_group: models.TextField = models.TextField(blank=True)
+    comment: models.TextField = models.TextField(blank=True)
+    blocks: models.TextField = models.TextField(blank=True)
+    dependson: models.TextField = models.TextField(blank=True)
 
     def __str__(self):
         return self.name
 
 
 class User(models.Model):
-    class Meta:
+    class Meta(TypedModelMeta):
         permissions = (
             (
                 "reportmanager_visible",
@@ -620,16 +637,22 @@ class User(models.Model):
             ("reportmanager_read", "Read access to ReportManager"),
         )
 
-    user = models.OneToOneField(DjangoUser, on_delete=models.deletion.CASCADE)
+    user: models.OneToOneField = models.OneToOneField(
+        DjangoUser, on_delete=models.deletion.CASCADE
+    )
     # Explicitly do not store this as a ForeignKey to e.g. BugzillaTemplate
     # because the bug provider has to decide how to interpret this ID.
-    default_template_id = models.IntegerField(default=0)
-    default_provider_id = models.IntegerField(default=1)
-    buckets_watching = models.ManyToManyField(Bucket, through="BucketWatch")
+    default_template_id: models.IntegerField = models.IntegerField(default=0)
+    default_provider_id: models.IntegerField = models.IntegerField(default=1)
+    buckets_watching: models.ManyToManyField = models.ManyToManyField(
+        Bucket, through="BucketWatch"
+    )
 
     # Notifications
-    bucket_hit = models.BooleanField(blank=False, default=False)
-    inaccessible_bug = models.BooleanField(blank=False, default=False)
+    bucket_hit: models.BooleanField = models.BooleanField(blank=False, default=False)
+    inaccessible_bug: models.BooleanField = models.BooleanField(
+        blank=False, default=False
+    )
 
 
 @receiver(post_save, sender=DjangoUser)

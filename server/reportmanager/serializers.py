@@ -43,7 +43,7 @@ class BucketSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Bucket
-        fields = (
+        fields = [
             "bug",
             "bug_provider",
             "color",
@@ -57,9 +57,11 @@ class BucketSerializer(serializers.ModelSerializer):
             "signature",
             "size",
             "reassign_in_progress",
-        )
+        ]
         ordering = ("-id",)
-        read_only_fields = ("id",)
+        read_only_fields = [
+            "id",
+        ]
 
     def to_internal_value(self, data):
         result = super().to_internal_value(data)
@@ -83,22 +85,22 @@ class BucketVueSerializer(BucketSerializer):
     view_url = serializers.SerializerMethodField()
 
     class Meta(BucketSerializer.Meta):
-        fields = (
+        fields = [
             *BucketSerializer.Meta.fields,
             "bug_closed",
             "bug_hostname",
             "bug_urltemplate",
             "new_bug_url",
             "view_url",
-        )
-        read_only_fields = (
+        ]
+        read_only_fields = [
             *BucketSerializer.Meta.read_only_fields,
             "bug_closed",
             "bug_hostname",
             "bug_urltemplate",
             "new_bug_url",
             "view_url",
-        )
+        ]
 
     def get_bug_closed(self, sig):
         if sig.bug:
@@ -130,12 +132,12 @@ class BucketVueSerializer(BucketSerializer):
 class BugProviderSerializer(serializers.ModelSerializer):
     class Meta:
         model = BugProvider
-        fields = (
+        fields = [
             "id",
             "classname",
             "hostname",
             "url_template",
-        )
+        ]
 
 
 class BugzillaTemplateSerializer(serializers.ModelSerializer):
@@ -143,7 +145,7 @@ class BugzillaTemplateSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = BugzillaTemplate
-        fields = (
+        fields = [
             "id",
             "mode",
             "name",
@@ -169,8 +171,8 @@ class BugzillaTemplateSerializer(serializers.ModelSerializer):
             "security",
             "blocks",
             "dependson",
-        )
-        read_only_fields = ("id", "mode")
+        ]
+        read_only_fields = ["id", "mode"]
 
     def get_mode(self, obj):
         return obj.mode.value
@@ -191,7 +193,7 @@ class ReportEntrySerializer(serializers.ModelSerializer):
 
     class Meta:
         model = ReportEntry
-        fields = (
+        fields = [
             "app_channel",
             "app_name",
             "app_version",
@@ -207,9 +209,9 @@ class ReportEntrySerializer(serializers.ModelSerializer):
             "reported_at",
             "url",
             "uuid",
-        )
+        ]
         ordering = ("-id",)
-        read_only_fields = ("bucket", "id")
+        read_only_fields = ["bucket", "id"]
 
     def create(self, attrs):
         """Create a ReportEntry instance based on the given dictionary of values
@@ -238,20 +240,20 @@ class ReportEntryVueSerializer(ReportEntrySerializer):
     find_sigs_url = serializers.SerializerMethodField()
 
     class Meta(ReportEntrySerializer.Meta):
-        fields = (
+        fields = [
             *ReportEntrySerializer.Meta.fields,
             "view_url",
             "sig_view_url",
             "sig_new_url",
             "find_sigs_url",
-        )
-        read_only_fields = (
+        ]
+        read_only_fields = [
             *ReportEntrySerializer.Meta.read_only_fields,
             "view_url",
             "sig_view_url",
             "sig_new_url",
             "find_sigs_url",
-        )
+        ]
 
     def get_view_url(self, entry):
         return reverse("reportmanager:reportview", kwargs={"report_id": entry.id})
