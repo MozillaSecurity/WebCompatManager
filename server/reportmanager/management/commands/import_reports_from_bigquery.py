@@ -32,6 +32,10 @@ KNOWN_BUCKET_IDS: dict[str, int] = {}
 # check.
 def find_bucket_for_report(report_info: Report) -> int | None:
     hostname = report_info.url.hostname
+
+    if hostname is None:
+        return None
+
     if (known_bucket := KNOWN_BUCKET_IDS.get(hostname)) is not None:
         return known_bucket
 

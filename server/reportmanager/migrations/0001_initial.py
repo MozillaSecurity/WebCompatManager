@@ -3,7 +3,6 @@
 import django.core.validators
 import django.db.models.deletion
 import django.utils.timezone
-import enumfields.fields
 from django.conf import settings
 from django.db import migrations, models
 
@@ -167,8 +166,8 @@ class Migration(migrations.Migration):
                 ),
                 (
                     "mode",
-                    enumfields.fields.EnumField(
-                        enum=reportmanager.models.BugzillaTemplateMode, max_length=30
+                    models.TextField(
+                        choices=reportmanager.models.BugzillaTemplateMode, max_length=30
                     ),
                 ),
                 ("name", models.TextField()),

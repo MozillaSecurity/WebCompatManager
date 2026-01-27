@@ -110,14 +110,14 @@ class Matcher(ABC):
         return TimeRangeMatcher(after, before)
 
     @abstractmethod
-    def matches(self, value: str | None) -> bool:
+    def matches(self, value: float | int | str | None) -> bool:
         """test the given value and return whether there is a match"""
 
 
 class NullMatcher(Matcher):
     ORDER = 0
 
-    def matches(self, value: str | None) -> bool:
+    def matches(self, value: float | int | str | None) -> bool:
         return value is None
 
 
@@ -127,8 +127,8 @@ class PatternMatcher(Matcher):
     def __init__(self, pattern: str) -> None:
         self.pattern = re.compile(pattern)
 
-    def matches(self, value: str | None) -> bool:
-        if value is None:
+    def matches(self, value: float | int | str | None) -> bool:
+        if value is None or isinstance(value, float | int):
             return False
         return self.pattern.match(value) is not None
 
@@ -164,7 +164,7 @@ class ValueMatcher(Matcher):
     value: str
     ORDER = 1
 
-    def matches(self, value: str | None) -> bool:
+    def matches(self, value: float | int | str | None) -> bool:
         if value is None:
             return False
         return value == self.value
