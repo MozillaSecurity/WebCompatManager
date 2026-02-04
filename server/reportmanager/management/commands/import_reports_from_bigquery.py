@@ -2,6 +2,7 @@
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 from contextlib import suppress
+from datetime import UTC
 from logging import getLogger
 from urllib.parse import urlsplit
 
@@ -10,10 +11,13 @@ from django.conf import settings
 from django.core.management import BaseCommand
 from django.db.models import Q
 from django.db.utils import IntegrityError
-from datetime import UTC
 from google.cloud import bigquery
 from google.oauth2 import service_account
 
+from reportmanager.clustering.ClusterBucketManager import (
+    ClusterBucketManager,
+    ClusteringConfig,
+)
 from reportmanager.models import Bucket, ReportEntry
 from webcompat.models import Report
 
@@ -24,13 +28,17 @@ LOG = getLogger("reportmanager.import")
 KNOWN_BUCKET_IDS: dict[str, int] = {}
 
 
-# This is only returning a bucket if there is exactly one matching bucket, or
-# if there is absolutely no matching bucket and we have to create one. If there
-# are multiple buckets matching, we return none, and effectively leave the
-# report in the "untriaged", i.e. not assigned to any bucket, state. The cronjob
-# can then pick the report up and run the more comprehensive full-signature
-# check.
+# This is only returning a bucket for low quality reports. The rest
+# of the reports are left unbucketed for triaging.
+# Returns a bucket if there is a matching domain bucket, or
+# creates a new domain bucket if none exist. Excludes cluster buckets.
 def find_bucket_for_report(report_info: Report) -> int | None:
+    # Only apply domain bucketing for low-quality reports
+    if ClusterBucketManager.ok_to_cluster(
+        report_info.comments, report_info.ml_valid_probability
+    ):
+        return None
+
     hostname = report_info.url.hostname
 
     if hostname is None:
@@ -39,21 +47,25 @@ def find_bucket_for_report(report_info: Report) -> int | None:
     if (known_bucket := KNOWN_BUCKET_IDS.get(hostname)) is not None:
         return known_bucket
 
-    candidates = Bucket.objects.filter(Q(domain=hostname)).values_list("id", flat=True)
+    # Find domain buckets, excluding cluster buckets
+    bucket_id = (
+        Bucket.objects.filter(Q(domain=hostname))
+        .exclude(description__contains=ClusteringConfig.CLUSTER_BUCKET_IDENTIFIER)
+        .values_list("id", flat=True)
+        .first()
+    )
 
-    if len(candidates) == 1:
-        KNOWN_BUCKET_IDS[hostname] = candidates[0]
-        return candidates[0]
+    if bucket_id:
+        KNOWN_BUCKET_IDS[hostname] = bucket_id
+        return bucket_id
 
-    if len(candidates) == 0:
-        bucket = Bucket.objects.create(
-            description=f"domain is {report_info.url.hostname}",
-            signature=report_info.create_signature().raw_signature,
-        )
-        KNOWN_BUCKET_IDS[hostname] = bucket.id
-        return bucket.id
-
-    return None
+    # No existing bucket found, create new one
+    bucket = Bucket.objects.create(
+        description=f"domain is {report_info.url.hostname}",
+        signature=report_info.create_signature().raw_signature,
+    )
+    KNOWN_BUCKET_IDS[hostname] = bucket.pk
+    return bucket.pk
 
 
 class Command(BaseCommand):
