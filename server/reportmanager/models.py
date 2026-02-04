@@ -456,7 +456,7 @@ class ReportHit(models.Model):
 
 class ReportEntryManager(models.Manager):
     @transaction.atomic
-    def create_from_report(self, report, bucket_id=None):
+    def create_from_report(self, report, bucket_id=None, cluster_id=None):
         app = App.objects.get_or_create(
             channel=report.app_channel,
             name=report.app_name,
@@ -482,6 +482,7 @@ class ReportEntryManager(models.Manager):
             comments_original_language=report.comments_original_language,
             ml_valid_probability=report.ml_valid_probability,
             bucket_id=bucket_id,
+            cluster_id=cluster_id,
         )
 
 
@@ -612,8 +613,8 @@ def ReportEntry_save(sender, instance, created, **kwargs):
         else:
             triage = True
 
-    if getattr(settings, "USE_CELERY", None) and triage:
-        triage_new_report.apply_async((instance.pk,), countdown=0.1)
+    # if getattr(settings, "USE_CELERY", None) and triage:
+    #     triage_new_report.apply_async((instance.pk,), countdown=0.1)
 
 
 class BugzillaTemplateMode(models.TextChoices):

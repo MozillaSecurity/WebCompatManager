@@ -5,7 +5,7 @@ from logging import getLogger
 
 from django.core.management import BaseCommand
 
-from reportmanager.Clustering.ClusterBucketManager import ClusterBucketManager
+from reportmanager.clustering.ClusterBucketManager import ClusterBucketManager
 
 LOG = getLogger("reportmanager.cluster")
 
