@@ -66,15 +66,12 @@ class Report:
 
     def create_signature(self) -> Signature:
         """Create a default signature"""
-        return Signature(
-            json.dumps(
-                {
-                    "symptoms": [
-                        {"type": "url", "part": "hostname", "value": self.url.hostname}
-                    ]
-                }
-            )
-        )
+        symptoms = [{"type": "url", "part": "hostname", "value": self.url.hostname}]
+
+        if self.cluster_id is not None:
+            symptoms.append({"type": "cluster_id", "value": self.cluster_id})
+
+        return Signature(json.dumps({"symptoms": symptoms}))
 
 
 @dataclass

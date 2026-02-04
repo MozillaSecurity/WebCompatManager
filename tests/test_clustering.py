@@ -207,7 +207,7 @@ class TestClusterBucketManager:
         assert len(groups_by_size[1].reports) == 1
 
     def test_group_reports_by_label_length_mismatch_reports_labels(self, manager):
-        """Test that length mismatch between reports and labels raises assertion error."""
+        """Test that length mismatch between reports and labels raises error."""
         reports = [
             ClusterReport(
                 id=1,

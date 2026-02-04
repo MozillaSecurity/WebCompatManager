@@ -20,6 +20,15 @@ from reportmanager.utils import preprocess_text
 
 
 @dataclass
+class DomainClusterData:
+    """Domain-specific clustering data including distance threshold and embeddings."""
+
+    domain: str
+    distance_threshold: float
+    embeddings: dict[int, np.ndarray]  # cluster_id -> embeddings
+
+
+@dataclass
 class ClusterReport:
     id: int
     ml_valid_probability: float
@@ -117,6 +126,7 @@ def batch_delete_in_chunks(
 class ClusterBucketManager:
     def __init__(self) -> None:
         self.clusterer = SBERTClusterer()
+        self.domain_data: dict[str, DomainClusterData] = {}
 
     def build_cluster_report(self, report_data: dict) -> ClusterReport:
         comments = report_data["comments_translated"] or report_data["comments"]
@@ -269,7 +279,7 @@ class ClusterBucketManager:
             return []
 
         # Calculate if this is a high-volume domain
-        # and if so, only use reports in the last 14 days
+        # and if so, only use reports in the last N days
         is_high_volume = self.is_high_volume_domain(reports)
 
         if is_high_volume:
@@ -417,3 +427,85 @@ class ClusterBucketManager:
             buckets_created += 1
 
         return buckets_created
+
+    def get_bucket_for_cluster(self, cluster_id: int) -> Bucket | None:
+        cluster = Cluster.objects.filter(id=cluster_id).first()
+        if not cluster:
+            return None
+
+        signature = self.build_cluster_bucket_signature(cluster.domain, cluster_id)
+        bucket = Bucket.objects.filter(signature=signature).first()
+        return bucket
+
+    def build_domain_data(
+        self,
+        all_reports: list[ClusterReport],
+        domains: set[str] | None = None,
+    ) -> None:
+        """Build domain data: threshold based on volume and cluster embeddings."""
+
+        reports_by_domain = self.group_reports_by_domain(all_reports, domains)
+
+        for domain, domain_reports in reports_by_domain.items():
+            is_high_volume = self.is_high_volume_domain(domain_reports)
+
+            distance_threshold = (
+                ClusteringConfig.HIGH_VOLUME_DISTANCE_THRESHOLD
+                if is_high_volume
+                else ClusteringConfig.NORMAL_VOLUME_DISTANCE_THRESHOLD
+            )
+
+            domain_clusters = Cluster.objects.filter(domain=domain).prefetch_related(
+                "reportentry_set"
+            )
+
+            cluster_embeddings = {}
+            for cluster in domain_clusters:
+                reports = list(
+                    cluster.reportentry_set.exclude(comments="").values(
+                        "id", "comments", "comments_translated"
+                    )
+                )
+
+                if not reports:
+                    continue
+
+                texts = []
+                for r in reports:
+                    text = r["comments_translated"] or r["comments"]
+                    preprocessed = preprocess_text(text)
+                    if preprocessed:
+                        texts.append(preprocessed)
+
+                if not texts:
+                    continue
+
+                embeddings = self.clusterer.build_embeddings(texts)
+                cluster_embeddings[cluster.id] = embeddings
+
+            # Store domain data only if we have clusters
+            if cluster_embeddings:
+                self.domain_data[domain] = DomainClusterData(
+                    domain=domain,
+                    distance_threshold=distance_threshold,
+                    embeddings=cluster_embeddings,
+                )
+
+    def get_closest_cluster(self, report: ClusterReport) -> int | None:
+        """Find the closest cluster for a report."""
+
+        domain_data = self.domain_data.get(report.domain)
+
+        if not domain_data or not domain_data.embeddings:
+            return None
+
+        min_similarity = 1.0 - domain_data.distance_threshold
+
+        cluster_id = self.clusterer.assign_to_cluster_top_n_avg(
+            report.text,
+            domain_data.embeddings,
+            n=5,
+            min_similarity=min_similarity,
+        )
+
+        return cluster_id
