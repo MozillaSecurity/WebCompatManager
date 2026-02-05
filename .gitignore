@@ -18,7 +18,6 @@ server/logs/
 src/WebCompatManager.egg-info/
 build/
 dist/
-uv.lock
 
 # Code coverage
 .coverage*
