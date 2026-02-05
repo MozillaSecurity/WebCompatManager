@@ -400,6 +400,27 @@ class BucketWatch(models.Model):
     last_report: models.IntegerField = models.IntegerField(default=0)
 
 
+class Cluster(models.Model):
+    """Represents a similarity-based cluster of reports within a domain.
+
+    Clusters are created by the similarity clustering algorithm and group
+    reports that have semantically similar comments.
+    """
+
+    domain: models.CharField = models.CharField(max_length=255)
+    centroid: models.ForeignKey = models.ForeignKey(
+        "ReportEntry",
+        null=True,
+        on_delete=models.deletion.SET_NULL,
+        related_name="centroid_of",
+    )
+
+    class Meta:
+        indexes = [  # noqa: RUF012
+            models.Index(fields=["domain"]),
+        ]
+
+
 class OS(models.Model):
     name: models.CharField = models.CharField(max_length=63, unique=True)
 
@@ -435,7 +456,7 @@ class ReportHit(models.Model):
 
 class ReportEntryManager(models.Manager):
     @transaction.atomic
-    def create_from_report(self, report, bucket_id=None):
+    def create_from_report(self, report, bucket_id=None, cluster_id=None):
         app = App.objects.get_or_create(
             channel=report.app_channel,
             name=report.app_name,
@@ -461,6 +482,7 @@ class ReportEntryManager(models.Manager):
             comments_original_language=report.comments_original_language,
             ml_valid_probability=report.ml_valid_probability,
             bucket_id=bucket_id,
+            cluster_id=cluster_id,
         )
 
 
@@ -481,6 +503,9 @@ class ReportEntry(models.Model):
     url: models.URLField = models.URLField(max_length=8192)
     uuid: models.UUIDField = models.UUIDField(unique=True)
     ml_valid_probability: models.FloatField = models.FloatField(null=True)
+    cluster: models.ForeignKey = models.ForeignKey(
+        Cluster, null=True, on_delete=models.deletion.SET_NULL
+    )
 
     objects = ReportEntryManager()
 
@@ -540,6 +565,9 @@ class ReportEntry(models.Model):
                     else None
                 ),
                 ml_valid_probability=self.ml_valid_probability,
+                cluster_id=(
+                    str(self.cluster_id) if self.cluster_id is not None else None
+                ),
             )
         return self._cached_report
 
@@ -585,8 +613,8 @@ def ReportEntry_save(sender, instance, created, **kwargs):
         else:
             triage = True
 
-    if getattr(settings, "USE_CELERY", None) and triage:
-        triage_new_report.apply_async((instance.pk,), countdown=0.1)
+    # if getattr(settings, "USE_CELERY", None) and triage:
+    #     triage_new_report.apply_async((instance.pk,), countdown=0.1)
 
 
 class BugzillaTemplateMode(models.TextChoices):

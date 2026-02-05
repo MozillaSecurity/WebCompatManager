@@ -54,6 +54,7 @@ class Report:
     app_channel: str | None = None
     breakage_category: str | None = None
     ml_valid_probability: float | None = None
+    cluster_id: str | None = None
 
     @classmethod
     def load(cls, data: str) -> Report:
@@ -65,12 +66,17 @@ class Report:
 
     def create_signature(self) -> Signature:
         """Create a default signature"""
+        symptoms = [
+            {"type": "url", "part": "hostname", "value": self.url.hostname}
+        ]
+
+        if self.cluster_id is not None:
+            symptoms.append({"type": "cluster_id", "value": self.cluster_id})
+
         return Signature(
             json.dumps(
                 {
-                    "symptoms": [
-                        {"type": "url", "part": "hostname", "value": self.url.hostname}
-                    ]
+                    "symptoms": symptoms
                 }
             )
         )

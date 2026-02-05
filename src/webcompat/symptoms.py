@@ -63,6 +63,7 @@ class Symptom(ABC):
             "app_name",
             "app_version",
             "breakage_category",
+            "cluster_id",
             "comments",
             "os",
             "uuid",
