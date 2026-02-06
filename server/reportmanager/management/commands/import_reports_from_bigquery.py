@@ -10,7 +10,7 @@ from django.conf import settings
 from django.core.management import BaseCommand
 from django.db.models import Q
 from django.db.utils import IntegrityError
-from django.utils import timezone
+from datetime import UTC
 from google.cloud import bigquery
 from google.oauth2 import service_account
 
@@ -117,7 +117,7 @@ class Command(BaseCommand):
                 comments_translated=row.translated_text,
                 comments_original_language=row.language_code,
                 details=row.details,
-                reported_at=row.reported_at.replace(tzinfo=timezone.utc),
+                reported_at=row.reported_at.replace(tzinfo=UTC),
                 url=urlsplit(row.url),
                 os=row.os,
                 uuid=row.uuid,
