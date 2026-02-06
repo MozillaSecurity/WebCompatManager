@@ -12,16 +12,19 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      - name: Install uv
+        uses: astral-sh/setup-uv@v7
+
       - name: Set up Python 3.12
         uses: actions/setup-python@v5
         with:
           python-version: "3.12"
 
       - name: Install tox
-        run: pip install tox
+        run: uv tool install tox
 
       - name: Run tests
-        run: tox
+        run: uv run --extra=dev tox
         env:
           TOXENV: py312
 
