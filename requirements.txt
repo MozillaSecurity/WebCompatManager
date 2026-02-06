@@ -106,7 +106,7 @@ packaging==25.0
     #   kombu
 ply==3.11
     # via jsonpath-ng
-prompt-toolkit==3.0.50
+prompt-toolkit==3.0.52
     # via click-repl
 proto-plus==1.26.1
     # via google-api-core
