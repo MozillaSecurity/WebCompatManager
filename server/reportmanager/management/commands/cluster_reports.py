@@ -5,7 +5,7 @@ from logging import getLogger
 
 from django.core.management import BaseCommand
 
-from reportmanager.Clustering.ClusterBucketManager import ClusterBucketManager
+from reportmanager.clustering.ClusterBucketManager import ClusterBucketManager
 
 LOG = getLogger("reportmanager.cluster")
 
@@ -20,24 +20,22 @@ class Command(BaseCommand):
             help="Cluster reports for a specific domain only",
         )
 
-    def handle(self, *args, **options):
-        domain_filter = options.get("domain")
-
+    def handle(self, domain: str | None = None, **options) -> None:
+        domain_filter = domain
         manager = ClusterBucketManager()
 
         # Clean up in case there was a previous run
-        deleted_clusters_count = manager.delete_existing_clusters()
-        deleted_buckets_count = manager.delete_cluster_buckets()
+        deleted_clusters_count = manager.delete_existing_clusters(domain_filter)
+        deleted_buckets_count = manager.delete_cluster_buckets(domain_filter)
 
         LOG.info(f"Deleted {deleted_clusters_count} existing clusters.")
         LOG.info(f"Deleted {deleted_buckets_count} cluster-based buckets...")
 
-        all_reports = manager.fetch_reports()
+        all_reports = manager.fetch_reports(domain_filter)
         reports_by_domain = manager.group_reports_by_domain(all_reports)
 
         if domain_filter:
             if domain_filter in reports_by_domain:
-                reports_by_domain = {domain_filter: reports_by_domain[domain_filter]}
                 LOG.info(f"Filtering to domain: {domain_filter}")
             else:
                 LOG.info(f"No reports found for domain: {domain_filter}")

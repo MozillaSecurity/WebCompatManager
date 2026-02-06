@@ -39,6 +39,7 @@ dev = [
     "mypy==1.19.1",
     "pytest==9.0.2",
     "pytest-cov==7.0.0",
+    "pytest-django==4.11.1",
     "pytest-mock==3.15.1",
     "celery-types==0.24.0",
     "django-stubs==5.2.9",
@@ -136,7 +137,7 @@ select = [
     # pycodestyle
     "W",
 ]
-ignore = ["SIM117"]
+ignore = ["SIM117", "RUF012"]
 
 [tool.ruff.lint.isort]
 known-first-party = ["reportmanager"]

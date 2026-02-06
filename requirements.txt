@@ -2,42 +2,55 @@
 #    uv export --extra=docker --extra=server --no-hashes --no-emit-project --format requirements-txt
 amqp==5.3.1
     # via kombu
+anyio==4.12.1
+    # via httpx
 asgiref==3.11.0
     # via django
-attrs==25.3.0
+attrs==25.4.0
     # via
     #   jsonschema
     #   referencing
-billiard==4.2.1
+billiard==4.2.4
     # via celery
 celery==5.6.2
     # via webcompatmanager
-certifi==2025.1.31
-    # via requests
-cffi==1.17.1 ; platform_python_implementation != 'PyPy'
+certifi==2026.1.4
+    # via
+    #   httpcore
+    #   httpx
+    #   requests
+cffi==2.0.0 ; platform_python_implementation != 'PyPy'
     # via cryptography
-charset-normalizer==3.4.1
+charset-normalizer==3.4.4
     # via requests
-click==8.1.8
+click==8.3.1
     # via
     #   celery
     #   click-didyoumean
     #   click-plugins
     #   click-repl
+    #   typer-slim
 click-didyoumean==0.3.1
     # via celery
-click-plugins==1.1.1
+click-plugins==1.1.1.2
     # via celery
 click-repl==0.3.0
     # via celery
 colorama==0.4.6 ; sys_platform == 'win32'
-    # via click
+    # via
+    #   click
+    #   tqdm
 crispy-bootstrap3==2024.1
     # via webcompatmanager
-cryptography==44.0.2
+cryptography==46.0.3
     # via
+    #   google-auth
     #   josepy
     #   mozilla-django-oidc
+cuda-bindings==12.9.4 ; platform_machine == 'x86_64' and sys_platform == 'linux'
+    # via torch
+cuda-pathfinder==1.3.3 ; platform_machine == 'x86_64' and sys_platform == 'linux'
+    # via cuda-bindings
 django==6.0.1
     # via
     #   crispy-bootstrap3
@@ -54,75 +67,157 @@ django-stubs-ext==5.2.9
     # via webcompatmanager
 djangorestframework==3.16.1
     # via webcompatmanager
-google-api-core==2.24.2
+filelock==3.20.3
+    # via
+    #   huggingface-hub
+    #   torch
+    #   transformers
+fsspec==2026.1.0
+    # via
+    #   huggingface-hub
+    #   torch
+google-api-core==2.29.0
     # via
     #   google-cloud-bigquery
     #   google-cloud-core
-google-auth==2.47.0
+google-auth==2.48.0
     # via
     #   google-api-core
     #   google-cloud-bigquery
     #   google-cloud-core
 google-cloud-bigquery==3.40.0
     # via webcompatmanager
-google-cloud-core==2.4.3
+google-cloud-core==2.5.0
     # via google-cloud-bigquery
-google-crc32c==1.7.0
+google-crc32c==1.8.0
     # via google-resumable-media
-google-resumable-media==2.7.2
+google-resumable-media==2.8.0
     # via google-cloud-bigquery
-googleapis-common-protos==1.69.2
+googleapis-common-protos==1.72.0
     # via
     #   google-api-core
     #   grpcio-status
-grpcio==1.71.0
+grpcio==1.76.0
     # via
     #   google-api-core
     #   grpcio-status
-grpcio-status==1.71.0
+grpcio-status==1.76.0
     # via google-api-core
 gunicorn==22.0.0
     # via webcompatmanager
-idna==3.10
-    # via requests
-josepy==2.0.0
+h11==0.16.0
+    # via httpcore
+hf-xet==1.2.0 ; platform_machine == 'AMD64' or platform_machine == 'aarch64' or platform_machine == 'amd64' or platform_machine == 'arm64' or platform_machine == 'x86_64'
+    # via huggingface-hub
+httpcore==1.0.9
+    # via httpx
+httpx==0.28.1
+    # via huggingface-hub
+huggingface-hub==1.3.4
+    # via
+    #   sentence-transformers
+    #   tokenizers
+    #   transformers
+idna==3.11
+    # via
+    #   anyio
+    #   httpx
+    #   requests
+jinja2==3.1.6
+    # via torch
+joblib==1.5.3
+    # via scikit-learn
+josepy==2.2.0
     # via mozilla-django-oidc
 jsonpath-ng==1.7.0
     # via webcompatmanager
-jsonschema==4.23.0
+jsonschema==4.26.0
     # via webcompatmanager
-jsonschema-specifications==2024.10.1
+jsonschema-specifications==2025.9.1
     # via jsonschema
 kombu==5.6.2
     # via celery
+markupsafe==3.0.3
+    # via jinja2
 mozilla-django-oidc==4.0.1
     # via webcompatmanager
+mpmath==1.3.0
+    # via sympy
 mysqlclient==2.2.7
     # via webcompatmanager
-packaging==25.0
+networkx==3.6.1
+    # via torch
+numpy==2.3.5
+    # via
+    #   scikit-learn
+    #   scipy
+    #   sentence-transformers
+    #   transformers
+nvidia-cublas-cu12==12.8.4.1 ; platform_machine == 'x86_64' and sys_platform == 'linux'
+    # via
+    #   nvidia-cudnn-cu12
+    #   nvidia-cusolver-cu12
+    #   torch
+nvidia-cuda-cupti-cu12==12.8.90 ; platform_machine == 'x86_64' and sys_platform == 'linux'
+    # via torch
+nvidia-cuda-nvrtc-cu12==12.8.93 ; platform_machine == 'x86_64' and sys_platform == 'linux'
+    # via torch
+nvidia-cuda-runtime-cu12==12.8.90 ; platform_machine == 'x86_64' and sys_platform == 'linux'
+    # via torch
+nvidia-cudnn-cu12==9.10.2.21 ; platform_machine == 'x86_64' and sys_platform == 'linux'
+    # via torch
+nvidia-cufft-cu12==11.3.3.83 ; platform_machine == 'x86_64' and sys_platform == 'linux'
+    # via torch
+nvidia-cufile-cu12==1.13.1.3 ; platform_machine == 'x86_64' and sys_platform == 'linux'
+    # via torch
+nvidia-curand-cu12==10.3.9.90 ; platform_machine == 'x86_64' and sys_platform == 'linux'
+    # via torch
+nvidia-cusolver-cu12==11.7.3.90 ; platform_machine == 'x86_64' and sys_platform == 'linux'
+    # via torch
+nvidia-cusparse-cu12==12.5.8.93 ; platform_machine == 'x86_64' and sys_platform == 'linux'
+    # via
+    #   nvidia-cusolver-cu12
+    #   torch
+nvidia-cusparselt-cu12==0.7.1 ; platform_machine == 'x86_64' and sys_platform == 'linux'
+    # via torch
+nvidia-nccl-cu12==2.27.5 ; platform_machine == 'x86_64' and sys_platform == 'linux'
+    # via torch
+nvidia-nvjitlink-cu12==12.8.93 ; platform_machine == 'x86_64' and sys_platform == 'linux'
+    # via
+    #   nvidia-cufft-cu12
+    #   nvidia-cusolver-cu12
+    #   nvidia-cusparse-cu12
+    #   torch
+nvidia-nvshmem-cu12==3.4.5 ; platform_machine == 'x86_64' and sys_platform == 'linux'
+    # via torch
+nvidia-nvtx-cu12==12.8.90 ; platform_machine == 'x86_64' and sys_platform == 'linux'
+    # via torch
+packaging==26.0
     # via
     #   google-cloud-bigquery
     #   gunicorn
+    #   huggingface-hub
     #   kombu
+    #   transformers
 ply==3.11
     # via jsonpath-ng
-prompt-toolkit==3.0.50
+prompt-toolkit==3.0.52
     # via click-repl
-proto-plus==1.26.1
+proto-plus==1.27.0
     # via google-api-core
-protobuf==5.29.4
+protobuf==6.33.4
     # via
     #   google-api-core
     #   googleapis-common-protos
     #   grpcio-status
     #   proto-plus
-pyasn1==0.6.1
+pyasn1==0.6.2
     # via
     #   pyasn1-modules
     #   rsa
-pyasn1-modules==0.4.1
+pyasn1-modules==0.4.2
     # via google-auth
-pycparser==2.22 ; platform_python_implementation != 'PyPy'
+pycparser==3.0 ; implementation_name != 'PyPy' and platform_python_implementation != 'PyPy'
     # via cffi
 python-dateutil==2.9.0.post0
     # via
@@ -130,32 +225,80 @@ python-dateutil==2.9.0.post0
     #   google-cloud-bigquery
     #   webcompatmanager
 pyyaml==6.0.3
-    # via webcompatmanager
-referencing==0.36.2
+    # via
+    #   huggingface-hub
+    #   transformers
+    #   webcompatmanager
+referencing==0.37.0
     # via
     #   jsonschema
     #   jsonschema-specifications
-requests==2.32.3
+regex==2026.1.15
+    # via transformers
+requests==2.32.5
     # via
     #   google-api-core
     #   google-cloud-bigquery
     #   mozilla-django-oidc
-rpds-py==0.23.1
+rpds-py==0.30.0
     # via
     #   jsonschema
     #   referencing
-rsa==4.9
+rsa==4.9.1
     # via google-auth
-setuptools==80.9.0
+safetensors==0.7.0
+    # via transformers
+scikit-learn==1.8.0
+    # via
+    #   sentence-transformers
+    #   webcompatmanager
+scipy==1.17.0
+    # via
+    #   scikit-learn
+    #   sentence-transformers
+sentence-transformers==5.2.2
     # via webcompatmanager
+setuptools==80.9.0
+    # via
+    #   torch
+    #   webcompatmanager
+shellingham==1.5.4
+    # via huggingface-hub
 six==1.17.0
     # via python-dateutil
-sqlparse==0.5.3
+sqlparse==0.5.5
     # via django
+sympy==1.14.0
+    # via torch
+threadpoolctl==3.6.0
+    # via scikit-learn
+tokenizers==0.22.2
+    # via transformers
+torch==2.10.0
+    # via sentence-transformers
+tqdm==4.67.1
+    # via
+    #   huggingface-hub
+    #   sentence-transformers
+    #   transformers
+transformers==5.0.0
+    # via sentence-transformers
+triton==3.6.0 ; platform_machine == 'x86_64' and sys_platform == 'linux'
+    # via torch
+typer-slim==0.21.1
+    # via
+    #   huggingface-hub
+    #   transformers
 typing-extensions==4.15.0
     # via
+    #   anyio
     #   django-stubs-ext
+    #   grpcio
+    #   huggingface-hub
     #   referencing
+    #   sentence-transformers
+    #   torch
+    #   typer-slim
 tzdata==2025.3
     # via
     #   django
@@ -163,14 +306,14 @@ tzdata==2025.3
     #   tzlocal
 tzlocal==5.3.1
     # via celery
-urllib3==2.3.0
+urllib3==2.6.3
     # via requests
 vine==5.1.0
     # via
     #   amqp
     #   celery
     #   kombu
-wcwidth==0.2.13
+wcwidth==0.5.0
     # via prompt-toolkit
 whitenoise==6.11.0
     # via webcompatmanager

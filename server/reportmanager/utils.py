@@ -7,7 +7,7 @@ import re
 
 def preprocess_text(text):
     if not text or text == "":
-        return "empty report"
+        return ""
 
     text = html.unescape(text)
     text = str(text).strip()

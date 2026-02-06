@@ -416,7 +416,7 @@ class Cluster(models.Model):
     )
 
     class Meta:
-        indexes = [  # noqa: RUF012
+        indexes = [
             models.Index(fields=["domain"]),
         ]
 
