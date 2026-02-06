@@ -47,7 +47,7 @@ dev = [
     "types-python-dateutil==2.9.0.20260124",
 ]
 docker = [
-    "gunicorn~=22.0.0",
+    "gunicorn~=25.0.2",
     "mozilla-django-oidc~=4.0.1",
     "mysqlclient~=2.2.4",
 ]
