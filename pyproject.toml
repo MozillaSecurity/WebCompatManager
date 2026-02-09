@@ -28,7 +28,7 @@ dependencies = [
     "jsonpath-ng",
     "jsonschema>=4.18.0",
     "python-dateutil",
-    "setuptools==80.10.2"
+    "setuptools==82.0.0"
 ]
 
 [project.optional-dependencies]
