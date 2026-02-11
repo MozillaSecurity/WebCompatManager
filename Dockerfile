@@ -22,6 +22,9 @@ RUN cd /src && uv sync --locked --extra=server --extra=docker
 # Retrieve previous Javascript build
 COPY --from=frontend /src/dist/ /src/server/frontend/dist/
 
+RUN chown -R worker:worker /src
+USER worker
+
 # Use a custom settings file that can be overwritten
 ENV DJANGO_SETTINGS_MODULE="server.settings_docker"
 
