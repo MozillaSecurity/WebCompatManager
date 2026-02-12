@@ -3,6 +3,7 @@
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 import json
 import re
+from dataclasses import dataclass
 from datetime import timedelta
 from itertools import batched
 from logging import getLogger
@@ -23,8 +24,8 @@ from django_stubs_ext.db.models import TypedModelMeta
 from webcompat.models import Report, Signature
 from webcompat.symptoms import URLSymptom, ValueMatcher
 
-if getattr(settings, "USE_CELERY", None):
-    from .tasks import triage_new_report
+# if getattr(settings, "USE_CELERY", None):
+#     from .tasks import triage_new_report
 
 
 LOG = getLogger("reportmanager")
@@ -421,6 +422,57 @@ class Cluster(models.Model):
         ]
 
 
+@dataclass
+class ClusteringStatus:
+    """Status of clustering jobs."""
+
+    in_progress: bool
+    has_successful_run: bool
+
+
+class ClusteringJobType(models.TextChoices):
+    FULL = "full", "Full Clustering"
+    INCREMENTAL = "incremental", "Incremental Triage"
+
+
+class ClusteringJob(models.Model):
+    """Tracks clustering job execution status."""
+
+    job_type: models.CharField = models.CharField(
+        max_length=20,
+        choices=ClusteringJobType.choices,
+        default=ClusteringJobType.FULL,
+    )
+    started_at: models.DateTimeField = models.DateTimeField(auto_now_add=True)
+    completed_at: models.DateTimeField = models.DateTimeField(null=True, blank=True)
+    is_ok: models.BooleanField = models.BooleanField(default=False)
+    domain: models.CharField = models.CharField(max_length=255, null=True, blank=True)
+    buckets_created: models.IntegerField = models.IntegerField(default=0)
+    error_message: models.TextField = models.TextField(null=True, blank=True)
+
+    @classmethod
+    def get_clustering_status(cls) -> ClusteringStatus:
+        latest_job = cls.objects.order_by("-started_at").first()
+
+        if latest_job is None:
+            return ClusteringStatus(in_progress=False, has_successful_run=False)
+
+        in_progress = latest_job.completed_at is None
+
+        # If latest job is successful and completed, we know there's a successful run
+        # Otherwise, check if there are any other successful runs
+        if latest_job.is_ok and latest_job.completed_at is not None:
+            has_successful_run = True
+        else:
+            has_successful_run = cls.objects.filter(
+                is_ok=True, completed_at__isnull=False
+            ).exists()
+
+        return ClusteringStatus(
+            in_progress=in_progress, has_successful_run=has_successful_run
+        )
+
+
 class OS(models.Model):
     name: models.CharField = models.CharField(max_length=63, unique=True)
 
@@ -456,7 +508,7 @@ class ReportHit(models.Model):
 
 class ReportEntryManager(models.Manager):
     @transaction.atomic
-    def create_from_report(self, report, bucket_id=None):
+    def create_from_report(self, report, bucket_id=None, cluster_id=None):
         app = App.objects.get_or_create(
             channel=report.app_channel,
             name=report.app_name,
@@ -482,6 +534,7 @@ class ReportEntryManager(models.Manager):
             comments_original_language=report.comments_original_language,
             ml_valid_probability=report.ml_valid_probability,
             bucket_id=bucket_id,
+            cluster_id=cluster_id,
         )
 
 
@@ -597,23 +650,23 @@ def ReportEntry_delete(sender, instance, **kwargs):
         BucketHit.decrement_count(instance.bucket_id, instance.reported_at)
 
 
-@receiver(post_save, sender=ReportEntry)
-def ReportEntry_save(sender, instance, created, **kwargs):
-    triage = created
-
-    if instance.bucket_id != instance._original_bucket:
-        if instance._original_bucket is not None:
-            # remove BucketHit for old bucket
-            BucketHit.decrement_count(instance._original_bucket, instance.reported_at)
-
-        if instance.bucket is not None:
-            # add BucketHit for new bucket
-            BucketHit.increment_count(instance.bucket_id, instance.reported_at)
-        else:
-            triage = True
-
-    if getattr(settings, "USE_CELERY", None) and triage:
-        triage_new_report.apply_async((instance.pk,), countdown=0.1)
+# @receiver(post_save, sender=ReportEntry)
+# def ReportEntry_save(sender, instance, created, **kwargs):
+#     triage = created
+#
+#     if instance.bucket_id != instance._original_bucket:
+#         if instance._original_bucket is not None:
+#             # remove BucketHit for old bucket
+#             BucketHit.decrement_count(instance._original_bucket, instance.reported_at)
+#
+#         if instance.bucket is not None:
+#             # add BucketHit for new bucket
+#             BucketHit.increment_count(instance.bucket_id, instance.reported_at)
+#         else:
+#             triage = True
+#
+#     if getattr(settings, "USE_CELERY", None) and triage:
+#         triage_new_report.apply_async((instance.pk,), countdown=0.1)
 
 
 class BugzillaTemplateMode(models.TextChoices):

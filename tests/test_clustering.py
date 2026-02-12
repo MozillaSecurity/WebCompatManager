@@ -12,6 +12,7 @@ from reportmanager.clustering.ClusterBucketManager import (
     ClusterBucketManager,
     ClusterGroup,
     ClusterReport,
+    DomainClusterData,
 )
 from reportmanager.clustering.SBERTClusterer import SBERTClusterer
 
@@ -207,7 +208,7 @@ class TestClusterBucketManager:
         assert len(groups_by_size[1].reports) == 1
 
     def test_group_reports_by_label_length_mismatch_reports_labels(self, manager):
-        """Test that length mismatch between reports and labels raises assertion error."""
+        """Test that length mismatch between reports and labels raises error."""
         reports = [
             ClusterReport(
                 id=1,
@@ -333,3 +334,101 @@ class TestClusterBucketManager:
         assert signature["symptoms"][0]["value"] == "example.com"
         assert signature["symptoms"][1]["type"] == "cluster_id"
         assert signature["symptoms"][1]["value"] == "123"
+
+    def test_get_closest_cluster_uses_precomputed_threshold(self, manager):
+        """Test that get_closest_cluster uses precomputed distance threshold."""
+        # Setup domain data
+        manager.domain_data["example.com"] = DomainClusterData(
+            domain="example.com",
+            distance_threshold=0.30,
+            embeddings={1: np.array([[0.1, 0.2]]), 2: np.array([[0.3, 0.4]])},
+        )
+
+        report = ClusterReport(
+            id=1,
+            ml_valid_probability=0.8,
+            reported_at=timezone.now(),
+            url="https://example.com/page",
+            bucket_id=None,
+            text="Test issue",
+            domain="example.com",
+        )
+
+        # Mock assign_to_cluster_top_n_avg to capture the min_similarity
+        manager.clusterer.assign_to_cluster_top_n_avg = Mock(return_value=1)
+
+        manager.get_closest_cluster(report)
+
+        # Verify that min_similarity was calculated from precomputed threshold
+        call_args = manager.clusterer.assign_to_cluster_top_n_avg.call_args
+        assert call_args[1]["min_similarity"] == 0.70
+
+    def test_get_closest_cluster_returns_none_for_unknown_domain(self, manager):
+        """Test that get_closest_cluster returns None for domains without data."""
+        report = ClusterReport(
+            id=1,
+            ml_valid_probability=0.8,
+            reported_at=timezone.now(),
+            url="https://unknown.com/page",
+            bucket_id=None,
+            text="Test issue",
+            domain="unknown.com",
+        )
+
+        result = manager.get_closest_cluster(report)
+        assert result is None
+
+    def test_get_closest_cluster_returns_none_for_empty_embeddings(self, manager):
+        """Test that get_closest_cluster returns None when domain has no embeddings."""
+        # Setup domain data with no embeddings
+        manager.domain_data["empty.com"] = DomainClusterData(
+            domain="empty.com", distance_threshold=0.30, embeddings={}
+        )
+
+        report = ClusterReport(
+            id=1,
+            ml_valid_probability=0.8,
+            reported_at=timezone.now(),
+            url="https://empty.com/page",
+            bucket_id=None,
+            text="Test issue",
+            domain="empty.com",
+        )
+
+        result = manager.get_closest_cluster(report)
+        assert result is None
+
+    def test_get_closest_cluster_uses_domain_embeddings(self, manager):
+        """Test that get_closest_cluster uses embeddings from correct domain."""
+        # Setup multiple domains
+        manager.domain_data["domain1.com"] = DomainClusterData(
+            domain="domain1.com",
+            distance_threshold=0.30,
+            embeddings={1: np.array([[0.1, 0.2]]), 2: np.array([[0.3, 0.4]])},
+        )
+        manager.domain_data["domain2.com"] = DomainClusterData(
+            domain="domain2.com",
+            distance_threshold=0.38,
+            embeddings={3: np.array([[0.5, 0.6]])},
+        )
+
+        report = ClusterReport(
+            id=1,
+            ml_valid_probability=0.8,
+            reported_at=timezone.now(),
+            url="https://domain2.com/page",
+            bucket_id=None,
+            text="Test issue",
+            domain="domain2.com",
+        )
+
+        manager.clusterer.assign_to_cluster_top_n_avg = Mock(return_value=3)
+
+        result = manager.get_closest_cluster(report)
+
+        # Verify that domain2's embeddings were used
+        call_args = manager.clusterer.assign_to_cluster_top_n_avg.call_args
+        embeddings_used = call_args[0][1]
+        assert 3 in embeddings_used
+        assert 1 not in embeddings_used
+        assert result == 3

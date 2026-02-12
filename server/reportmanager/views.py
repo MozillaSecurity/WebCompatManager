@@ -29,7 +29,7 @@ from rest_framework.response import Response
 
 from webcompat.models import Report
 
-from .cron import triage_new_reports
+from .cron import cluster_reports, triage_new_reports
 from .forms import (
     BugzillaTemplateBugForm,
     BugzillaTemplateCommentForm,
@@ -43,6 +43,7 @@ from .models import (
     BugProvider,
     BugzillaTemplate,
     BugzillaTemplateMode,
+    ClusteringJob,
     ReportEntry,
     ReportHit,
     User,
@@ -53,6 +54,7 @@ from .serializers import (
     BucketVueSerializer,
     BugProviderSerializer,
     BugzillaTemplateSerializer,
+    ClusteringJobSerializer,
     InvalidArgumentException,
     ReportEntrySerializer,
     ReportEntryVueSerializer,
@@ -1000,6 +1002,31 @@ class BucketViewSet(
             limit = offset = None
         return self.__validate(bucket, save, reassign, limit, offset, created=save)
 
+    @action(detail=False, methods=["post"])
+    def cluster(self, request):
+        """Trigger clustering of reports"""
+        domain = request.data.get("domain", None)
+
+        LOG.info(f"Clustering endpoint called with domain: {domain}")
+
+        # Trigger the clustering task asynchronously
+        try:
+            result = cluster_reports.delay(domain=domain)
+            LOG.info(
+                f"Clustering task queued with ID: {result.id if result else 'None'}"
+            )
+        except Exception as e:
+            LOG.error(f"Failed to queue clustering task: {e}")
+            return Response(
+                {"error": f"Failed to queue task: {str(e)}"},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            )
+
+        return Response(
+            {"message": "Clustering task started successfully"},
+            status=status.HTTP_202_ACCEPTED,
+        )
+
 
 class BucketVueViewSet(BucketViewSet):
     """API endpoint that allows viewing Buckets and always uses Vue serializer"""
@@ -1539,3 +1566,15 @@ class BucketSpikeViewSet(viewsets.GenericViewSet):
 
 def spike_list_view(request):
     return render(request, "buckets/spikes.html")
+
+
+def clustering_view(request):
+    return render(request, "clustering.html")
+
+
+class ClusteringJobViewSet(mixins.ListModelMixin, viewsets.GenericViewSet):
+    """API endpoint that allows viewing ClusteringJob history"""
+
+    authentication_classes = (TokenAuthentication, SessionAuthentication)
+    queryset = ClusteringJob.objects.all().order_by("-started_at")
+    serializer_class = ClusteringJobSerializer

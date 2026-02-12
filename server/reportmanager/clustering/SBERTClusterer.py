@@ -59,3 +59,67 @@ class SBERTClusterer:
         closest_idx = int(np.argmin(squared_distances))
 
         return closest_idx
+
+    def build_embeddings(self, texts: list[str]) -> np.ndarray:
+        embeddings = self.model.encode(
+            texts, show_progress_bar=False, normalize_embeddings=True
+        )
+        return np.asarray(embeddings, dtype=np.float32)
+
+    def assign_to_cluster_top_n_avg(
+        self,
+        report_text: str,
+        cluster_embeddings: dict[int, np.ndarray],
+        n: int,
+        min_similarity: float,
+    ) -> int | None:
+        """Assign report to cluster based on average similarity to top-N members.
+
+        This approach averages the similarity scores of the N most similar members
+        from each cluster, then assigns to the cluster with the highest average.
+
+        Args:
+            report_text: Text to classify
+            cluster_embeddings: Dict mapping cluster IDs to their member embeddings
+            n: Number of top similar members to average
+            min_similarity: Minimum average similarity threshold
+
+        Returns:
+            Cluster ID if match found, None otherwise
+        """
+        if not cluster_embeddings:
+            return None
+
+        x = self.model.encode(
+            [report_text], show_progress_bar=False, normalize_embeddings=True
+        )[0]
+        x = np.asarray(x, dtype=np.float32)
+
+        best_cluster = None
+        best_avg_similarity = min_similarity
+
+        for cluster_id, embs in cluster_embeddings.items():
+            # Calculate similarities to all members
+            sims = embs @ x
+
+            # Take average of top-N most similar members
+            # For small clusters, use all members
+            top_n = min(n, len(sims))
+
+            if top_n == 0:
+                continue
+
+            # Use partition to get top-N
+            if len(sims) > top_n:
+                top_sims = np.partition(sims, -top_n)[-top_n:]
+            else:
+                top_sims = sims
+
+            avg_similarity = float(np.mean(top_sims))
+
+            # Update best cluster if this one has higher average similarity
+            if avg_similarity > best_avg_similarity:
+                best_avg_similarity = avg_similarity
+                best_cluster = cluster_id
+
+        return best_cluster

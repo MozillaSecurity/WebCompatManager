@@ -19,6 +19,11 @@ router.register(
     views.BucketSpikeViewSet,
     basename="bucket-spikes",
 )
+router.register(
+    r"clustering-jobs",
+    views.ClusteringJobViewSet,
+    basename="clustering-jobs",
+)
 
 app_name = "reportmanager"
 urlpatterns = [
@@ -140,6 +145,7 @@ urlpatterns = [
     re_path(r"^buckets/create/$", views.signature_create, name="createbucket"),
     re_path(r"^spikes/$", views.spike_list_view, name="spikes"),
     re_path(r"^stats/$", views.stats, name="stats"),
+    re_path(r"^clustering/$", views.clustering_view, name="clustering"),
     re_path(
         r"^usersettings/$", views.UserSettingsEditView.as_view(), name="usersettings"
     ),

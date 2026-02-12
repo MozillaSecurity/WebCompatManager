@@ -2,6 +2,7 @@
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 from contextlib import suppress
+from datetime import UTC
 from logging import getLogger
 from urllib.parse import urlsplit
 
@@ -10,50 +11,13 @@ from django.conf import settings
 from django.core.management import BaseCommand
 from django.db.models import Q
 from django.db.utils import IntegrityError
-from datetime import UTC
 from google.cloud import bigquery
 from google.oauth2 import service_account
 
-from reportmanager.models import Bucket, ReportEntry
+from reportmanager.models import ReportEntry
 from webcompat.models import Report
 
 LOG = getLogger("reportmanager.import")
-
-# Little dict that maps hostnames to bucket IDs, used to memoize the results of
-# the find_bucket_for_report function below, since DB lookups are slow.
-KNOWN_BUCKET_IDS: dict[str, int] = {}
-
-
-# This is only returning a bucket if there is exactly one matching bucket, or
-# if there is absolutely no matching bucket and we have to create one. If there
-# are multiple buckets matching, we return none, and effectively leave the
-# report in the "untriaged", i.e. not assigned to any bucket, state. The cronjob
-# can then pick the report up and run the more comprehensive full-signature
-# check.
-def find_bucket_for_report(report_info: Report) -> int | None:
-    hostname = report_info.url.hostname
-
-    if hostname is None:
-        return None
-
-    if (known_bucket := KNOWN_BUCKET_IDS.get(hostname)) is not None:
-        return known_bucket
-
-    candidates = Bucket.objects.filter(Q(domain=hostname)).values_list("id", flat=True)
-
-    if len(candidates) == 1:
-        KNOWN_BUCKET_IDS[hostname] = candidates[0]
-        return candidates[0]
-
-    if len(candidates) == 0:
-        bucket = Bucket.objects.create(
-            description=f"domain is {report_info.url.hostname}",
-            signature=report_info.create_signature().raw_signature,
-        )
-        KNOWN_BUCKET_IDS[hostname] = bucket.id
-        return bucket.id
-
-    return None
 
 
 class Command(BaseCommand):
@@ -124,9 +88,7 @@ class Command(BaseCommand):
                 ml_valid_probability=ml_valid_probability,
             )
             with suppress(IntegrityError):
-                ReportEntry.objects.create_from_report(
-                    report_obj, find_bucket_for_report(report_obj)
-                )
+                ReportEntry.objects.create_from_report(report_obj)
                 created += 1
         LOG.info("imported %d report entries", created)
 
