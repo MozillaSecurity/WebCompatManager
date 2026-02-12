@@ -3,6 +3,10 @@ repos:
     rev: v0.14.11
     hooks:
       - id: ruff-format
+  - repo: https://github.com/astral-sh/uv-pre-commit
+    rev: 0.10.2
+    hooks:
+      - id: uv-lock
   - repo: meta
     hooks:
       - id: check-useless-excludes
