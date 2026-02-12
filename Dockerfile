@@ -26,13 +26,14 @@ RUN adduser --disabled-password worker
 COPY --from=ghcr.io/astral-sh/uv:0.10.2 /uv /uvx /bin/
 
 COPY . /src/
-RUN cd /src && uv sync --locked --extra=server --extra=docker
 
 # Retrieve previous Javascript build
 COPY --from=frontend /src/dist/ /src/server/frontend/dist/
 
 RUN chown -R worker:worker /src
 USER worker
+
+RUN cd /src && uv sync --locked --extra=server --extra=docker
 
 # Use a custom settings file that can be overwritten
 ENV DJANGO_SETTINGS_MODULE="server.settings_docker"
