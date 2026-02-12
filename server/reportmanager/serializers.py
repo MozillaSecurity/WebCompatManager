@@ -15,6 +15,7 @@ from .models import (
     Bucket,
     BugProvider,
     BugzillaTemplate,
+    ClusteringJob,
     ReportEntry,
 )
 
@@ -270,6 +271,21 @@ class ReportEntryVueSerializer(ReportEntrySerializer):
 
     def get_find_sigs_url(self, entry):
         return reverse("reportmanager:findbuckets", kwargs={"report_id": entry.id})
+
+
+class ClusteringJobSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = ClusteringJob
+        fields = [
+            "id",
+            "job_type",
+            "started_at",
+            "completed_at",
+            "is_ok",
+            "domain",
+            "buckets_created",
+            "error_message",
+        ]
 
 
 class BucketSpikeSerializer(serializers.Serializer):

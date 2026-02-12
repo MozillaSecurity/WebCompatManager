@@ -3,6 +3,7 @@
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 import json
 import re
+from dataclasses import dataclass
 from datetime import timedelta
 from itertools import batched
 from logging import getLogger
@@ -419,6 +420,57 @@ class Cluster(models.Model):
         indexes = [
             models.Index(fields=["domain"]),
         ]
+
+
+@dataclass
+class ClusteringStatus:
+    """Status of clustering jobs."""
+
+    in_progress: bool
+    has_successful_run: bool
+
+
+class ClusteringJobType(models.TextChoices):
+    FULL = "full", "Full Clustering"
+    INCREMENTAL = "incremental", "Incremental Triage"
+
+
+class ClusteringJob(models.Model):
+    """Tracks clustering job execution status."""
+
+    job_type: models.CharField = models.CharField(
+        max_length=20,
+        choices=ClusteringJobType.choices,
+        default=ClusteringJobType.FULL,
+    )
+    started_at: models.DateTimeField = models.DateTimeField(auto_now_add=True)
+    completed_at: models.DateTimeField = models.DateTimeField(null=True, blank=True)
+    is_ok: models.BooleanField = models.BooleanField(default=False)
+    domain: models.CharField = models.CharField(max_length=255, null=True, blank=True)
+    buckets_created: models.IntegerField = models.IntegerField(default=0)
+    error_message: models.TextField = models.TextField(null=True, blank=True)
+
+    @classmethod
+    def get_clustering_status(cls) -> ClusteringStatus:
+        latest_job = cls.objects.order_by("-started_at").first()
+
+        if latest_job is None:
+            return ClusteringStatus(in_progress=False, has_successful_run=False)
+
+        in_progress = latest_job.completed_at is None
+
+        # If latest job is successful and completed, we know there's a successful run
+        # Otherwise, check if there are any other successful runs
+        if latest_job.is_ok and latest_job.completed_at is not None:
+            has_successful_run = True
+        else:
+            has_successful_run = cls.objects.filter(
+                is_ok=True, completed_at__isnull=False
+            ).exists()
+
+        return ClusteringStatus(
+            in_progress=in_progress, has_successful_run=has_successful_run
+        )
 
 
 class OS(models.Model):

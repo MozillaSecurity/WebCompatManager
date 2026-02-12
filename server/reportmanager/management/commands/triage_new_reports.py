@@ -2,27 +2,46 @@ from logging import getLogger
 
 from django.core.management import BaseCommand
 from django.db.models import Q
+from django.utils import timezone
 
 from reportmanager.clustering.ClusterBucketManager import (
     ClusterBucketManager,
     ClusteringConfig,
     ClusterReport,
 )
-from reportmanager.models import Bucket, ReportEntry
+from reportmanager.models import Bucket, ClusteringJob, ClusteringJobType, ReportEntry
 
 LOG = getLogger("reportmanager.triage")
 
 KNOWN_BUCKET_IDS: dict[str, int] = {}
 
 
+def complete_job(
+    job: ClusteringJob,
+    success: bool,
+    buckets_created: int = 0,
+    error: str | None = None,
+) -> None:
+    job.completed_at = timezone.now()
+    job.is_ok = success
+    job.buckets_created = buckets_created
+    if error:
+        job.error_message = error
+    job.save()
+
+
 def cluster_unmatched_reports(
     manager: ClusterBucketManager,
     unmatched_reports: list[ClusterReport],
-) -> set[int]:
-    """Cluster unmatched reports to find groups among remaining reports."""
+) -> tuple[set[int], int]:
+    """Cluster unmatched reports to find groups among remaining reports.
+
+    Returns:
+        Tuple of (clustered_report_ids, buckets_created)
+    """
 
     if not unmatched_reports:
-        return set()
+        return set(), 0
 
     LOG.info(
         f"Processing {len(unmatched_reports)} unmatched reports for potential clustering..."  # noqa
@@ -31,6 +50,7 @@ def cluster_unmatched_reports(
     unmatched_by_domain = manager.group_reports_by_domain(unmatched_reports)
 
     clustered_report_ids = set()
+    total_buckets = 0
 
     for domain, domain_reports in unmatched_by_domain.items():
         LOG.info(
@@ -43,14 +63,15 @@ def cluster_unmatched_reports(
             continue
 
         clusters_with_ids = manager.save_clusters(clusters)
-        manager.create_buckets_from_clusters(clusters_with_ids)
+        buckets_count = manager.create_buckets_from_clusters(clusters_with_ids)
+        total_buckets += buckets_count
 
         # Track which reports were successfully clustered
         for cluster_data in clusters_with_ids:
             for report in cluster_data.reports:
                 clustered_report_ids.add(report.id)
 
-    return clustered_report_ids
+    return clustered_report_ids, total_buckets
 
 
 def apply_domain_bucketing_fallback(
@@ -111,13 +132,8 @@ def get_cluster_bucket(
     return cluster_id, bucket_id
 
 
-class Command(BaseCommand):
-    help = (
-        "Iterates over all unbucketed report entries that have never been triaged "
-        "before to assign them into the existing buckets."
-    )
-
-    def handle(self, *args: object, **options: object) -> None:
+def run_triage(job: ClusteringJob) -> None:
+    try:
         manager = ClusterBucketManager()
 
         # Get all reports to build a domain volume map and reports embeddings
@@ -154,6 +170,7 @@ class Command(BaseCommand):
 
         if not unbucketed_reports:
             LOG.info("No unbucketed reports to triage")
+            complete_job(job, success=True, buckets_created=0)
             return
 
         # Build domain data (volume + embeddings) for unbucketed report domains
@@ -179,7 +196,9 @@ class Command(BaseCommand):
                 low_quality_reports.append(report)
 
         # Cluster unmatched reports that might form clusters among themselves
-        clustered_report_ids = cluster_unmatched_reports(manager, unmatched_reports)
+        clustered_report_ids, buckets_created = cluster_unmatched_reports(
+            manager, unmatched_reports
+        )
 
         # Filter out reports that were successfully clustered
         still_unmatched = [
@@ -190,3 +209,35 @@ class Command(BaseCommand):
         # and low-quality reports
         remaining = still_unmatched + low_quality_reports
         apply_domain_bucketing_fallback(remaining, report_entries)
+
+        complete_job(job, success=True, buckets_created=buckets_created)
+        LOG.info(
+            f"Triage completed successfully. Created {buckets_created} new cluster buckets."
+        )
+
+    except Exception as e:
+        complete_job(job, success=False, error=str(e))
+        raise
+
+
+class Command(BaseCommand):
+    help = (
+        "Iterates over all unbucketed report entries that have never been triaged "
+        "before to assign them into the existing buckets."
+    )
+
+    def handle(self, *args: object, **options: object) -> None:
+        status = ClusteringJob.get_clustering_status()
+
+        if status.in_progress or not status.has_successful_run:
+            reason = (
+                "clustering is currently in progress"
+                if status.in_progress
+                else "no successful clustering run has occurred yet"
+            )
+            LOG.warning(f"Skipping triaging: {reason}")
+            return
+
+        # Create a job record for this triage run
+        job = ClusteringJob.objects.create(job_type=ClusteringJobType.INCREMENTAL)
+        run_triage(job)

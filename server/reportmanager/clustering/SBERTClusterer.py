@@ -81,8 +81,8 @@ class SBERTClusterer:
         Args:
             report_text: Text to classify
             cluster_embeddings: Dict mapping cluster IDs to their member embeddings
-            n: Number of top similar members to average (default: 3)
-            min_similarity: Minimum average similarity threshold (default: 0.5)
+            n: Number of top similar members to average
+            min_similarity: Minimum average similarity threshold
 
         Returns:
             Cluster ID if match found, None otherwise

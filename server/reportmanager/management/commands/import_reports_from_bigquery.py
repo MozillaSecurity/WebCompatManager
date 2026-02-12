@@ -14,58 +14,10 @@ from django.db.utils import IntegrityError
 from google.cloud import bigquery
 from google.oauth2 import service_account
 
-from reportmanager.clustering.ClusterBucketManager import (
-    ClusterBucketManager,
-    ClusteringConfig,
-)
-from reportmanager.models import Bucket, ReportEntry
+from reportmanager.models import ReportEntry
 from webcompat.models import Report
 
 LOG = getLogger("reportmanager.import")
-
-# Little dict that maps hostnames to bucket IDs, used to memoize the results of
-# the find_bucket_for_report function below, since DB lookups are slow.
-KNOWN_BUCKET_IDS: dict[str, int] = {}
-
-
-# This is only returning a bucket for low quality reports. The rest
-# of the reports are left unbucketed for triaging.
-# Returns a bucket if there is a matching domain bucket, or
-# creates a new domain bucket if none exist. Excludes cluster buckets.
-def find_bucket_for_report(report_info: Report) -> int | None:
-    # Only apply domain bucketing for low-quality reports
-    if ClusterBucketManager.ok_to_cluster(
-        report_info.comments, report_info.ml_valid_probability
-    ):
-        return None
-
-    hostname = report_info.url.hostname
-
-    if hostname is None:
-        return None
-
-    if (known_bucket := KNOWN_BUCKET_IDS.get(hostname)) is not None:
-        return known_bucket
-
-    # Find domain buckets, excluding cluster buckets
-    bucket_id = (
-        Bucket.objects.filter(Q(domain=hostname))
-        .exclude(description__contains=ClusteringConfig.CLUSTER_BUCKET_IDENTIFIER)
-        .values_list("id", flat=True)
-        .first()
-    )
-
-    if bucket_id:
-        KNOWN_BUCKET_IDS[hostname] = bucket_id
-        return bucket_id
-
-    # No existing bucket found, create new one
-    bucket = Bucket.objects.create(
-        description=f"domain is {report_info.url.hostname}",
-        signature=report_info.create_signature().raw_signature,
-    )
-    KNOWN_BUCKET_IDS[hostname] = bucket.pk
-    return bucket.pk
 
 
 class Command(BaseCommand):
@@ -136,9 +88,7 @@ class Command(BaseCommand):
                 ml_valid_probability=ml_valid_probability,
             )
             with suppress(IntegrityError):
-                ReportEntry.objects.create_from_report(
-                    report_obj, find_bucket_for_report(report_obj)
-                )
+                ReportEntry.objects.create_from_report(report_obj)
                 created += 1
         LOG.info("imported %d report entries", created)
 
