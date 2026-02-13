@@ -8,19 +8,32 @@ WORKDIR /src
 RUN npm install
 RUN npm run production
 
-FROM ghcr.io/astral-sh/uv:python3.12-alpine AS backend
+FROM ubuntu:25.10 AS backend
 
-RUN apk add --no-cache build-base git mariadb-dev
+RUN apt-get update && \
+    apt-get install -y --no-install-recommends \
+       bash \
+       build-essential \
+       git \
+       libmariadb-dev \
+       mariadb-client \
+       openssh-client \
+       pkg-config && \
+    rm -rf /var/lib/apt/lists/* /var/log/*
 
-RUN adduser -D worker && \
-   apk add --no-cache bash git mariadb-client mariadb-connector-c openssh-client-default && \
-   rm -rf /var/log/*
+RUN adduser --disabled-password worker
+
+COPY --from=ghcr.io/astral-sh/uv:0.10.2 /uv /uvx /bin/
 
 COPY . /src/
-RUN cd /src && uv sync --locked --extra=server --extra=docker
 
 # Retrieve previous Javascript build
 COPY --from=frontend /src/dist/ /src/server/frontend/dist/
+
+RUN chown -R worker:worker /src
+USER worker
+
+RUN cd /src && uv sync --locked --extra=server --extra=docker
 
 # Use a custom settings file that can be overwritten
 ENV DJANGO_SETTINGS_MODULE="server.settings_docker"
