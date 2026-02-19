@@ -21,12 +21,9 @@ from django.dispatch.dispatcher import receiver
 from django.utils import timezone
 from django_stubs_ext.db.models import TypedModelMeta
 
+from reportmanager.utils import preprocess_text
 from webcompat.models import Report, Signature
 from webcompat.symptoms import URLSymptom, ValueMatcher
-
-# if getattr(settings, "USE_CELERY", None):
-#     from .tasks import triage_new_report
-
 
 LOG = getLogger("reportmanager")
 
@@ -521,6 +518,11 @@ class ReportEntryManager(models.Manager):
         else:
             breakage = None
         os = OS.objects.get_or_create(name=report.os)[0]
+
+        domain = report.url.hostname or "unknown"
+        comments_text = report.comments_translated or report.comments
+        preprocessed = preprocess_text(comments_text)
+
         return self.create(
             app=app,
             breakage_category=breakage,
@@ -535,6 +537,8 @@ class ReportEntryManager(models.Manager):
             ml_valid_probability=report.ml_valid_probability,
             bucket_id=bucket_id,
             cluster_id=cluster_id,
+            domain=domain,
+            comments_preprocessed=preprocessed,
         )
 
 
@@ -558,6 +562,8 @@ class ReportEntry(models.Model):
     cluster: models.ForeignKey = models.ForeignKey(
         Cluster, null=True, on_delete=models.deletion.SET_NULL
     )
+    domain: models.CharField = models.CharField(max_length=255, null=True)
+    comments_preprocessed: models.TextField = models.TextField(null=True)
 
     objects = ReportEntryManager()
 
@@ -648,25 +654,6 @@ class ReportEntry(models.Model):
 def ReportEntry_delete(sender, instance, **kwargs):
     if instance.bucket_id is not None:
         BucketHit.decrement_count(instance.bucket_id, instance.reported_at)
-
-
-# @receiver(post_save, sender=ReportEntry)
-# def ReportEntry_save(sender, instance, created, **kwargs):
-#     triage = created
-#
-#     if instance.bucket_id != instance._original_bucket:
-#         if instance._original_bucket is not None:
-#             # remove BucketHit for old bucket
-#             BucketHit.decrement_count(instance._original_bucket, instance.reported_at)
-#
-#         if instance.bucket is not None:
-#             # add BucketHit for new bucket
-#             BucketHit.increment_count(instance.bucket_id, instance.reported_at)
-#         else:
-#             triage = True
-#
-#     if getattr(settings, "USE_CELERY", None) and triage:
-#         triage_new_report.apply_async((instance.pk,), countdown=0.1)
 
 
 class BugzillaTemplateMode(models.TextChoices):

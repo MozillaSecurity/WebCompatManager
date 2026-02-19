@@ -93,7 +93,6 @@ class SBERTClusterer:
         x = self.model.encode(
             [report_text], show_progress_bar=False, normalize_embeddings=True
         )[0]
-        x = np.asarray(x, dtype=np.float32)
 
         best_cluster = None
         best_avg_similarity = min_similarity

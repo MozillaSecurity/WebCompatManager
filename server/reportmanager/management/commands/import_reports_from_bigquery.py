@@ -9,7 +9,6 @@ from urllib.parse import urlsplit
 from dateutil.parser import isoparse
 from django.conf import settings
 from django.core.management import BaseCommand
-from django.db.models import Q
 from django.db.utils import IntegrityError
 from google.cloud import bigquery
 from google.oauth2 import service_account

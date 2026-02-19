@@ -12,10 +12,6 @@ export const retrieveBucket = async (id) =>
 export const listBuckets = async (params) =>
   (await mainAxios.get("/reportmanager/rest/buckets/", { params })).data;
 
-export const clusterReports = async (domain = null) =>
-  (await mainAxios.post("/reportmanager/rest/buckets/cluster/", { domain }))
-    .data;
-
 export const listClusteringJobs = async (params) =>
   (await mainAxios.get("/reportmanager/rest/clustering-jobs/", { params }))
     .data;

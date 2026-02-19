@@ -7,9 +7,7 @@ The clustering mechanism groups similar reports within each domain using unsuper
 ## Running Full Clustering
 Note that running full clustering **will delete existing clusters and cluster-based buckets** and recreate them from scratch. Generally we'll need to do it only once.
 
-There are two ways to run full clustering:
 
-### 1. Using the Command Line
 
 ```bash
 # Cluster reports for a specific domain only
@@ -49,37 +47,6 @@ The command performs the following steps:
 
 6. Clusters are saved to the database along with corresponding buckets. Each bucket receives a signature containing the domain and cluster ID for future report assignment.
 
-### 2. Using the UI
-
-It is also possible to initiate full clustering through the web interface at `/reportmanager/clustering/`:
-
-1. **Prerequisites for local development**:
-   ```bash
-   1. Install and start Redis
-
-   For example, on MacOS:
-   brew install redis
-   brew services start redis
-
-   2. Start the Celery worker to handle background tasks
-   uv run --extra server celery -A celeryconf worker --loglevel=info --concurrency=1 -Q celery,cron
-   ```
-
-2. **Running Full Clustering**:
-   - Navigate to the Clustering page
-   - Optionally specify a domain to cluster only reports from that domain
-   - Click "Run Clustering" to start the process
-   - The job runs in the background and you can monitor its progress in the job history table
-
-3. **Job Types**:
-   - **Full**: Re-clusters all reports from scratch (deletes existing clusters)
-   - **Incremental**: Automatically triages new unbucketed reports against existing clusters (runs hourly via Celery Beat)
-
-The web interface shows:
-- Job history with status, completion time, and number of buckets created
-- Real-time progress updates (polls every 10 seconds)
-- Error messages if a job fails
-
 ## Incremental Triage of New Reports
 
 After the initial full clustering, new incoming reports need to be assigned to appropriate buckets. This is handled by the `triage_new_reports` command, which runs every hour.
@@ -115,6 +82,19 @@ uv run -p 3.12 --extra=server server/manage.py triage_new_reports
 ```
 
 Note: This command requires at least one successful full clustering run to have occurred first.
+
+## Results of clustering jobs in the UI
+
+It's possible to view clustering results and status through the web interface at `/reportmanager/clustering/`:
+
+- Job history with status, completion time, and number of buckets created
+- Real-time progress updates (polls every 10 seconds)
+- Error messages if a job fails
+
+**Job Types**:
+- **Full**: Re-clusters all reports from scratch (deletes existing clusters)
+- **Incremental**: Automatically triages new unbucketed reports against existing clusters (runs hourly via Celery Beat)
+
 
 ## Clustering algorithm details
 

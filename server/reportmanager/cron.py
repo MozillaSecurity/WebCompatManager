@@ -102,12 +102,3 @@ def import_reports():
         )
 
     call_command("import_reports_from_bigquery", since=since)
-
-
-@app.task(ignore_result=True)
-def cluster_reports(domain=None):
-    """Cluster similar reports within domains and create buckets for each cluster"""
-    if domain:
-        call_command("cluster_reports", domain=domain)
-    else:
-        call_command("cluster_reports")
