@@ -43,6 +43,7 @@ from .models import (
     BugProvider,
     BugzillaTemplate,
     BugzillaTemplateMode,
+    ClusteringJob,
     ReportEntry,
     ReportHit,
     User,
@@ -53,6 +54,7 @@ from .serializers import (
     BucketVueSerializer,
     BugProviderSerializer,
     BugzillaTemplateSerializer,
+    ClusteringJobSerializer,
     InvalidArgumentException,
     ReportEntrySerializer,
     ReportEntryVueSerializer,
@@ -1539,3 +1541,15 @@ class BucketSpikeViewSet(viewsets.GenericViewSet):
 
 def spike_list_view(request):
     return render(request, "buckets/spikes.html")
+
+
+def clustering_view(request):
+    return render(request, "clustering.html")
+
+
+class ClusteringJobViewSet(mixins.ListModelMixin, viewsets.GenericViewSet):
+    """API endpoint that allows viewing ClusteringJob history"""
+
+    authentication_classes = (TokenAuthentication, SessionAuthentication)
+    queryset = ClusteringJob.objects.all().order_by("-started_at")
+    serializer_class = ClusteringJobSerializer

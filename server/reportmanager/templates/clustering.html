@@ -1,0 +1,9 @@
+{% extends 'layouts/layout_base.html' %}
+
+{% block title %}Clustering{% endblock title %}
+
+{% block body_content %}
+<clustering
+  :can-edit="{% if perms.reportmanager.reportmanager_write %}true{% else %}false{% endif %}"
+  />
+{% endblock body_content %}

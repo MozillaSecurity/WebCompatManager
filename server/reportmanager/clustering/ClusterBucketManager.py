@@ -7,16 +7,23 @@ from dataclasses import dataclass
 from datetime import datetime, timedelta
 from itertools import batched
 from typing import Any
-from urllib.parse import urlsplit
 
 import numpy as np
 from django.db import transaction
-from django.db.models import QuerySet
+from django.db.models import Count, Max, Min, QuerySet
 from django.utils import timezone
 
 from reportmanager.clustering.SBERTClusterer import SBERTClusterer
 from reportmanager.models import Bucket, BucketHit, Cluster, ReportEntry
-from reportmanager.utils import preprocess_text
+
+
+@dataclass
+class DomainClusterData:
+    """Domain-specific clustering data including distance threshold and embeddings."""
+
+    domain: str
+    distance_threshold: float
+    embeddings: dict[int, np.ndarray]  # cluster_id -> embeddings
 
 
 @dataclass
@@ -75,9 +82,9 @@ class ClusteringConfig:
     HIGH_VOLUME_WINDOW_DAYS = 14
 
     # Threshold for high-volume domains (70% similarity required)
-    HIGH_VOLUME_DISTANCE_THRESHOLD = 0.30
+    MIN_DISTANCE_THRESHOLD = 0.30
     # Threshold for normal-volume domains (62% similarity required)
-    NORMAL_VOLUME_DISTANCE_THRESHOLD = 0.38
+    MAX_DISTANCE_THRESHOLD = 0.38
 
     # Minimum ML confidence for single-report clusters
     MIN_VALID_PROBABILITY_SINGLE_REPORT = 0.60
@@ -119,29 +126,20 @@ class ClusterBucketManager:
         self.clusterer = SBERTClusterer()
 
     def build_cluster_report(self, report_data: dict) -> ClusterReport:
-        comments = report_data["comments_translated"] or report_data["comments"]
-        preprocessed_text = preprocess_text(comments)
-
-        try:
-            parsed_url = urlsplit(report_data["url"])
-            domain = parsed_url.hostname or "unknown"
-        except Exception:
-            domain = "unknown"
-
         report = ClusterReport(
             id=report_data["id"],
             ml_valid_probability=report_data["ml_valid_probability"],
             reported_at=report_data["reported_at"],
             url=report_data["url"],
             bucket_id=report_data["bucket_id"],
-            text=preprocessed_text,
-            domain=domain,
+            text=report_data["comments_preprocessed"],
+            domain=report_data["domain"],
         )
 
         return report
 
     def fetch_reports(self, domain: str | None = None) -> list[ClusterReport]:
-        reports_qs = ReportEntry.objects.exclude(comments="").filter(
+        reports_qs = ReportEntry.objects.exclude(comments_preprocessed="").filter(
             ml_valid_probability__gt=0.03
         )
 
@@ -149,12 +147,12 @@ class ClusterBucketManager:
             self.build_cluster_report(report_data)
             for report_data in reports_qs.values(
                 "id",
-                "comments",
-                "comments_translated",
+                "comments_preprocessed",
                 "ml_valid_probability",
                 "reported_at",
                 "url",
                 "bucket_id",
+                "domain",
             )
         ]
 
@@ -258,6 +256,35 @@ class ClusterBucketManager:
             )
         return clusters
 
+    @staticmethod
+    def dynamic_threshold(report_count, min, max, center=100, steepness=0.05):
+        """Calculate dynamic clustering threshold using sigmoid transition.
+
+        Args:
+            report_count: Number of reports for the domain
+            min: Minimum threshold for high-volume domains (strict clustering)
+            max: Maximum threshold for low-volume domains (lenient clustering)
+            center: Report count where threshold is halfway between min and max.
+                Based on a 60-day window analysis: 98% of domains have 1-10 reports,
+                ~1.8% have 10-100 reports, and only 0.2% have >100 reports. Default 100
+                keeps most domains lenient (98% well below center), gradually tightens
+                for the ~300 mid-volume domains, and reaches strict clustering for the
+                top 0.2%.
+            steepness: Controls transition speed. Default 0.05 creates gradual
+                ~100-report transition (at 50: ≈0.37, at 100: ≈0.34, at 150: ≈0.31).
+
+        Returns:
+            float: Clustering distance threshold
+
+        Note that these parameters are initial estimates and may need tuning. There is
+        some uncertainty about the best value and volume-based approach might not be ideal
+        and may require some experimentation with calculating threshold based on how diverse
+        reports are within each domain instead.
+        """
+        # Sigmoid from high → low as volume increases
+        blend = 1.0 / (1.0 + np.exp(-steepness * (report_count - center)))
+        return max * (1 - blend) + min * blend
+
     def cluster_domain_reports(
         self,
         domain: str,
@@ -269,7 +296,7 @@ class ClusterBucketManager:
             return []
 
         # Calculate if this is a high-volume domain
-        # and if so, only use reports in the last 14 days
+        # and if so, only use reports in the last N days
         is_high_volume = self.is_high_volume_domain(reports)
 
         if is_high_volume:
@@ -281,10 +308,10 @@ class ClusterBucketManager:
             return []
 
         # Use different thresholds for high vs normal volume
-        threshold = (
-            ClusteringConfig.HIGH_VOLUME_DISTANCE_THRESHOLD
-            if is_high_volume
-            else ClusteringConfig.NORMAL_VOLUME_DISTANCE_THRESHOLD
+        threshold = self.dynamic_threshold(
+            report_count=len(reports),
+            min=ClusteringConfig.MIN_DISTANCE_THRESHOLD,
+            max=ClusteringConfig.MAX_DISTANCE_THRESHOLD,
         )
 
         texts = [report.text for report in reports]
@@ -417,3 +444,119 @@ class ClusterBucketManager:
             buckets_created += 1
 
         return buckets_created
+
+    def get_bucket_for_cluster(self, cluster_id: int) -> Bucket | None:
+        cluster = Cluster.objects.filter(id=cluster_id).first()
+        if not cluster:
+            return None
+
+        signature = self.build_cluster_bucket_signature(cluster.domain, cluster_id)
+        bucket = Bucket.objects.filter(signature=signature).first()
+        return bucket
+
+    def calculate_domain_thresholds(self, domains: set[str]) -> dict[str, float]:
+        """Calculate dynamic distance thresholds for domains based on report volume."""
+        domain_thresholds = {}
+
+        for batch_domains in batched(domains, 500):
+            domain_stats = (
+                ReportEntry.objects.filter(domain__in=batch_domains)
+                .filter(ml_valid_probability__gt=0.03)
+                .exclude(comments_preprocessed="")
+                .values("domain")
+                .annotate(report_count=Count("id"))
+            )
+
+            for stats in domain_stats:
+                domain = stats["domain"]
+                report_count = stats["report_count"]
+
+                threshold = self.dynamic_threshold(
+                    report_count=report_count,
+                    min=ClusteringConfig.MIN_DISTANCE_THRESHOLD,
+                    max=ClusteringConfig.MAX_DISTANCE_THRESHOLD,
+                )
+                domain_thresholds[domain] = threshold
+
+        return domain_thresholds
+
+    def build_domain_data(
+        self,
+        domains: set[str] | None = None,
+    ) -> dict[str, DomainClusterData]:
+        """Build domain data: threshold based on volume and cluster embeddings."""
+
+        domain_data: dict[str, DomainClusterData] = {}
+
+        if not domains:
+            return domain_data
+
+        domain_thresholds = self.calculate_domain_thresholds(domains=domains)
+
+        texts_by_domain: dict[str, dict[int, list[str]]] = defaultdict(
+            lambda: defaultdict(list)
+        )
+
+        for batch_domains in batched(domains, 500):
+            clustered_reports = (
+                Cluster.objects.filter(domain__in=batch_domains)
+                .values(
+                    "id",
+                    "domain",
+                    "reportentry__id",
+                    "reportentry__comments_preprocessed",
+                )
+                .exclude(reportentry__comments_preprocessed="")
+            )
+
+            for row in clustered_reports:
+                if row["reportentry__id"] is None:
+                    continue
+
+                preprocessed = row["reportentry__comments_preprocessed"]
+
+                if preprocessed:
+                    texts_by_domain[row["domain"]][row["id"]].append(preprocessed)
+
+        for domain, clusters in texts_by_domain.items():
+            distance_threshold = domain_thresholds.get(
+                domain, ClusteringConfig.MAX_DISTANCE_THRESHOLD
+            )
+
+            cluster_embeddings = {
+                cluster_id: self.clusterer.build_embeddings(texts)
+                for cluster_id, texts in clusters.items()
+                if texts
+            }
+
+            if cluster_embeddings:
+                domain_data[domain] = DomainClusterData(
+                    domain=domain,
+                    distance_threshold=distance_threshold,
+                    embeddings=cluster_embeddings,
+                )
+
+        return domain_data
+
+    def get_closest_cluster(
+        self,
+        report: ClusterReport,
+        domain_data: dict[str, DomainClusterData],
+    ) -> int | None:
+        """Find the closest cluster for a report."""
+
+        data = domain_data.get(report.domain)
+
+        if not data or not data.embeddings:
+            return None
+
+        min_similarity = 1.0 - data.distance_threshold
+
+        cluster_id = self.clusterer.assign_to_cluster_top_n_avg(
+            report.text,
+            data.embeddings,
+            n=5,
+            min_similarity=min_similarity,
+        )
+
+        return cluster_id

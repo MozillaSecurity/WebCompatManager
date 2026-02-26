@@ -4,10 +4,9 @@
 
 The clustering mechanism groups similar reports within each domain using unsupervised machine learning (SBERT embeddings and agglomerative clustering) and creates a bucket for each cluster. 
 
-## One-time clustering of existing reports
+## Running Full Clustering
+Note that running full clustering **will delete existing clusters and cluster-based buckets** and recreate them from scratch. Generally we'll need to do it only once.
 
-This command clusters reports by similarity and creates buckets for existing reports and intended to be run once. 
-Note that rerunning this command **will delete existing clusters and cluster-based buckets** and recreate them from scratch. 
 
 
 ```bash
@@ -47,6 +46,55 @@ The command performs the following steps:
 5. Creates clusters based on the results of the clustering algorithm. Single-report clusters are discarded if their ML validity probability is below 0.60. These reports remain in the default domain-based buckets.
 
 6. Clusters are saved to the database along with corresponding buckets. Each bucket receives a signature containing the domain and cluster ID for future report assignment.
+
+## Incremental Triage of New Reports
+
+After the initial full clustering, new incoming reports need to be assigned to appropriate buckets. This is handled by the `triage_new_reports` command, which runs every hour.
+
+### How it works
+
+1. **Match to existing clusters**: For each unbucketed report, the system:
+   - Generates a semantic embedding for the report text
+   - For each cluster in report's domain:
+      - Compare the input to every member in that cluster
+      - Find the N most similar members
+      - Calculate the average of those similarity scores
+   - Assigns the report to the cluster with the highest average similarity, if that average exceeds the domain's threshold.
+2. **Cluster unmatched reports**: Reports that don't match any existing cluster are clustered among themselves:
+   - Groups similar unmatched reports into new clusters
+   - Creates new cluster-based buckets for these groups
+
+3. **Domain-based fallback**: Reports that still don't cluster are assigned to default domain-based buckets
+
+### Report Quality Criteria
+
+Similarly to full clustering, reports are only considered for clustering if they have:
+- Non-empty comment text
+- ML validity probability > 0.03 (not spam/invalid)
+
+Low-quality reports skip clustering and go directly to domain-based buckets.
+
+### Running Manually
+
+You can also run triage manually:
+```bash
+uv run -p 3.12 --extra=server server/manage.py triage_new_reports
+```
+
+Note: This command requires at least one successful full clustering run to have occurred first.
+
+## Results of clustering jobs in the UI
+
+It's possible to view clustering results and status through the web interface at `/reportmanager/clustering/`:
+
+- Job history with status, completion time, and number of buckets created
+- Real-time progress updates (polls every 10 seconds)
+- Error messages if a job fails
+
+**Job Types**:
+- **Full**: Re-clusters all reports from scratch (deletes existing clusters)
+- **Incremental**: Automatically triages new unbucketed reports against existing clusters (runs hourly via Celery Beat)
+
 
 ## Clustering algorithm details
 

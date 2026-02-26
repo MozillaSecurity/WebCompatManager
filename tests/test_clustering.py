@@ -12,6 +12,7 @@ from reportmanager.clustering.ClusterBucketManager import (
     ClusterBucketManager,
     ClusterGroup,
     ClusterReport,
+    DomainClusterData,
 )
 from reportmanager.clustering.SBERTClusterer import SBERTClusterer
 
@@ -207,7 +208,7 @@ class TestClusterBucketManager:
         assert len(groups_by_size[1].reports) == 1
 
     def test_group_reports_by_label_length_mismatch_reports_labels(self, manager):
-        """Test that length mismatch between reports and labels raises assertion error."""
+        """Test that length mismatch between reports and labels raises error."""
         reports = [
             ClusterReport(
                 id=1,
@@ -333,3 +334,167 @@ class TestClusterBucketManager:
         assert signature["symptoms"][0]["value"] == "example.com"
         assert signature["symptoms"][1]["type"] == "cluster_id"
         assert signature["symptoms"][1]["value"] == "123"
+
+    def test_get_closest_cluster_uses_precomputed_threshold(self, manager):
+        """Test that get_closest_cluster uses precomputed distance threshold."""
+        # Setup domain data
+        domain_data = {
+            "example.com": DomainClusterData(
+                domain="example.com",
+                distance_threshold=0.30,
+                embeddings={1: np.array([[0.1, 0.2]]), 2: np.array([[0.3, 0.4]])},
+            )
+        }
+
+        report = ClusterReport(
+            id=1,
+            ml_valid_probability=0.8,
+            reported_at=timezone.now(),
+            url="https://example.com/page",
+            bucket_id=None,
+            text="Test issue",
+            domain="example.com",
+        )
+
+        # Mock assign_to_cluster_top_n_avg to capture the min_similarity
+        manager.clusterer.assign_to_cluster_top_n_avg = Mock(return_value=1)
+
+        manager.get_closest_cluster(report, domain_data)
+
+        # Verify that min_similarity was calculated from precomputed threshold
+        call_args = manager.clusterer.assign_to_cluster_top_n_avg.call_args
+        assert call_args[1]["min_similarity"] == 0.70
+
+    def test_get_closest_cluster_returns_none_for_unknown_domain(self, manager):
+        """Test that get_closest_cluster returns None for domains without data."""
+        report = ClusterReport(
+            id=1,
+            ml_valid_probability=0.8,
+            reported_at=timezone.now(),
+            url="https://unknown.com/page",
+            bucket_id=None,
+            text="Test issue",
+            domain="unknown.com",
+        )
+
+        domain_data = {}
+        result = manager.get_closest_cluster(report, domain_data)
+        assert result is None
+
+    def test_get_closest_cluster_returns_none_for_empty_embeddings(self, manager):
+        """Test that get_closest_cluster returns None when domain has no embeddings."""
+        # Setup domain data with no embeddings
+        domain_data = {
+            "empty.com": DomainClusterData(
+                domain="empty.com", distance_threshold=0.30, embeddings={}
+            )
+        }
+
+        report = ClusterReport(
+            id=1,
+            ml_valid_probability=0.8,
+            reported_at=timezone.now(),
+            url="https://empty.com/page",
+            bucket_id=None,
+            text="Test issue",
+            domain="empty.com",
+        )
+
+        result = manager.get_closest_cluster(report, domain_data)
+        assert result is None
+
+    def test_get_closest_cluster_uses_domain_embeddings(self, manager):
+        """Test that get_closest_cluster uses embeddings from correct domain."""
+        # Setup multiple domains
+        domain_data = {
+            "domain1.com": DomainClusterData(
+                domain="domain1.com",
+                distance_threshold=0.30,
+                embeddings={1: np.array([[0.1, 0.2]]), 2: np.array([[0.3, 0.4]])},
+            ),
+            "domain2.com": DomainClusterData(
+                domain="domain2.com",
+                distance_threshold=0.38,
+                embeddings={3: np.array([[0.5, 0.6]])},
+            ),
+        }
+
+        report = ClusterReport(
+            id=1,
+            ml_valid_probability=0.8,
+            reported_at=timezone.now(),
+            url="https://domain2.com/page",
+            bucket_id=None,
+            text="Test issue",
+            domain="domain2.com",
+        )
+
+        manager.clusterer.assign_to_cluster_top_n_avg = Mock(return_value=3)
+
+        result = manager.get_closest_cluster(report, domain_data)
+
+        # Verify that domain2's embeddings were used
+        call_args = manager.clusterer.assign_to_cluster_top_n_avg.call_args
+        embeddings_used = call_args[0][1]
+        assert 3 in embeddings_used
+        assert 1 not in embeddings_used
+        assert result == 3
+
+    def test_dynamic_threshold_at_center(self):
+        """Test that threshold is midpoint when n equals center."""
+        threshold = ClusterBucketManager.dynamic_threshold(
+            report_count=100, min=0.30, max=0.38, center=100
+        )
+        # At center, sigmoid is 0.5, so we get the average of high and low
+        expected = (0.38 + 0.30) / 2
+        assert abs(threshold - expected) < 0.01
+
+    def test_dynamic_threshold_at_low_volume(self):
+        """Test that threshold approaches high value for very small n."""
+        threshold = ClusterBucketManager.dynamic_threshold(
+            report_count=1, min=0.30, max=0.38, center=100
+        )
+        # For small n, sigmoid approaches 0, so we get close to max
+        assert threshold > 0.37
+        assert threshold <= 0.38
+
+    def test_dynamic_threshold_at_high_volume(self):
+        """Test that threshold approaches low value for very large n."""
+        threshold = ClusterBucketManager.dynamic_threshold(
+            report_count=500, min=0.30, max=0.38, center=100
+        )
+        # For large n, sigmoid approaches 1, so we get close to min
+        assert threshold < 0.31
+        assert threshold >= 0.30
+
+    def test_dynamic_threshold_monotonic_decrease(self):
+        """Test that threshold decreases as volume increases."""
+        thresholds = [
+            ClusterBucketManager.dynamic_threshold(report_count=n, min=0.30, max=0.38)
+            for n in [10, 50, 100, 150, 200]
+        ]
+        # Each threshold should be less than or equal to the previous one
+        for i in range(len(thresholds) - 1):
+            assert thresholds[i] >= thresholds[i + 1]
+
+    def test_dynamic_threshold_custom_steepness(self):
+        """Test that steepness parameter controls transition rate."""
+        # Gentle slope (low steepness)
+        gentle = ClusterBucketManager.dynamic_threshold(
+            report_count=120, min=0.30, max=0.38, center=100, steepness=0.02
+        )
+        # Steep slope (high steepness)
+        steep = ClusterBucketManager.dynamic_threshold(
+            report_count=120, min=0.30, max=0.38, center=100, steepness=0.10
+        )
+        # With same n > center, steeper curve should be closer to min
+        assert steep < gentle
+
+    def test_dynamic_threshold_bounds(self):
+        """Test that threshold stays within [min, max] bounds."""
+        # Test extreme values
+        for n in [0, 1, 10, 100, 500, 1000]:
+            threshold = ClusterBucketManager.dynamic_threshold(
+                report_count=n, min=0.30, max=0.38
+            )
+            assert 0.30 <= threshold <= 0.38

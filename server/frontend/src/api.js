@@ -12,6 +12,10 @@ export const retrieveBucket = async (id) =>
 export const listBuckets = async (params) =>
   (await mainAxios.get("/reportmanager/rest/buckets/", { params })).data;
 
+export const listClusteringJobs = async (params) =>
+  (await mainAxios.get("/reportmanager/rest/clustering-jobs/", { params }))
+    .data;
+
 export const reportStats = async (params) =>
   (await mainAxios.get("/reportmanager/rest/reports/stats/", { params })).data;
 
