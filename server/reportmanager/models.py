@@ -567,6 +567,11 @@ class ReportEntry(models.Model):
 
     objects = ReportEntryManager()
 
+    class Meta:
+        indexes = [
+            models.Index(fields=["domain"]),
+        ]
+
     def __init__(self, *args, **kwargs):
         self._cached_report = None
         self._original_bucket = None

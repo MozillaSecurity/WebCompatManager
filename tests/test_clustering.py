@@ -443,7 +443,7 @@ class TestClusterBucketManager:
     def test_dynamic_threshold_at_center(self):
         """Test that threshold is midpoint when n equals center."""
         threshold = ClusterBucketManager.dynamic_threshold(
-            n=100, high=0.38, low=0.30, center=100
+            report_count=100, min=0.30, max=0.38, center=100
         )
         # At center, sigmoid is 0.5, so we get the average of high and low
         expected = (0.38 + 0.30) / 2
@@ -452,25 +452,25 @@ class TestClusterBucketManager:
     def test_dynamic_threshold_at_low_volume(self):
         """Test that threshold approaches high value for very small n."""
         threshold = ClusterBucketManager.dynamic_threshold(
-            n=1, high=0.38, low=0.30, center=100
+            report_count=1, min=0.30, max=0.38, center=100
         )
-        # For small n, sigmoid approaches 0, so we get close to high
+        # For small n, sigmoid approaches 0, so we get close to max
         assert threshold > 0.37
         assert threshold <= 0.38
 
     def test_dynamic_threshold_at_high_volume(self):
         """Test that threshold approaches low value for very large n."""
         threshold = ClusterBucketManager.dynamic_threshold(
-            n=500, high=0.38, low=0.30, center=100
+            report_count=500, min=0.30, max=0.38, center=100
         )
-        # For large n, sigmoid approaches 1, so we get close to low
+        # For large n, sigmoid approaches 1, so we get close to min
         assert threshold < 0.31
         assert threshold >= 0.30
 
     def test_dynamic_threshold_monotonic_decrease(self):
         """Test that threshold decreases as volume increases."""
         thresholds = [
-            ClusterBucketManager.dynamic_threshold(n=n, high=0.38, low=0.30)
+            ClusterBucketManager.dynamic_threshold(report_count=n, min=0.30, max=0.38)
             for n in [10, 50, 100, 150, 200]
         ]
         # Each threshold should be less than or equal to the previous one
@@ -481,18 +481,20 @@ class TestClusterBucketManager:
         """Test that steepness parameter controls transition rate."""
         # Gentle slope (low steepness)
         gentle = ClusterBucketManager.dynamic_threshold(
-            n=120, high=0.38, low=0.30, center=100, steepness=0.02
+            report_count=120, min=0.30, max=0.38, center=100, steepness=0.02
         )
         # Steep slope (high steepness)
         steep = ClusterBucketManager.dynamic_threshold(
-            n=120, high=0.38, low=0.30, center=100, steepness=0.10
+            report_count=120, min=0.30, max=0.38, center=100, steepness=0.10
         )
-        # With same n > center, steeper curve should be closer to low
+        # With same n > center, steeper curve should be closer to min
         assert steep < gentle
 
     def test_dynamic_threshold_bounds(self):
-        """Test that threshold stays within [low, high] bounds."""
+        """Test that threshold stays within [min, max] bounds."""
         # Test extreme values
         for n in [0, 1, 10, 100, 500, 1000]:
-            threshold = ClusterBucketManager.dynamic_threshold(n=n, high=0.38, low=0.30)
+            threshold = ClusterBucketManager.dynamic_threshold(
+                report_count=n, min=0.30, max=0.38
+            )
             assert 0.30 <= threshold <= 0.38

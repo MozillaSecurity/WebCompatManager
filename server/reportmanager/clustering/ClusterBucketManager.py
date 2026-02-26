@@ -258,6 +258,29 @@ class ClusterBucketManager:
 
     @staticmethod
     def dynamic_threshold(report_count, min, max, center=100, steepness=0.05):
+        """Calculate dynamic clustering threshold using sigmoid transition.
+
+        Args:
+            report_count: Number of reports for the domain
+            min: Minimum threshold for high-volume domains (strict clustering)
+            max: Maximum threshold for low-volume domains (lenient clustering)
+            center: Report count where threshold is halfway between min and max.
+                Based on a 60-day window analysis: 98% of domains have 1-10 reports,
+                ~1.8% have 10-100 reports, and only 0.2% have >100 reports. Default 100
+                keeps most domains lenient (98% well below center), gradually tightens
+                for the ~300 mid-volume domains, and reaches strict clustering for the
+                top 0.2%.
+            steepness: Controls transition speed. Default 0.05 creates gradual
+                ~100-report transition (at 50: ≈0.37, at 100: ≈0.34, at 150: ≈0.31).
+
+        Returns:
+            float: Clustering distance threshold
+
+        Note that these parameters are initial estimates and may need tuning. There is
+        some uncertainty about the best value and volume-based approach might not be ideal
+        and may require some experimentation with calculating threshold based on how diverse
+        reports are within each domain instead.
+        """
         # Sigmoid from high → low as volume increases
         blend = 1.0 / (1.0 + np.exp(-steepness * (report_count - center)))
         return max * (1 - blend) + min * blend

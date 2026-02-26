@@ -99,7 +99,7 @@ class SBERTClusterer:
 
         for cluster_id, embs in cluster_embeddings.items():
             # Calculate similarities to all members
-            sims = embs @ x
+            sims = self.model.similarity(x, embs)[0].numpy()
 
             # Take average of top-N most similar members
             # For small clusters, use all members

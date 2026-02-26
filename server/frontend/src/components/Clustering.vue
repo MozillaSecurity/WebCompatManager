@@ -33,8 +33,8 @@
               >
               <span v-else class="label label-default">Incremental</span>
             </td>
-            <td>{{ formatDate(job.started_at) }}</td>
-            <td>
+            <td class="wrap-none">{{ formatDate(job.started_at) }}</td>
+            <td class="wrap-none">
               <span v-if="job.completed_at">{{
                 formatDate(job.completed_at)
               }}</span>
@@ -65,6 +65,7 @@
 
 <script>
 import * as api from "../api.js";
+import { shorterDate } from "../helpers.js";
 
 export default {
   name: "Clustering",
@@ -90,17 +91,15 @@ export default {
     async fetchJobs() {
       try {
         const data = await api.listClusteringJobs({ limit: 10 });
-        this.jobs = data.results || data;
-        this.loading = false;
+        this.jobs = data.results;
       } catch (err) {
         console.error("Failed to fetch clustering jobs:", err);
+      } finally {
         this.loading = false;
       }
     },
     formatDate(dateString) {
-      if (!dateString) return "";
-      const date = new Date(dateString);
-      return date.toLocaleString();
+      return shorterDate(dateString);
     },
   },
 };
