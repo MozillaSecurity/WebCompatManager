@@ -3,8 +3,9 @@
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 import json
 import re
+from collections import defaultdict
 from dataclasses import dataclass
-from datetime import timedelta
+from datetime import datetime, timedelta
 from itertools import batched
 from logging import getLogger
 from urllib.parse import urlsplit
@@ -375,6 +376,47 @@ class BucketHit(models.Model):
         )
         counter.count += 1
         counter.save()
+
+    @classmethod
+    @transaction.atomic
+    def bulk_increment_counts(cls, bucket_hits: list[tuple[int, datetime]]) -> None:
+        """Bulk increment BucketHit counts for multiple reports."""
+        if not bucket_hits:
+            return
+
+        # Aggregate counts of reports per bucket_id per hour
+        buckethit_updates: dict[tuple[int, datetime], int] = defaultdict(int)
+        bucket_ids: set[int] = set()
+        begins: set[datetime] = set()
+
+        for bucket_id, reported_at in bucket_hits:
+            normalized_time = reported_at.replace(microsecond=0, second=0, minute=0)
+            buckethit_updates[(bucket_id, normalized_time)] += 1
+            bucket_ids.add(bucket_id)
+            begins.add(normalized_time)
+
+        existing = {
+            (h.bucket_id, h.begin): h  # type: ignore[attr-defined]
+            for h in cls.objects.select_for_update().filter(
+                bucket_id__in=bucket_ids, begin__in=begins
+            )
+        }
+
+        to_update: list = []
+        to_create: list = []
+
+        for (bucket_id, begin), count in buckethit_updates.items():
+            if (bucket_id, begin) in existing:
+                hit = existing[(bucket_id, begin)]
+                hit.count += count
+                to_update.append(hit)
+            else:
+                to_create.append(cls(bucket_id=bucket_id, begin=begin, count=count))
+
+        if to_update:
+            cls.objects.bulk_update(to_update, ["count"])
+        if to_create:
+            cls.objects.bulk_create(to_create)
 
     class Meta(TypedModelMeta):
         constraints = (
