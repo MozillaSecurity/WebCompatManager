@@ -11,6 +11,7 @@ from django.utils import timezone
 from reportmanager.clustering.ClusterBucketManager import (
     ClusterBucketManager,
     ClusterGroup,
+    ClusteringConfig,
     ClusterReport,
     DomainClusterData,
 )
@@ -363,7 +364,10 @@ class TestClusterBucketManager:
 
         # Verify that min_similarity was calculated from precomputed threshold
         call_args = manager.clusterer.assign_to_cluster_top_n_avg.call_args
-        assert call_args[1]["min_similarity"] == 0.70
+        assert (
+            call_args[1]["min_similarity"]
+            == 0.70 + ClusteringConfig.ASSIGNMENT_SIMILARITY_BUFFER
+        )
 
     def test_get_closest_cluster_returns_none_for_unknown_domain(self, manager):
         """Test that get_closest_cluster returns None for domains without data."""
