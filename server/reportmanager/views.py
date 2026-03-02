@@ -12,7 +12,7 @@ from dateutil.relativedelta import relativedelta
 from django.conf import settings as django_settings
 from django.core.exceptions import FieldError, SuspiciousOperation
 from django.db import models as db_models
-from django.db.models import Case, F, Prefetch, Q, When
+from django.db.models import Case, F, Q, When, Prefetch
 from django.db.models.aggregates import Count, Max
 from django.http import Http404
 from django.shortcuts import get_object_or_404, redirect, render
