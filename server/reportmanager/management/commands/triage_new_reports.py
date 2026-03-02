@@ -1,3 +1,4 @@
+from datetime import datetime
 from itertools import batched
 from logging import getLogger
 
@@ -9,7 +10,13 @@ from reportmanager.clustering.ClusterBucketManager import (
     ClusteringConfig,
     ClusterReport,
 )
-from reportmanager.models import Bucket, ClusteringJob, ClusteringJobType, ReportEntry
+from reportmanager.models import (
+    Bucket,
+    BucketHit,
+    ClusteringJob,
+    ClusteringJobType,
+    ReportEntry,
+)
 
 LOG = getLogger("reportmanager.triage")
 
@@ -75,10 +82,10 @@ def cluster_unmatched_reports(
 def apply_domain_bucketing_fallback(
     unmatched_reports: list[ClusterReport],
     report_entries: dict[int, ReportEntry],
-) -> int:
+) -> tuple[int, list[tuple[int, datetime]]]:
     """Add unclustered reports to default domain-based buckets."""
     if not unmatched_reports:
-        return 0
+        return 0, []
 
     LOG.info(
         f"Applying domain-based bucketing to {len(unmatched_reports)} reports that didn't cluster"  # noqa
@@ -98,6 +105,7 @@ def apply_domain_bucketing_fallback(
         existing_buckets.update({bucket["domain"]: bucket["id"] for bucket in buckets})
 
     entries_to_update = []
+    bucket_hits = []
     buckets_created = 0
 
     for report in unmatched_reports:
@@ -118,14 +126,15 @@ def apply_domain_bucketing_fallback(
             existing_buckets[report.domain] = bucket_id
 
         entry = report_entries[report.id]
-        entry.bucket_id = bucket_id
+        entry.bucket_id = bucket_id  # type: ignore[attr-defined]
         entries_to_update.append(entry)
+        bucket_hits.append((bucket_id, entry.reported_at))
 
     if entries_to_update:
         ReportEntry.objects.bulk_update(entries_to_update, ["bucket_id"])
 
     LOG.info(f"Applied domain-based bucketing to {len(entries_to_update)} reports")
-    return buckets_created
+    return buckets_created, bucket_hits
 
 
 def get_cluster_bucket(
@@ -184,6 +193,7 @@ def run_triage(job: ClusteringJob) -> None:
         unmatched_reports = []
         low_quality_reports = []
         entries_to_update = []
+        bucket_hits = []
 
         for report in unbucketed_reports:
             if report.ok_to_cluster:
@@ -194,6 +204,7 @@ def run_triage(job: ClusteringJob) -> None:
                     entry.cluster_id = cluster_id
                     entry.bucket_id = bucket_id
                     entries_to_update.append(entry)
+                    bucket_hits.append((bucket_id, entry.reported_at))
                 else:
                     # Track unmatched reports for further clustering
                     unmatched_reports.append(report)
@@ -219,7 +230,13 @@ def run_triage(job: ClusteringJob) -> None:
         # Fall back to domain-based bucketing for reports that still don't have clusters
         # and low-quality reports
         remaining = still_unmatched + low_quality_reports
-        fallback_buckets = apply_domain_bucketing_fallback(remaining, report_entries)
+        fallback_buckets, fallback_bucket_hits = apply_domain_bucketing_fallback(
+            remaining, report_entries
+        )
+
+        all_bucket_hits = bucket_hits + fallback_bucket_hits
+        if all_bucket_hits:
+            BucketHit.bulk_increment_counts(all_bucket_hits)
 
         total_buckets = buckets_created + fallback_buckets
         complete_job(job, success=True, buckets_created=total_buckets)
