@@ -10,7 +10,7 @@ from typing import Any
 
 import numpy as np
 from django.db import transaction
-from django.db.models import Count, Max, Min, QuerySet
+from django.db.models import Count, QuerySet
 from django.utils import timezone
 
 from reportmanager.clustering.SBERTClusterer import SBERTClusterer
@@ -417,6 +417,7 @@ class ClusterBucketManager:
                 color=None,
                 bug=None,
                 domain=domain,
+                cluster_id=cluster_id,
             )
 
             # Reassign reports to new bucket

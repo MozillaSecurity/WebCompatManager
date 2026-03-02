@@ -8,10 +8,16 @@
     <td class="wrap-anywhere">
       <span class="two-line-limit">{{ bucket.description }}</span>
     </td>
-    <td>{{ bucket.priority }}</td>
+    <td class="wrap-anywhere">
+      <span v-if="bucket.centroid_text">{{
+        truncate(bucket.centroid_text)
+      }}</span>
+      <span v-else class="text-muted">—</span>
+    </td>
     <td>
       <activitygraph :data="bucket.report_history" :range="activityRange" />
     </td>
+    <td>{{ bucket.priority }}</td>
     <td class="wrap-anywhere">{{ formatDate(bucket.latest_report) }}</td>
     <td>
       {{ bucket.size }}
@@ -29,14 +35,14 @@
         title="View details and comments"
         :href="bucket.view_url"
       >
-        View details and comments
+        View details
       </a>
     </td>
   </tr>
 </template>
 
 <script>
-import { date } from "../../helpers";
+import { date, truncate } from "../../helpers";
 import ActivityGraph from "../ActivityGraph.vue";
 
 export default {
@@ -63,6 +69,7 @@ export default {
   },
   methods: {
     formatDate: date,
+    truncate,
     addFilter(key, value) {
       this.$emit("add-filter", key, value);
     },

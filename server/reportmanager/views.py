@@ -11,7 +11,8 @@ from logging import getLogger
 from dateutil.relativedelta import relativedelta
 from django.conf import settings as django_settings
 from django.core.exceptions import FieldError, SuspiciousOperation
-from django.db.models import F, Q
+from django.db import models as db_models
+from django.db.models import Case, F, Q, When, Prefetch
 from django.db.models.aggregates import Count, Max
 from django.http import Http404
 from django.shortcuts import get_object_or_404, redirect, render
@@ -43,6 +44,7 @@ from .models import (
     BugProvider,
     BugzillaTemplate,
     BugzillaTemplateMode,
+    Cluster,
     ClusteringJob,
     ReportEntry,
     ReportHit,
@@ -661,6 +663,11 @@ class BucketAnnotateFilterBackend(BaseFilterBackend):
             size=Count("reportentry"),
             latest_report=Max("reportentry__reported_at"),
             latest_entry_id=Max("reportentry__id"),
+            has_cluster=Case(
+                When(cluster__isnull=False, then=1),
+                default=0,
+                output_field=db_models.IntegerField(),
+            ),
         )
 
 
@@ -798,6 +805,7 @@ class BucketViewSet(
         "size",
         "priority",
         "bug__external_id",
+        "has_cluster",
     )
 
     def get_serializer(self, *args, **kwds):
@@ -1009,6 +1017,12 @@ class BucketVueViewSet(BucketViewSet):
     def get_serializer(self, *args, **kwds):
         self.vue = True
         return BucketVueSerializer(*args, **kwds)
+
+    def get_queryset(self):
+        queryset = super().get_queryset()
+        return queryset.prefetch_related(
+            Prefetch("cluster", queryset=Cluster.objects.select_related("centroid"))
+        )
 
 
 class BugProviderViewSet(mixins.ListModelMixin, viewsets.GenericViewSet):

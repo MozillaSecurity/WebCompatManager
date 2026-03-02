@@ -229,7 +229,7 @@ export default {
       currentPage: 1,
       description: "",
       loading: true,
-      mlValidThreshold: 0.8,
+      mlValidThreshold: 0,
       reports: null,
       sortKeys: [...defaultSortKeys],
       totalPages: 1,
