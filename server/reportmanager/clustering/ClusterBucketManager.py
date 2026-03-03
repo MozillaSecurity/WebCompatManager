@@ -10,7 +10,7 @@ from typing import Any
 
 import numpy as np
 from django.db import transaction
-from django.db.models import Count, Max, Min, QuerySet
+from django.db.models import Count, QuerySet
 from django.utils import timezone
 
 from reportmanager.clustering.SBERTClusterer import SBERTClusterer
@@ -58,22 +58,38 @@ class ClusterGroup:
 
 
 class ClusteringConfig:
-    """Configuration parameters for report clustering.
+    """Configuration parameters for similarity-based report clustering.
 
-    Clustering uses different strategies based on domain volume:
-    - High-volume domains (>HIGH_VOLUME_THRESHOLD):
-        Use stricter thresholds and recent reports
-    - Normal-volume domains:
-        Use permissive thresholds and all reports
+    This class defines thresholds and parameters for both:
+    1. Initial clustering: Grouping similar reports into clusters using
+       agglomerative clustering with average linkage (see SBERTClusterer.cluster)
+    2. Assignment: Adding new incoming reports to existing clusters using
+       top-N average similarity
 
-    Distance is calculated as (1 - similarity), where similarity ranges from 0 to 1.
-    Lower distance: stricter clustering, only very similar reports group together.
-    Higher distance: more permissive clustering, somewhat similar reports
-    can group together.
+    Distance threshold strategy:
+
+    The distance threshold for agglomerative clustering is calculated dynamically
+    per domain using a volume-based strategy (see dynamic_threshold method):
+
+    - High-volume domains: Stricter thresholds (MIN_DISTANCE_THRESHOLD) to avoid
+      over-clustering, using only recent reports
+    - Low-volume domains: Permissive thresholds (MAX_DISTANCE_THRESHOLD) to ensure
+      enough grouping, using all historical reports
+    - Mid-volume domains: Sigmoid transition between the min and max
+
+    Threshold interpretation:
+    - Lower threshold = stricter clustering = only very similar reports group together
+    - Higher threshold = more permissive clustering = somewhat similar reports
+      can group together
 
     Example:
     - Distance 0.30 means reports must be 70% similar to cluster together
     - Distance 0.38 means reports must be 62% similar to cluster together
+
+    Assignment buffer:
+    - ASSIGNMENT_SIMILARITY_BUFFER compensates for top-N avg being more permissive
+      than average linkage clustering, preventing false positive assignments to
+      existing clusters
     """
 
     # Reports per week to classify domain as high-volume
@@ -85,6 +101,20 @@ class ClusteringConfig:
     MIN_DISTANCE_THRESHOLD = 0.30
     # Threshold for normal-volume domains (62% similarity required)
     MAX_DISTANCE_THRESHOLD = 0.38
+
+    # This arbitrary buffer added to similarity threshold when assigning
+    # incoming reports to clusters. This compensates for the fact that
+    # top-N avg produces higher similarity scores than agglomerative
+    # clustering with average linkage.
+    #
+    # Why: Top-N avg picks the best N matches from a cluster, while average
+    # linkage (used in initial clustering) averages over all members. This means
+    # top-N avg will assign reports to clusters more aggressively.
+    #
+    # The buffer provides margin to prevent borderline false positives
+    # where top-N avg accepts reports based on a few high matches despite
+    # overall weak cluster fit.
+    ASSIGNMENT_SIMILARITY_BUFFER = 0.05
 
     # Minimum ML confidence for single-report clusters
     MIN_VALID_PROBABILITY_SINGLE_REPORT = 0.60
@@ -550,7 +580,10 @@ class ClusterBucketManager:
         if not data or not data.embeddings:
             return None
 
-        min_similarity = 1.0 - data.distance_threshold
+        domain_threshold = 1.0 - data.distance_threshold
+        min_similarity = (
+            domain_threshold + ClusteringConfig.ASSIGNMENT_SIMILARITY_BUFFER
+        )
 
         cluster_id = self.clusterer.assign_to_cluster_top_n_avg(
             report.text,

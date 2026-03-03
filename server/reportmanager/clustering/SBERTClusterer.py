@@ -17,7 +17,19 @@ class SBERTClusterer:
     def cluster(
         self, texts: list[str], distance_threshold: float
     ) -> tuple[np.ndarray, np.ndarray]:
-        """Cluster text documents using SBERT embeddings and agglomerative clustering.
+        """Cluster texts using SBERT embeddings and agglomerative clustering.
+
+        This method uses agglomerative clustering algorithm:
+        - Starts with each text as its own cluster
+        - Computes cosine distance between all pairs of text embeddings
+        - Iteratively merges the two closest clusters
+          (only merges if the distance between them is below distance_threshold)
+        - Stops when no more clusters are close enough to merge
+
+        Args:
+            texts: List of text documents to cluster
+            distance_threshold: maximum linkage distance (dissimilarity)
+            allowed between two clusters for them to be merged
 
         Returns:
             Tuple of (labels, embeddings) where both are numpy arrays.
