@@ -72,6 +72,14 @@ class Bucket(models.Model):
     # Raw signature JSON (see webcompat.models.Signature)
     signature: models.TextField = models.TextField()
     reassign_in_progress: models.BooleanField = models.BooleanField(default=False)
+    cluster: models.ForeignKey = models.ForeignKey(
+        "Cluster",
+        null=True,
+        blank=True,
+        on_delete=models.deletion.SET_NULL,
+        related_name="buckets",
+        db_index=True,
+    )
 
     class Meta(TypedModelMeta):
         constraints = (
@@ -294,6 +302,11 @@ class Bucket(models.Model):
                     break
 
         return (optimized_signature, matching_entries)
+
+    def get_centroid_text(self):
+        if self.cluster and self.cluster.centroid:
+            return self.cluster.centroid.comments_preprocessed
+        return None
 
 
 class BucketColor(models.Model):

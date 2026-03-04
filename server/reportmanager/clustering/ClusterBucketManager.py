@@ -447,6 +447,7 @@ class ClusterBucketManager:
                 color=None,
                 bug=None,
                 domain=domain,
+                cluster_id=cluster_id,
             )
 
             # Reassign reports to new bucket

@@ -58,6 +58,11 @@ export const shorterDate = (datetime) => {
   return `${date} ${hhmm}`;
 };
 
+export const truncate = (text, length = 150) => {
+  if (!text) return "";
+  return text.length > length ? text.substring(0, length) + "..." : text;
+};
+
 export const assignExternalBug = (bucketId, bugId, providerId) => {
   const payload = {
     bug: bugId,

@@ -84,6 +84,7 @@ class BucketVueSerializer(BucketSerializer):
     bug_urltemplate = serializers.SerializerMethodField()
     new_bug_url = serializers.SerializerMethodField()
     view_url = serializers.SerializerMethodField()
+    centroid_text = serializers.SerializerMethodField()
 
     class Meta(BucketSerializer.Meta):
         fields = [
@@ -93,6 +94,7 @@ class BucketVueSerializer(BucketSerializer):
             "bug_urltemplate",
             "new_bug_url",
             "view_url",
+            "centroid_text",
         ]
         read_only_fields = [
             *BucketSerializer.Meta.read_only_fields,
@@ -101,6 +103,7 @@ class BucketVueSerializer(BucketSerializer):
             "bug_urltemplate",
             "new_bug_url",
             "view_url",
+            "centroid_text",
         ]
 
     def get_bug_closed(self, sig):
@@ -128,6 +131,10 @@ class BucketVueSerializer(BucketSerializer):
 
     def get_view_url(self, sig):
         return reverse("reportmanager:bucketview", kwargs={"sig_id": sig.id})
+
+    def get_centroid_text(self, obj):
+        """Get centroid report comments for cluster buckets."""
+        return obj.get_centroid_text()
 
 
 class BugProviderSerializer(serializers.ModelSerializer):

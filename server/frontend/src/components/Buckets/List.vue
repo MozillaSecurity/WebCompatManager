@@ -149,6 +149,8 @@
             >
               Description
             </th>
+            <th>Representative Comment</th>
+            <th>Activity</th>
             <th
               :class="{
                 active:
@@ -160,7 +162,6 @@
             >
               Priority
             </th>
-            <th>Activity</th>
             <th
               :class="{
                 active:
@@ -259,13 +260,14 @@ export default {
   data: function () {
     const validSortKeys = [
       "bug__external_id",
+      "has_cluster",
       "id",
       "description",
       "latest_report",
       "priority",
       "size",
     ];
-    const defaultSortKeys = ["-size", "-latest_report"];
+    const defaultSortKeys = ["-has_cluster", "-size", "-latest_report"];
     const domainFilterSignature = {
       op: "AND",
       1: {
