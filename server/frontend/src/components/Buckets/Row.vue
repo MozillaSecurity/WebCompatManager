@@ -18,6 +18,7 @@
       <activitygraph :data="bucket.report_history" :range="activityRange" />
     </td>
     <td>{{ bucket.priority }}</td>
+    <td>{{ formatScore(bucket.priority_score) }}</td>
     <td class="wrap-anywhere">{{ formatDate(bucket.latest_report) }}</td>
     <td>
       {{ bucket.size }}
@@ -70,6 +71,12 @@ export default {
   methods: {
     formatDate: date,
     truncate,
+    formatScore(score) {
+      if (score === null || score === undefined) {
+        return "—";
+      }
+      return score.toFixed(2);
+    },
     addFilter(key, value) {
       this.$emit("add-filter", key, value);
     },

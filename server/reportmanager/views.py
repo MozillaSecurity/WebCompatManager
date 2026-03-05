@@ -12,8 +12,19 @@ from dateutil.relativedelta import relativedelta
 from django.conf import settings as django_settings
 from django.core.exceptions import FieldError, SuspiciousOperation
 from django.db import models as db_models
-from django.db.models import Case, F, Q, When, Prefetch
+from django.db.models import (
+    Avg,
+    Case,
+    ExpressionWrapper,
+    F,
+    FloatField,
+    Prefetch,
+    Q,
+    Value,
+    When,
+)
 from django.db.models.aggregates import Count, Max
+from django.db.models.functions import Cast, Coalesce, Ln
 from django.http import Http404
 from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse, reverse_lazy
@@ -656,7 +667,7 @@ class JsonQueryFilterBackend(BaseFilterBackend):
 
 
 class BucketAnnotateFilterBackend(BaseFilterBackend):
-    """Annotates bucket queryset with size"""
+    """Annotates bucket queryset with size and priority score"""
 
     def filter_queryset(self, request, queryset, view):
         return queryset.annotate(
@@ -667,6 +678,63 @@ class BucketAnnotateFilterBackend(BaseFilterBackend):
                 When(cluster__isnull=False, then=1),
                 default=0,
                 output_field=db_models.IntegerField(),
+            ),
+            # ML metrics for priority score calculation
+            ml_report_count=Count(
+                "reportentry",
+                filter=Q(reportentry__ml_valid_probability__isnull=False),
+            ),
+            valid_report_count=Count(
+                "reportentry",
+                filter=Q(reportentry__ml_valid_probability__gt=0.5),
+            ),
+            # Valid percentage (safe division)
+            valid_percentage=Case(
+                When(
+                    ml_report_count__gt=0,
+                    then=ExpressionWrapper(
+                        Cast("valid_report_count", FloatField())
+                        / Cast("ml_report_count", FloatField()),
+                        output_field=FloatField(),
+                    ),
+                ),
+                default=Value(0.0),
+                output_field=FloatField(),
+            ),
+            # Average confidence (conditional on valid/invalid)
+            avg_confidence=Avg(
+                Case(
+                    When(
+                        reportentry__ml_valid_probability__gt=0.5,
+                        then=F("reportentry__ml_valid_probability"),
+                    ),
+                    When(
+                        reportentry__ml_valid_probability__isnull=False,
+                        then=ExpressionWrapper(
+                            Value(1.0) - F("reportentry__ml_valid_probability"),
+                            output_field=FloatField(),
+                        ),
+                    ),
+                    default=Value(0.5),
+                    output_field=FloatField(),
+                ),
+                filter=Q(reportentry__ml_valid_probability__isnull=False),
+            ),
+            # Priority score = valid_pct * avg_conf * ln(size + 1)
+            # Only calculate for buckets with a cluster_id
+            priority_score=Case(
+                When(
+                    cluster__isnull=False,
+                    ml_report_count__gt=0,
+                    then=ExpressionWrapper(
+                        F("valid_percentage")
+                        * Coalesce(F("avg_confidence"), Value(0.5))
+                        * Ln(F("size") + Value(1)),
+                        output_field=FloatField(),
+                    ),
+                ),
+                default=Value(0.0),
+                output_field=FloatField(),
             ),
         )
 
@@ -806,6 +874,7 @@ class BucketViewSet(
         "priority",
         "bug__external_id",
         "has_cluster",
+        "priority_score",
     )
 
     def get_serializer(self, *args, **kwds):

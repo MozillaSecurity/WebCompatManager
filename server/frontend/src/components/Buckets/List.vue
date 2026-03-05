@@ -165,6 +165,17 @@
             <th
               :class="{
                 active:
+                  sortKeys.includes('priority_score') ||
+                  sortKeys.includes('-priority_score'),
+              }"
+              @click.exact="sortBy('priority_score')"
+              @click.ctrl.exact="addSort('priority_score')"
+            >
+              Priority Score
+            </th>
+            <th
+              :class="{
+                active:
                   sortKeys.includes('latest_report') ||
                   sortKeys.includes('-latest_report'),
               }"
@@ -265,9 +276,10 @@ export default {
       "description",
       "latest_report",
       "priority",
+      "priority_score",
       "size",
     ];
-    const defaultSortKeys = ["-has_cluster", "-size", "-latest_report"];
+    const defaultSortKeys = ["-priority_score", "-size", "-latest_report"];
     const domainFilterSignature = {
       op: "AND",
       1: {
