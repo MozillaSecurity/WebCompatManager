@@ -63,6 +63,13 @@ export const truncate = (text, length = 150) => {
   return text.length > length ? text.substring(0, length) + "..." : text;
 };
 
+export const formatScore = (score) => {
+  if (score === null || score === undefined) {
+    return "—";
+  }
+  return score.toFixed(2);
+};
+
 export const assignExternalBug = (bucketId, bugId, providerId) => {
   const payload = {
     bug: bugId,

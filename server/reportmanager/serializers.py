@@ -41,6 +41,7 @@ class BucketSerializer(serializers.ModelSerializer):
         style={"base_template": "textarea.html"}, required=False
     )
     size = serializers.IntegerField(write_only=True, required=False)
+    priority_score = serializers.FloatField(write_only=True, required=False)
 
     class Meta:
         model = Bucket
@@ -58,6 +59,7 @@ class BucketSerializer(serializers.ModelSerializer):
             "signature",
             "size",
             "reassign_in_progress",
+            "priority_score",
         ]
         ordering = ("-id",)
         read_only_fields = [
@@ -75,6 +77,7 @@ class BucketSerializer(serializers.ModelSerializer):
         serialized["size"] = obj.size
         serialized["latest_entry_id"] = getattr(obj, "latest_entry_id", None)
         serialized["latest_report"] = getattr(obj, "latest_report", None)
+        serialized["priority_score"] = getattr(obj, "priority_score", None)
         return serialized
 
 

@@ -17,7 +17,7 @@
     <td>
       <activitygraph :data="bucket.report_history" :range="activityRange" />
     </td>
-    <td>{{ bucket.priority }}</td>
+    <td>{{ formatScore(bucket.priority_score) }}</td>
     <td class="wrap-anywhere">{{ formatDate(bucket.latest_report) }}</td>
     <td>
       {{ bucket.size }}
@@ -42,7 +42,7 @@
 </template>
 
 <script>
-import { date, truncate } from "../../helpers";
+import { date, truncate, formatScore } from "../../helpers";
 import ActivityGraph from "../ActivityGraph.vue";
 
 export default {
@@ -70,6 +70,7 @@ export default {
   methods: {
     formatDate: date,
     truncate,
+    formatScore,
     addFilter(key, value) {
       this.$emit("add-filter", key, value);
     },
