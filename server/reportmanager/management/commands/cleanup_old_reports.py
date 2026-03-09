@@ -4,11 +4,11 @@ from logging import getLogger
 
 from django.conf import settings
 from django.core.management import BaseCommand, CommandError  # noqa
-from django.db.models.aggregates import Count
+from django.db.models import Count
 from django.utils import timezone
 
 from reportmanager.locking import JobLockError, acquire_job_lock
-from reportmanager.models import Bucket, Bug, JobLock, ReportEntry
+from reportmanager.models import Bucket, Bug, Cluster, JobLock, ReportEntry
 
 LOG = getLogger("reportmanager.cleanup_old_reports")
 
@@ -29,6 +29,9 @@ class Command(BaseCommand):
         cleanup_reports_after_days = getattr(settings, "CLEANUP_REPORTS_AFTER_DAYS", 14)
         cleanup_fixed_buckets_after_days = getattr(
             settings, "CLEANUP_FIXED_BUCKETS_AFTER_DAYS", 3
+        )
+        cleanup_centroids_after_days = getattr(
+            settings, "CLEANUP_CENTROIDS_AFTER_DAYS", 180
         )
 
         # Select all buckets that have been closed for x days
@@ -90,12 +93,49 @@ class Command(BaseCommand):
         expiry_date = now - timedelta(
             days=cleanup_reports_after_days,
         )
-        old_reports = ReportEntry.objects.filter(reported_at__lt=expiry_date)
+        old_reports = ReportEntry.objects.filter(
+            reported_at__lt=expiry_date, centroid_of__isnull=True
+        )
         old_report_count = old_reports.count()
         if old_report_count:
-            LOG.info("Removing %d old, unbucketed reports", old_report_count)
+            LOG.info("Removing %d old non-centroid reports", old_report_count)
         for report_set in batched(old_reports.values_list("pk", flat=True), 500):
             ReportEntry.objects.filter(pk__in=list(report_set)).delete()
+
+        centroid_expiry_date = now - timedelta(
+            days=cleanup_centroids_after_days,
+        )
+        # Delete centroid reports that are the last in their cluster
+        # and older than 180 days
+        old_centroid_reports = (
+            ReportEntry.objects.filter(
+                reported_at__lt=centroid_expiry_date,
+                centroid_of__isnull=False,
+            )
+            .annotate(cluster_size=Count("centroid_of__reportentry"))
+            .filter(cluster_size=1)
+        )
+
+        old_centroid_count = old_centroid_reports.count()
+        if old_centroid_count:
+            LOG.info(
+                "Removing %d old centroid reports (last in cluster)", old_centroid_count
+            )
+        for report_set in batched(
+            old_centroid_reports.values_list("pk", flat=True), 500
+        ):
+            ReportEntry.objects.filter(pk__in=list(report_set)).delete()
+
+        # Cleanup clusters with no reports left
+        empty_clusters = Cluster.objects.annotate(
+            report_count=Count("reportentry")
+        ).filter(report_count=0)
+
+        empty_cluster_count = empty_clusters.count()
+
+        if empty_cluster_count:
+            LOG.info("Removing %d empty clusters", empty_cluster_count)
+            empty_clusters.delete()
 
         # Cleanup all bugs that don't belong to any bucket anymore
         orphan_bugs = Bug.objects.filter(bucket__isnull=True)
