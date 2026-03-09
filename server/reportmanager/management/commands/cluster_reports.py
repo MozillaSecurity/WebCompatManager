@@ -7,7 +7,8 @@ from django.core.management import BaseCommand
 from django.utils import timezone
 
 from reportmanager.clustering.ClusterBucketManager import ClusterBucketManager
-from reportmanager.models import ClusteringJob, ClusteringJobType
+from reportmanager.locking import JobLockError, acquire_job_lock
+from reportmanager.models import ClusteringJob, ClusteringJobType, JobLock
 
 LOG = getLogger("reportmanager.cluster")
 
@@ -84,13 +85,14 @@ class Command(BaseCommand):
         )
 
     def handle(self, domain: str | None = None, **options) -> None:
-        status = ClusteringJob.get_clustering_status()
+        try:
+            with acquire_job_lock(JobLock.CLUSTERING):
+                job = ClusteringJob.objects.create(
+                    domain=domain, job_type=ClusteringJobType.FULL
+                )
 
-        if status.in_progress:
-            LOG.warning("Clustering is already in progress. Skipping this run.")
+                run_clustering(domain, job)
+
+        except JobLockError as e:
+            LOG.warning(f"Cannot start clustering: {e}.")
             return
-
-        job = ClusteringJob.objects.create(
-            domain=domain, job_type=ClusteringJobType.FULL
-        )
-        run_clustering(domain, job)
