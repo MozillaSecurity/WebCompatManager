@@ -10,11 +10,13 @@ from reportmanager.clustering.ClusterBucketManager import (
     ClusteringConfig,
     ClusterReport,
 )
+from reportmanager.locking import JobLockError, acquire_job_lock
 from reportmanager.models import (
     Bucket,
     BucketHit,
     ClusteringJob,
     ClusteringJobType,
+    JobLock,
     ReportEntry,
 )
 
@@ -256,17 +258,20 @@ class Command(BaseCommand):
     )
 
     def handle(self, *args: object, **options: object) -> None:
-        status = ClusteringJob.get_clustering_status()
+        try:
+            with acquire_job_lock(JobLock.CLUSTERING):
+                status = ClusteringJob.get_clustering_status()
 
-        if status.in_progress or not status.has_successful_run:
-            reason = (
-                "clustering is currently in progress"
-                if status.in_progress
-                else "no successful clustering run has occurred yet"
-            )
-            LOG.warning(f"Skipping triaging: {reason}")
+                if not status.has_successful_run:
+                    LOG.warning("Skipping triaging: full clustering has not run yet")
+                    return
+
+                # Create a job record for this triage run
+                job = ClusteringJob.objects.create(
+                    job_type=ClusteringJobType.INCREMENTAL
+                )
+                run_triage(job)
+
+        except JobLockError as e:
+            LOG.warning(f"Cannot start triage: {e}.")
             return
-
-        # Create a job record for this triage run
-        job = ClusteringJob.objects.create(job_type=ClusteringJobType.INCREMENTAL)
-        run_triage(job)

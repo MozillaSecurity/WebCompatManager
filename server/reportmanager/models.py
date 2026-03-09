@@ -525,6 +525,35 @@ class ClusteringJob(models.Model):
         )
 
 
+class JobLock(models.Model):
+    """Generic lock for coordinating management commands related to clustering.
+
+    Prevents race conditions between operations like clustering and cleanup
+    that could interfere with each other (e.g., cleanup deleting reports
+    that clustering is about to use as centroids).
+    """
+
+    # Lock type constants
+    CLUSTERING = "clustering"
+    CLEANUP = "cleanup"
+
+    # Lock types that can exist
+    LOCK_TYPES = [CLUSTERING, CLEANUP]
+
+    # Locks older than 3 hours are considered stale
+    STALE_LOCK_HOURS = 3
+
+    lock_name: models.CharField = models.CharField(max_length=50, unique=True)
+    acquired_at: models.DateTimeField = models.DateTimeField(auto_now_add=True)
+    acquired_by: models.CharField = models.CharField(
+        max_length=255, help_text="hostname:pid of process holding lock"
+    )
+
+    def is_stale(self) -> bool:
+        cutoff = timezone.now() - timedelta(hours=self.STALE_LOCK_HOURS)
+        return self.acquired_at < cutoff
+
+
 class OS(models.Model):
     name: models.CharField = models.CharField(max_length=63, unique=True)
 

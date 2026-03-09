@@ -7,7 +7,8 @@ from django.core.management import BaseCommand, CommandError  # noqa
 from django.db.models.aggregates import Count
 from django.utils import timezone
 
-from reportmanager.models import Bucket, Bug, ReportEntry
+from reportmanager.locking import JobLockError, acquire_job_lock
+from reportmanager.models import Bucket, Bug, JobLock, ReportEntry
 
 LOG = getLogger("reportmanager.cleanup_old_reports")
 
@@ -16,6 +17,15 @@ class Command(BaseCommand):
     help = "Cleanup old report entries."
 
     def handle(self, *args, **options):
+        try:
+            with acquire_job_lock(JobLock.CLEANUP):
+                self.run_cleanup(options)
+
+        except JobLockError as e:
+            LOG.warning(f"Cannot start cleanup: {e}.")
+            return
+
+    def run_cleanup(self, options):
         cleanup_reports_after_days = getattr(settings, "CLEANUP_REPORTS_AFTER_DAYS", 14)
         cleanup_fixed_buckets_after_days = getattr(
             settings, "CLEANUP_FIXED_BUCKETS_AFTER_DAYS", 3
