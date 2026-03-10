@@ -259,7 +259,7 @@ class Command(BaseCommand):
 
     def handle(self, *args: object, **options: object) -> None:
         try:
-            with acquire_job_lock(JobLock.CLUSTERING):
+            with acquire_job_lock(JobLock.LockTypes.CLUSTERING):
                 status = ClusteringJob.get_clustering_status()
 
                 if not status.has_successful_run:

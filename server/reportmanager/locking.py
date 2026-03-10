@@ -8,7 +8,7 @@ import socket
 from collections.abc import Generator
 from contextlib import contextmanager
 
-from django.db import IntegrityError
+from django.db import transaction
 from django.utils import timezone
 
 from reportmanager.models import JobLock
@@ -28,62 +28,71 @@ def get_process_identifier() -> str:
 
 
 def acquire_lock(lock_name: str) -> bool:
-    """Acquire a lock by creating a JobLock record.
+    """Acquire a lock by updating the existing JobLock record."""
 
-    (only one lock can exist in the database at any time, regardless of name)
+    with transaction.atomic():
+        lock = JobLock.objects.select_for_update().first()
 
-    """
+        if lock is None:
+            raise JobLockError("No lock record exists in database.")
 
-    if lock_name not in JobLock.LOCK_TYPES:
-        raise ValueError(
-            f"Invalid lock type '{lock_name}'. Valid types: {JobLock.LOCK_TYPES}"
-        )
+        acquired_by = get_process_identifier()
 
-    acquired_by = get_process_identifier()
-    existing_lock = JobLock.objects.first()
-
-    if existing_lock:
-        if existing_lock.is_stale():
-            LOG.warning(
-                f"Releasing stale lock '{existing_lock.lock_name}' "
-                f"(held since {existing_lock.acquired_at}"
-                f"by {existing_lock.acquired_by})"
-            )
-            existing_lock.delete()
+        if lock.is_locked:
+            if lock.is_stale():
+                LOG.warning(
+                    f"Releasing stale lock '{lock.lock_name}' "
+                    f"(held since {lock.acquired_at} by {lock.acquired_by})"
+                )
+                # Release the stale lock and acquire the new one
+                lock.acquire(lock_name, acquired_by)
+            else:
+                raise JobLockError(
+                    f"Cannot acquire lock '{lock_name}': "
+                    f"another operation '{lock.lock_name}' is in progress "
+                    f"(held by {lock.acquired_by} since {lock.acquired_at})"
+                )
         else:
-            raise JobLockError(
-                f"Cannot acquire lock '{lock_name}': "
-                f"another operation '{existing_lock.lock_name}' is in progress "
-                f"(held by {existing_lock.acquired_by} "
-                f"since {existing_lock.acquired_at})"
-            )
+            lock.acquire(lock_name, acquired_by)
 
-    try:
-        JobLock.objects.create(lock_name=lock_name, acquired_by=acquired_by)
         LOG.info(f"Acquired lock '{lock_name}' (by {acquired_by})")
         return True
-    except IntegrityError:
-        raise JobLockError(
-            f"Cannot acquire lock '{lock_name}': another process acquired a lock"
-        )
 
 
 def release_lock(lock_name: str) -> None:
     """Release a previously acquired lock."""
-    try:
-        lock = JobLock.objects.get(lock_name=lock_name)
+    with transaction.atomic():
+        lock = JobLock.objects.select_for_update().first()
+
+        if lock is None:
+            LOG.warning(
+                f"Attempted to release lock '{lock_name}' but no lock record exists"
+            )
+            return
+
+        if not lock.is_locked:
+            LOG.warning(f"Attempted to release lock '{lock_name}' but it's not locked")
+            return
+
+        if lock.lock_name != lock_name:
+            LOG.warning(
+                f"Attempted to release lock '{lock_name}' "
+                f"but the current lock is '{lock.lock_name}'"
+            )
+            return
+
         acquired_by = lock.acquired_by
         acquired_at = lock.acquired_at
-        lock.delete()
+        duration = timezone.now() - acquired_at if acquired_at else None
 
-        duration = timezone.now() - acquired_at
-        LOG.info(
-            f"Released lock '{lock_name}' "
-            f"(held for {duration.total_seconds():.1f}s by {acquired_by})"
+        lock.release()
+
+        duration_str = (
+            f"{duration.total_seconds():.1f}s" if duration else "unknown duration"
         )
-
-    except JobLock.DoesNotExist:
-        LOG.warning(f"Attempted to release lock '{lock_name}' but it doesn't exist")
+        LOG.info(
+            f"Released lock '{lock_name}' (held for {duration_str} by {acquired_by})"
+        )
 
 
 @contextmanager
@@ -92,7 +101,7 @@ def acquire_job_lock(lock_name: str) -> Generator[None, None, None]:
 
     To run:
         try:
-            with acquire_job_lock(JobLock.CLUSTERING):
+            with acquire_job_lock(JobLock.LockTypes.CLUSTERING):
                 # Do clustering work
                 ...
         except JobLockError as e:
