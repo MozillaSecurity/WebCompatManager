@@ -525,6 +525,56 @@ class ClusteringJob(models.Model):
         )
 
 
+class JobLock(models.Model):
+    """Generic lock for coordinating management commands related to clustering.
+
+    Prevents race conditions between operations like clustering and cleanup
+    that could interfere with each other (e.g., cleanup deleting reports
+    that clustering is about to use as centroids).
+    """
+
+    class LockTypes(models.TextChoices):
+        CLUSTERING = "clustering", "Clustering"
+        CLEANUP = "cleanup", "Cleanup"
+
+    # Locks older than 3 hours are considered stale
+    STALE_LOCK_HOURS = 3
+
+    lock_name: models.CharField = models.CharField(
+        max_length=50,
+        blank=True,
+        choices=LockTypes.choices,
+        help_text="Name of operation holding the lock",
+    )
+    is_locked: models.BooleanField = models.BooleanField(default=False)
+    acquired_at: models.DateTimeField = models.DateTimeField(null=True, blank=True)
+    acquired_by: models.CharField = models.CharField(
+        max_length=255, blank=True, help_text="hostname:pid of process holding lock"
+    )
+
+    def is_stale(self) -> bool:
+        if not self.is_locked:
+            return False
+        if not self.acquired_at:
+            return True
+        cutoff = timezone.now() - timedelta(hours=self.STALE_LOCK_HOURS)
+        return self.acquired_at < cutoff
+
+    def acquire(self, lock_name: str, acquired_by: str) -> None:
+        self.lock_name = lock_name
+        self.is_locked = True
+        self.acquired_at = timezone.now()
+        self.acquired_by = acquired_by
+        self.save()
+
+    def release(self) -> None:
+        self.lock_name = ""
+        self.is_locked = False
+        self.acquired_at = None
+        self.acquired_by = ""
+        self.save()
+
+
 class OS(models.Model):
     name: models.CharField = models.CharField(max_length=63, unique=True)
 
