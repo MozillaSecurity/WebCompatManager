@@ -86,7 +86,7 @@ class Command(BaseCommand):
 
     def handle(self, domain: str | None = None, **options) -> None:
         try:
-            with acquire_job_lock(JobLock.CLUSTERING):
+            with acquire_job_lock(JobLock.LockTypes.CLUSTERING):
                 job = ClusteringJob.objects.create(
                     domain=domain, job_type=ClusteringJobType.FULL
                 )

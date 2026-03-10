@@ -18,7 +18,7 @@ class Command(BaseCommand):
 
     def handle(self, *args, **options):
         try:
-            with acquire_job_lock(JobLock.CLEANUP):
+            with acquire_job_lock(JobLock.LockTypes.CLEANUP):
                 self.run_cleanup(options)
 
         except JobLockError as e:

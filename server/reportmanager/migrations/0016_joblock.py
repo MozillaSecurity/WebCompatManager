@@ -3,6 +3,23 @@
 from django.db import migrations, models
 
 
+def create_initial_lock(apps, schema_editor):
+    """Create the single lock row."""
+    JobLock = apps.get_model('reportmanager', 'JobLock')
+    JobLock.objects.create(
+        lock_name='',
+        is_locked=False,
+        acquired_at=None,
+        acquired_by=''
+    )
+
+
+def delete_initial_lock(apps, schema_editor):
+    """Delete the lock row on migration reversal."""
+    JobLock = apps.get_model('reportmanager', 'JobLock')
+    JobLock.objects.all().delete()
+
+
 class Migration(migrations.Migration):
 
     dependencies = [
@@ -14,9 +31,11 @@ class Migration(migrations.Migration):
             name='JobLock',
             fields=[
                 ('id', models.AutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('lock_name', models.CharField(max_length=50, unique=True)),
-                ('acquired_at', models.DateTimeField(auto_now_add=True)),
-                ('acquired_by', models.CharField(help_text='hostname:pid of process holding lock', max_length=255)),
+                ('lock_name', models.CharField(blank=True, choices=[('clustering', 'Clustering'), ('cleanup', 'Cleanup')], help_text='Name of operation holding the lock', max_length=50)),
+                ('is_locked', models.BooleanField(default=False)),
+                ('acquired_at', models.DateTimeField(blank=True, null=True)),
+                ('acquired_by', models.CharField(blank=True, help_text='hostname:pid of process holding lock', max_length=255)),
             ],
         ),
+        migrations.RunPython(create_initial_lock, delete_initial_lock),
     ]
