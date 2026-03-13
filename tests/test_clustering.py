@@ -502,3 +502,55 @@ class TestClusterBucketManager:
                 report_count=n, min=0.30, max=0.38
             )
             assert 0.30 <= threshold <= 0.38
+
+    def test_cluster_domain_reports_uses_total_count_for_threshold(
+        self, manager, mock_clusterer
+    ):
+        """Test that threshold is based on total report count, not filtered count."""
+        now = timezone.now()
+
+        days_span = 60
+        target_weekly = ClusteringConfig.HIGH_VOLUME_THRESHOLD + 10
+        total_reports = int((target_weekly * days_span) / 7)
+
+        all_reports = [
+            ClusterReport(
+                id=i,
+                ml_valid_probability=0.8,
+                reported_at=now - timedelta(days=i % days_span),
+                url="https://example.com",
+                bucket_id=None,
+                text=f"Report {i}",
+                domain="example.com",
+            )
+            for i in range(total_reports)
+        ]
+
+        assert manager.is_high_volume_domain(all_reports) is True
+
+        def mock_cluster(texts, threshold):
+            n = len(texts)
+            labels = np.zeros(n, dtype=int)
+            embeddings = np.random.rand(n, 2)
+            return labels, embeddings
+
+        mock_clusterer.cluster.side_effect = mock_cluster
+        mock_clusterer.find_centroid_index.return_value = 0
+
+        manager.cluster_domain_reports("example.com", all_reports)
+
+        assert mock_clusterer.cluster.called
+
+        call_args = mock_clusterer.cluster.call_args
+        threshold_used = call_args[0][1]
+        texts_clustered = call_args[0][0]
+
+        expected_threshold = ClusterBucketManager.dynamic_threshold(
+            report_count=total_reports,
+            min=ClusteringConfig.MIN_DISTANCE_THRESHOLD,
+            max=ClusteringConfig.MAX_DISTANCE_THRESHOLD,
+        )
+
+        assert threshold_used == expected_threshold
+        assert threshold_used < 0.31
+        assert len(texts_clustered) < total_reports

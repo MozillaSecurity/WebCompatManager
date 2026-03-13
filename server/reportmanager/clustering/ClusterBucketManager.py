@@ -325,6 +325,14 @@ class ClusterBucketManager:
         if len(reports) == 0:
             return []
 
+        # Calculate threshold based on total domain volume.
+        total_report_count = len(reports)
+        threshold = self.dynamic_threshold(
+            report_count=total_report_count,
+            min=ClusteringConfig.MIN_DISTANCE_THRESHOLD,
+            max=ClusteringConfig.MAX_DISTANCE_THRESHOLD,
+        )
+
         # Calculate if this is a high-volume domain
         # and if so, only use reports in the last N days
         is_high_volume = self.is_high_volume_domain(reports)
@@ -336,13 +344,6 @@ class ClusterBucketManager:
 
         if len(reports) == 0:
             return []
-
-        # Use different thresholds for high vs normal volume
-        threshold = self.dynamic_threshold(
-            report_count=len(reports),
-            min=ClusteringConfig.MIN_DISTANCE_THRESHOLD,
-            max=ClusteringConfig.MAX_DISTANCE_THRESHOLD,
-        )
 
         texts = [report.text for report in reports]
         labels, embeddings = self.clusterer.cluster(texts, threshold)
