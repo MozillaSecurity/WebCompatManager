@@ -11,9 +11,21 @@ from logging import getLogger
 from dateutil.relativedelta import relativedelta
 from django.conf import settings as django_settings
 from django.core.exceptions import FieldError, SuspiciousOperation
-from django.db import models as db_models
-from django.db.models import Case, F, Prefetch, Q, When
+from django.db.models import (
+    Avg,
+    Case,
+    ExpressionWrapper,
+    F,
+    FloatField,
+    OuterRef,
+    Prefetch,
+    Q,
+    Subquery,
+    Value,
+    When,
+)
 from django.db.models.aggregates import Count, Max
+from django.db.models.functions import Cast, Coalesce, Greatest, Ln
 from django.http import Http404
 from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse, reverse_lazy
@@ -655,18 +667,133 @@ class JsonQueryFilterBackend(BaseFilterBackend):
         return queryset
 
 
+def as_float(expr):
+    """Helper to cast an expression to FloatField"""
+    return Cast(expr, FloatField())
+
+
 class BucketAnnotateFilterBackend(BaseFilterBackend):
-    """Annotates bucket queryset with size"""
+    """Adds annotations to bucket queries.
+
+    We want to rank buckets by quality (ML validity), spiking,
+    and recency.
+
+    For clustered buckets:
+        priority_score = ml_score + spike_boost + recency_boost
+
+        ml_score = valid_ratio x avg_confidence x ln(size + 1)
+            - valid_ratio: Ratio of reports labeled as valid with >50% confidence
+             to total reports in a given bucket
+            - avg_confidence: Average ML confidence score
+            - ln(size + 1): Take into account size of the bucket, but
+            use log scaling to prevent large buckets from dominating
+
+        spike_boost = ln(spike_ratio) x 0.5
+            - spike_ratio: Recent activity vs baseline, also use log scaling
+            and weight of 0.5 to keep it from dominating the ML score
+            (spike boost only applies in if there are at least ≥2 reports)
+
+
+        recency_boost = +0.5 if latest report within 7 days, else 0.0
+            - A bonus for buckets with recent activity
+
+    Non-clustered buckets (default per-domain buckets) get priority_score = 0.0
+    """
 
     def filter_queryset(self, request, queryset, view):
-        return queryset.annotate(
+        now = timezone.now()
+        short_days = 2
+        long_days = 60
+
+        short_window_start = now - timedelta(days=short_days)
+        long_window_start = now - timedelta(days=long_days)
+
+        latest_entry = ReportEntry.objects.filter(bucket_id=OuterRef("pk")).order_by(
+            "-reported_at", "-id"
+        )
+
+        return queryset.alias(
+            short_window_count=Count(
+                "reportentry",
+                filter=Q(reportentry__reported_at__gte=short_window_start),
+            ),
+            long_window_count=Count(
+                "reportentry",
+                filter=Q(reportentry__reported_at__gte=long_window_start),
+            ),
+            ml_report_count=Count(
+                "reportentry",
+                filter=Q(reportentry__ml_valid_probability__isnull=False),
+            ),
+            valid_report_count=Count(
+                "reportentry",
+                filter=Q(reportentry__ml_valid_probability__gt=0.5),
+            ),
+            valid_ratio=Case(
+                When(
+                    ml_report_count__gt=0,
+                    then=ExpressionWrapper(
+                        as_float(F("valid_report_count"))
+                        / as_float(F("ml_report_count")),
+                        output_field=FloatField(),
+                    ),
+                ),
+                default=Value(0),
+                output_field=FloatField(),
+            ),
+            avg_confidence=Avg(
+                Greatest(
+                    F("reportentry__ml_valid_probability"),
+                    1 - F("reportentry__ml_valid_probability"),
+                ),
+                filter=Q(reportentry__ml_valid_probability__isnull=False),
+            ),
+            spike_ratio=Case(
+                When(
+                    short_window_count__gte=2,
+                    long_window_count__gte=2,
+                    then=ExpressionWrapper(
+                        (as_float(F("short_window_count")) / Value(short_days))
+                        / (as_float(F("long_window_count")) / Value(long_days)),
+                        output_field=FloatField(),
+                    ),
+                ),
+                default=Value(1),
+                output_field=FloatField(),
+            ),
+            spike_boost=ExpressionWrapper(
+                Ln(F("spike_ratio")) * 0.5,
+                output_field=FloatField(),
+            ),
+        ).annotate(
             size=Count("reportentry"),
             latest_report=Max("reportentry__reported_at"),
-            latest_entry_id=Max("reportentry__id"),
-            has_cluster=Case(
-                When(cluster__isnull=False, then=1),
-                default=0,
-                output_field=db_models.IntegerField(),
+            latest_entry_id=Subquery(latest_entry.values("id")[:1]),
+            recency_boost=Case(
+                When(
+                    latest_report__gte=now - timedelta(days=7),
+                    then=Value(0.5),
+                ),
+                default=Value(0),
+                output_field=FloatField(),
+            ),
+            priority_score=Case(
+                When(
+                    cluster__isnull=False,
+                    ml_report_count__gt=0,
+                    then=ExpressionWrapper(
+                        (
+                            F("valid_ratio")
+                            * Coalesce(F("avg_confidence"), Value(0.5))
+                            * Ln(F("size") + Value(1))
+                        )
+                        + F("spike_boost")
+                        + F("recency_boost"),
+                        output_field=FloatField(),
+                    ),
+                ),
+                default=Value(0),
+                output_field=FloatField(),
             ),
         )
 
@@ -805,7 +932,7 @@ class BucketViewSet(
         "size",
         "priority",
         "bug__external_id",
-        "has_cluster",
+        "priority_score",
     )
 
     def get_serializer(self, *args, **kwds):

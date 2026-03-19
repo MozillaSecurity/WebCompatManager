@@ -154,13 +154,13 @@
             <th
               :class="{
                 active:
-                  sortKeys.includes('priority') ||
-                  sortKeys.includes('-priority'),
+                  sortKeys.includes('priority_score') ||
+                  sortKeys.includes('-priority_score'),
               }"
-              @click.exact="sortBy('priority')"
-              @click.ctrl.exact="addSort('priority')"
+              @click.exact="sortBy('priority_score')"
+              @click.ctrl.exact="addSort('priority_score')"
             >
-              Priority
+              Priority Score
             </th>
             <th
               :class="{
@@ -260,14 +260,13 @@ export default {
   data: function () {
     const validSortKeys = [
       "bug__external_id",
-      "has_cluster",
       "id",
       "description",
       "latest_report",
-      "priority",
+      "priority_score",
       "size",
     ];
-    const defaultSortKeys = ["-has_cluster", "-size", "-latest_report"];
+    const defaultSortKeys = ["-priority_score", "-size", "-latest_report"];
     const domainFilterSignature = {
       op: "AND",
       1: {

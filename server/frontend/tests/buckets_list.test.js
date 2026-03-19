@@ -44,7 +44,7 @@ test("bucket list has no buckets", async () => {
     vue: "1",
     limit: 100,
     offset: "0",
-    ordering: "-has_cluster,-size,-latest_report",
+    ordering: "-priority_score,-size,-latest_report",
     query: defaultQueryStr,
   });
 
@@ -78,7 +78,7 @@ test("bucket list has two buckets", async () => {
     vue: "1",
     limit: 100,
     offset: "0",
-    ordering: "-has_cluster,-size,-latest_report",
+    ordering: "-priority_score,-size,-latest_report",
     query: defaultQueryStr,
   });
 
