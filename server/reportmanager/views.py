@@ -681,9 +681,9 @@ class BucketAnnotateFilterBackend(BaseFilterBackend):
     For clustered buckets:
         priority_score = ml_score + spike_boost + recency_boost
 
-        ml_score = valid_percentage x avg_confidence x ln(size + 1)
-            - valid_percentage: How many reports the ML model marks as
-             valid with >50% confidence
+        ml_score = valid_ratio x avg_confidence x ln(size + 1)
+            - valid_ratio: Ratio of reports labeled as valid with >50% confidence
+             to total reports in a given bucket
             - avg_confidence: Average ML confidence score
             - ln(size + 1): Take into account size of the bucket, but
             use log scaling to prevent large buckets from dominating
@@ -729,7 +729,7 @@ class BucketAnnotateFilterBackend(BaseFilterBackend):
                 "reportentry",
                 filter=Q(reportentry__ml_valid_probability__gt=0.5),
             ),
-            valid_percentage=Case(
+            valid_ratio=Case(
                 When(
                     ml_report_count__gt=0,
                     then=ExpressionWrapper(
@@ -783,7 +783,7 @@ class BucketAnnotateFilterBackend(BaseFilterBackend):
                     ml_report_count__gt=0,
                     then=ExpressionWrapper(
                         (
-                            F("valid_percentage")
+                            F("valid_ratio")
                             * Coalesce(F("avg_confidence"), Value(0.5))
                             * Ln(F("size") + Value(1))
                         )
