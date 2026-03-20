@@ -8,7 +8,6 @@ def create_initial_lock(apps, schema_editor):
     JobLock = apps.get_model('reportmanager', 'JobLock')
     JobLock.objects.create(
         lock_name='',
-        is_locked=False,
         acquired_at=None,
         acquired_by=''
     )
@@ -32,7 +31,6 @@ class Migration(migrations.Migration):
             fields=[
                 ('id', models.AutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
                 ('lock_name', models.CharField(blank=True, choices=[('clustering', 'Clustering'), ('cleanup', 'Cleanup')], help_text='Name of operation holding the lock', max_length=50)),
-                ('is_locked', models.BooleanField(default=False)),
                 ('acquired_at', models.DateTimeField(blank=True, null=True)),
                 ('acquired_by', models.CharField(blank=True, help_text='hostname:pid of process holding lock', max_length=255)),
             ],

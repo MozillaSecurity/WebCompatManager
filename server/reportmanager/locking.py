@@ -27,50 +27,67 @@ def get_process_identifier() -> str:
     return f"{hostname}:{pid}"
 
 
+def get_or_create_lock() -> JobLock:
+    locks = list(JobLock.objects.select_for_update().all())
+
+    if len(locks) == 0:
+        LOG.warning(
+            "No lock record exists in database. Auto-creating missing lock record."
+        )
+        return JobLock.objects.create(lock_name="", acquired_at=None, acquired_by="")
+
+    if len(locks) > 1:
+        raise JobLockError(f"{len(locks)} lock records exist, expected exactly 1.")
+
+    return locks[0]
+
+
 def acquire_lock(lock_name: str) -> bool:
     """Acquire a lock by updating the existing JobLock record."""
 
     with transaction.atomic():
-        lock = JobLock.objects.select_for_update().first()
-
-        if lock is None:
-            raise JobLockError("No lock record exists in database.")
-
+        lock = get_or_create_lock()
         acquired_by = get_process_identifier()
 
-        if lock.is_locked:
-            if lock.is_stale():
-                LOG.warning(
-                    f"Releasing stale lock '{lock.lock_name}' "
-                    f"(held since {lock.acquired_at} by {lock.acquired_by})"
-                )
-                # Release the stale lock and acquire the new one
-                lock.acquire(lock_name, acquired_by)
-            else:
-                raise JobLockError(
-                    f"Cannot acquire lock '{lock_name}': "
-                    f"another operation '{lock.lock_name}' is in progress "
-                    f"(held by {lock.acquired_by} since {lock.acquired_at})"
-                )
-        else:
+        if lock.acquired_at is None:
             lock.acquire(lock_name, acquired_by)
+            LOG.info(f"Acquired lock '{lock_name}' (by {acquired_by})")
+            return True
 
-        LOG.info(f"Acquired lock '{lock_name}' (by {acquired_by})")
-        return True
+        if lock.is_stale():
+            LOG.warning(
+                f"Releasing stale lock '{lock.lock_name}' "
+                f"(held since {lock.acquired_at} by {lock.acquired_by})"
+            )
+            lock.acquire(lock_name, acquired_by)
+            LOG.info(f"Acquired lock '{lock_name}' (by {acquired_by})")
+            return True
+
+        # Lock is held and not stale
+        raise JobLockError(
+            f"Cannot acquire lock '{lock_name}': "
+            f"another operation '{lock.lock_name}' is in progress "
+            f"(held by {lock.acquired_by} since {lock.acquired_at})"
+        )
 
 
 def release_lock(lock_name: str) -> None:
     """Release a previously acquired lock."""
     with transaction.atomic():
-        lock = JobLock.objects.select_for_update().first()
+        locks = list(JobLock.objects.select_for_update().all())
 
-        if lock is None:
+        if len(locks) == 0:
             LOG.warning(
                 f"Attempted to release lock '{lock_name}' but no lock record exists"
             )
             return
 
-        if not lock.is_locked:
+        if len(locks) > 1:
+            raise JobLockError(f"{len(locks)} lock records exist, expected exactly 1.")
+
+        lock = locks[0]
+
+        if lock.acquired_at is None:
             LOG.warning(f"Attempted to release lock '{lock_name}' but it's not locked")
             return
 
