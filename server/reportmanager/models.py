@@ -540,6 +540,13 @@ class JobLock(models.Model):
     # Locks older than 3 hours are considered stale
     STALE_LOCK_HOURS = 3
 
+    singleton_key: models.PositiveSmallIntegerField = models.PositiveSmallIntegerField(
+        default=1,
+        unique=True,
+        editable=False,
+        help_text="Singleton key constrained to value 1 by check constraint",
+    )
+
     lock_name: models.CharField = models.CharField(
         max_length=50,
         blank=True,
@@ -550,6 +557,14 @@ class JobLock(models.Model):
     acquired_by: models.CharField = models.CharField(
         max_length=255, blank=True, help_text="hostname:pid of process holding lock"
     )
+
+    class Meta(TypedModelMeta):
+        constraints = (
+            models.CheckConstraint(
+                condition=models.Q(singleton_key=1),
+                name="singleton_key_must_be_one",
+            ),
+        )
 
     def is_stale(self) -> bool:
         if self.acquired_at is None:

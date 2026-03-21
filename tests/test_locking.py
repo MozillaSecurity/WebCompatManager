@@ -1,6 +1,7 @@
 from datetime import timedelta
 
 import pytest
+from django.db import IntegrityError, transaction
 from django.utils import timezone
 
 from reportmanager.locking import JobLockError, acquire_lock, release_lock
@@ -98,21 +99,45 @@ class TestJobLocking:
         assert locks[0].acquired_at is not None
 
     def test_multiple_lock_records_raises_error(self):
-        """Test that multiple lock records detected"""
+        """Test that database prevents creating a duplicate lock row."""
+        with transaction.atomic():
+            with pytest.raises(IntegrityError):
+                JobLock.objects.create(lock_name="", acquired_at=None, acquired_by="")
+
+        assert acquire_lock(JobLock.LockTypes.CLUSTERING) is True
+
+    def test_database_prevents_multiple_lock_records(self):
+        """Test that database-level UNIQUE constraint prevents multiple lock records."""
+        JobLock.objects.all().delete()
+
         JobLock.objects.create(lock_name="", acquired_at=None, acquired_by="")
 
-        with pytest.raises(
-            JobLockError, match="2 lock records exist, expected exactly 1"
-        ):
-            acquire_lock(JobLock.LockTypes.CLUSTERING)
+        with transaction.atomic():
+            with pytest.raises(IntegrityError):
+                JobLock.objects.create(lock_name="", acquired_at=None, acquired_by="")
 
-    def test_multiple_lock_records_on_release_raises_error(self):
-        """Test that multiple lock records detected during release."""
-        acquire_lock(JobLock.LockTypes.CLUSTERING)
+        lock_count = JobLock.objects.count()
+        assert lock_count == 1, f"Expected 1 lock, got {lock_count}"
 
-        JobLock.objects.create(lock_name="", acquired_at=None, acquired_by="")
+    def test_check_constraint_prevents_invalid_singleton_key(self):
+        """Constraint prevents singleton_key from being anything other than 1."""
+        JobLock.objects.all().delete()
 
-        with pytest.raises(
-            JobLockError, match="2 lock records exist, expected exactly 1"
-        ):
-            release_lock(JobLock.LockTypes.CLUSTERING)
+        lock1 = JobLock.objects.create(
+            singleton_key=1, lock_name="", acquired_at=None, acquired_by=""
+        )
+        assert lock1.singleton_key == 1
+
+        with transaction.atomic():
+            with pytest.raises(IntegrityError, match="singleton_key_must_be_one"):
+                JobLock.objects.create(
+                    singleton_key=2, lock_name="", acquired_at=None, acquired_by=""
+                )
+
+        with transaction.atomic():
+            with pytest.raises(IntegrityError, match="singleton_key_must_be_one"):
+                JobLock.objects.create(
+                    singleton_key=3, lock_name="", acquired_at=None, acquired_by=""
+                )
+
+        assert JobLock.objects.count() == 1

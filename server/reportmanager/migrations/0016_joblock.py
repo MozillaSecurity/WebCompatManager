@@ -30,10 +30,14 @@ class Migration(migrations.Migration):
             name='JobLock',
             fields=[
                 ('id', models.AutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
+                ('singleton_key', models.PositiveSmallIntegerField(default=1, editable=False, help_text='Singleton key constrained to value 1 by check constraint', unique=True)),
                 ('lock_name', models.CharField(blank=True, choices=[('clustering', 'Clustering'), ('cleanup', 'Cleanup')], help_text='Name of operation holding the lock', max_length=50)),
                 ('acquired_at', models.DateTimeField(blank=True, null=True)),
                 ('acquired_by', models.CharField(blank=True, help_text='hostname:pid of process holding lock', max_length=255)),
             ],
+            options={
+                'constraints': [models.CheckConstraint(condition=models.Q(('singleton_key', 1)), name='singleton_key_must_be_one')],
+            },
         ),
         migrations.RunPython(create_initial_lock, delete_initial_lock),
     ]

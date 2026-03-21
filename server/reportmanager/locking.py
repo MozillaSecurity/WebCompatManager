@@ -8,7 +8,7 @@ import socket
 from collections.abc import Generator
 from contextlib import contextmanager
 
-from django.db import transaction
+from django.db import IntegrityError, transaction
 from django.utils import timezone
 
 from reportmanager.models import JobLock
@@ -30,14 +30,28 @@ def get_process_identifier() -> str:
 def get_or_create_lock() -> JobLock:
     locks = list(JobLock.objects.select_for_update().all())
 
-    if len(locks) == 0:
-        LOG.warning(
-            "No lock record exists in database. Auto-creating missing lock record."
-        )
-        return JobLock.objects.create(lock_name="", acquired_at=None, acquired_by="")
-
     if len(locks) > 1:
-        raise JobLockError(f"{len(locks)} lock records exist, expected exactly 1.")
+        raise JobLockError(
+            f"{len(locks)} lock records exist."
+            "This should be impossible due to UNIQUE constraint on singleton_key."
+        )
+
+    if len(locks) == 0:
+        LOG.warning("No lock record exists. Creating missing lock record.")
+        try:
+            return JobLock.objects.create(
+                lock_name="",
+                acquired_at=None,
+                acquired_by="",
+            )
+        except IntegrityError:
+            locks = list(JobLock.objects.select_for_update().all())
+            if len(locks) != 1:
+                raise JobLockError(
+                    f"Lock should exist after IntegrityError recovery. "
+                    f"Found {len(locks)} lock records instead."
+                )
+            return locks[0]
 
     return locks[0]
 
