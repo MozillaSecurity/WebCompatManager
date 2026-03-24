@@ -14,6 +14,7 @@ from google.cloud import bigquery
 from google.oauth2 import service_account
 
 from reportmanager.models import ReportEntry
+from reportmanager.utils import transform_ml_label
 from webcompat.models import Report
 
 LOG = getLogger("reportmanager.import")
@@ -57,19 +58,7 @@ class Command(BaseCommand):
         )
 
         for row in result:
-            # The BugBot ML prediction can assign two labels, invalid or valid,
-            # with a probability between 0 and 1. Having two labels makes
-            # filtering and sorting harder, so let's transform "invalid 95%"
-            # into "valid 5%".
-            # There is a rare chance that a bug will have no score. In this case,
-            # we just assign None, which will get treated as invalid in the
-            # frontend.
-            ml_valid_probability = None
-            match row.ml_label:
-                case "invalid":
-                    ml_valid_probability = 1 - row.ml_probability
-                case "valid":
-                    ml_valid_probability = row.ml_probability
+            ml_valid_probability = transform_ml_label(row.ml_label, row.ml_probability)
 
             report_obj = Report(
                 app_name=row.app_name,
