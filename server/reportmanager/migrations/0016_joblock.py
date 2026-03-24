@@ -31,7 +31,7 @@ class Migration(migrations.Migration):
             fields=[
                 ('id', models.AutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
                 ('singleton_key', models.PositiveSmallIntegerField(default=1, editable=False, help_text='Singleton key constrained to value 1 by check constraint', unique=True)),
-                ('lock_name', models.CharField(blank=True, choices=[('clustering', 'Clustering'), ('cleanup', 'Cleanup')], help_text='Name of operation holding the lock', max_length=50)),
+                ('lock_name', models.CharField(blank=True, choices=[('clustering', 'Clustering'), ('cleanup', 'Cleanup'), ('backfill', 'Backfill')], help_text='Name of operation holding the lock', max_length=50)),
                 ('acquired_at', models.DateTimeField(blank=True, null=True)),
                 ('acquired_by', models.CharField(blank=True, help_text='hostname:pid of process holding lock', max_length=255)),
             ],

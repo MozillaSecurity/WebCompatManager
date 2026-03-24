@@ -536,6 +536,7 @@ class JobLock(models.Model):
     class LockTypes(models.TextChoices):
         CLUSTERING = "clustering", "Clustering"
         CLEANUP = "cleanup", "Cleanup"
+        BACKFILL = "backfill", "Backfill"
 
     # Locks older than 3 hours are considered stale
     STALE_LOCK_HOURS = 3

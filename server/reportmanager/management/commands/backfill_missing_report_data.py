@@ -50,7 +50,8 @@ from django.core.management import BaseCommand
 from google.cloud import bigquery
 from google.oauth2 import service_account
 
-from reportmanager.models import ReportEntry
+from reportmanager.locking import JobLockError, acquire_job_lock
+from reportmanager.models import JobLock, ReportEntry
 from reportmanager.utils import preprocess_text, transform_ml_label
 
 LOG = getLogger("reportmanager.backfill")
@@ -69,6 +70,14 @@ class Command(BaseCommand):
     BATCH_SIZE = 500
 
     def handle(self, *args, **options) -> None:
+        try:
+            with acquire_job_lock(JobLock.LockTypes.BACKFILL):
+                self.run_backfill()
+        except JobLockError as e:
+            LOG.warning(f"Cannot start backfill: {e}")
+            return
+
+    def run_backfill(self) -> None:
         # Find reports needing ML updates (only those with non-empty comments)
         reports_to_update = ReportEntry.objects.filter(
             ml_valid_probability__isnull=True, comments__isnull=False
