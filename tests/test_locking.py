@@ -123,10 +123,11 @@ class TestJobLocking:
         """Constraint prevents singleton_key from being anything other than 1."""
         JobLock.objects.all().delete()
 
-        lock1 = JobLock.objects.create(
-            singleton_key=1, lock_name="", acquired_at=None, acquired_by=""
-        )
-        assert lock1.singleton_key == 1
+        with transaction.atomic():
+            with pytest.raises(IntegrityError, match="singleton_key_must_be_one"):
+                JobLock.objects.create(
+                    singleton_key=0, lock_name="", acquired_at=None, acquired_by=""
+                )
 
         with transaction.atomic():
             with pytest.raises(IntegrityError, match="singleton_key_must_be_one"):
@@ -135,9 +136,13 @@ class TestJobLocking:
                 )
 
         with transaction.atomic():
-            with pytest.raises(IntegrityError, match="singleton_key_must_be_one"):
+            with pytest.raises(IntegrityError, match="NOT NULL constraint failed"):
                 JobLock.objects.create(
-                    singleton_key=3, lock_name="", acquired_at=None, acquired_by=""
+                    singleton_key=None, lock_name="", acquired_at=None, acquired_by=""
                 )
 
+        lock1 = JobLock.objects.create(
+            singleton_key=1, lock_name="", acquired_at=None, acquired_by=""
+        )
+        assert lock1.singleton_key == 1
         assert JobLock.objects.count() == 1
