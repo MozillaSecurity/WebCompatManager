@@ -67,7 +67,8 @@ class BackfillData:
 class Command(BaseCommand):
     help = "Backfill missing ML classification and translations from BigQuery"
 
-    BATCH_SIZE = 500
+    BQ_BATCH_SIZE = 5000
+    DB_BATCH_SIZE = 1000
 
     def handle(self, *args, **options) -> None:
         try:
@@ -84,14 +85,15 @@ class Command(BaseCommand):
         ).exclude(comments="")
 
         total_reports = reports_to_update.count()
-        LOG.info("Found %d reports needing ML backfill", total_reports)
 
         if total_reports == 0:
             LOG.info("No reports need ML backfill")
             return
 
+        LOG.info("Found %d reports needing ML backfill", total_reports)
+
         all_reports = list(reports_to_update)
-        batches = list(batched(all_reports, self.BATCH_SIZE))
+        batches = list(batched(all_reports, self.BQ_BATCH_SIZE))
         total_updated: int = 0
 
         params = {
@@ -157,15 +159,14 @@ class Command(BaseCommand):
 
                 if uuid in bq_data:
                     data = bq_data[uuid]
-                    ml_updated = False
-                    translation_updated = False
+                    updated = False
 
                     if (
                         report.ml_valid_probability is None
                         and data.ml_valid_probability is not None
                     ):
                         report.ml_valid_probability = data.ml_valid_probability
-                        ml_updated = True
+                        updated = True
 
                     if (
                         report.comments_translated is None
@@ -176,9 +177,9 @@ class Command(BaseCommand):
                         report.comments_preprocessed = preprocess_text(
                             data.translated_text
                         )
-                        translation_updated = True
+                        updated = True
 
-                    if ml_updated or translation_updated:
+                    if updated:
                         reports_to_update.append(report)
 
                         # Clear bucket assignment to re-triage these reports
@@ -195,6 +196,7 @@ class Command(BaseCommand):
                         "comments_preprocessed",
                         "bucket_id",
                     ],
+                    batch_size=self.DB_BATCH_SIZE,
                 )
                 total_updated += len(reports_to_update)
                 LOG.info(
