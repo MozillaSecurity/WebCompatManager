@@ -102,3 +102,8 @@ def import_reports():
         )
 
     call_command("import_reports_from_bigquery", since=since)
+
+
+@app.task(ignore_result=True)
+def backfill_missing_report_data():
+    call_command("backfill_missing_report_data")

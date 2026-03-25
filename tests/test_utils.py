@@ -1,6 +1,8 @@
 """Tests for reportmanager.utils."""
 
-from reportmanager.utils import preprocess_text
+import pytest
+
+from reportmanager.utils import preprocess_text, transform_ml_label
 
 
 class TestPreprocessText:
@@ -83,3 +85,31 @@ class TestPreprocessText:
         # Multiple issues in one string
         input_text = "\t  The &amp; symbol   is\nescaped  "
         assert preprocess_text(input_text) == "The & symbol is escaped"
+
+
+class TestTransformMLLabel:
+    """Tests for transform_ml_label function."""
+
+    def test_valid_label_with_high_probability(self):
+        """Test transformation of 'valid' label with high probability."""
+        assert transform_ml_label("valid", 0.95) == 0.95
+
+    def test_valid_label_with_low_probability(self):
+        """Test transformation of 'valid' label with mid probability."""
+        assert transform_ml_label("valid", 0.53) == 0.53
+
+    def test_invalid_label_with_high_probability(self):
+        """Test transformation of 'invalid' label with high probability."""
+        assert transform_ml_label("invalid", 0.95) == pytest.approx(0.05)
+
+    def test_invalid_label_mid_probability(self):
+        """Test transformation of 'invalid' label with mid probability."""
+        assert transform_ml_label("invalid", 0.6) == pytest.approx(0.4)
+
+    def test_none_label_returns_none(self):
+        """Test transformation of None label returns None."""
+        assert transform_ml_label(None, 0.5) is None
+
+    def test_empty_string_label_returns_none(self):
+        """Test transformation of empty string label returns None."""
+        assert transform_ml_label("", 0.5) is None
