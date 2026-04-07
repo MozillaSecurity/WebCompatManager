@@ -174,7 +174,7 @@ volumes:
 
 To manage user permissions, first SSH into the production server and then:
 
-* To list permissions for any user run: `sudo docker exec -it webcompatmanager python manage.py ls_permission [ldap email]`
+* To list permissions for any user run: `sudo docker exec -it webcompatmanager uv run --extra server python manage.py ls_permission [ldap email]`
 
 * Grant write-access to the reports to a user run:
-  `sudo docker exec -it webcompatmanager python manage.py add_permission [ldap email] reportmanager_write`
+  `sudo docker exec -it webcompatmanager uv run --extra server python manage.py add_permission [ldap email] reportmanager_write`
