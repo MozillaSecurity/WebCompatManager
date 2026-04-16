@@ -73,7 +73,7 @@
             </td>
           </tr>
           <tr>
-            <td>Reports in this bucket</td>
+            <td>Total Reports</td>
             <td>
               {{ bucket.size }}
               <span
@@ -87,6 +87,76 @@
                 :data="bucket.report_history"
                 :range="activityRange"
               />
+            </td>
+          </tr>
+          <tr>
+            <td>Report Breakdown</td>
+            <td>
+              <div></div>
+              <table class="table">
+                <thead>
+                  <tr>
+                    <th>Platform</th>
+                    <th>%</th>
+                    <th>OS</th>
+                    <th>Browser</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <template
+                    v-for="platform in ['desktop', 'mobile']"
+                    :key="platform"
+                  >
+                    <tr v-if="parsedSummary[platform].total > 0">
+                      <td>
+                        {{ platform == "desktop" ? "Desktop" : "Mobile" }}
+                      </td>
+                      <td>{{ parsedSummary[platform].pct }}%</td>
+                      <td>
+                        <ul class="summary-list">
+                          <li
+                            v-for="item in parsedSummary[platform].os"
+                            :key="item.name"
+                          >
+                            <img
+                              v-if="osLogoKey(item.name)"
+                              width="16px"
+                              height="16px"
+                              :alt="item.name"
+                              :src="staticLogo(osLogoKey(item.name))"
+                            />
+                            <span v-else>{{ item.name }}</span>
+                            {{ item.pct }}%
+                          </li>
+                        </ul>
+                      </td>
+                      <td>
+                        <ul class="summary-list">
+                          <li
+                            v-for="item in parsedSummary[platform]
+                              .browserVersions"
+                            :key="item.name"
+                          >
+                            {{ item.name }}: {{ item.pct }}%
+                          </li>
+                        </ul>
+                      </td>
+                    </tr>
+                  </template>
+                </tbody>
+              </table>
+              <table class="table">
+                <tbody>
+                  <tr>
+                    <th>PBM enabled</th>
+                    <td>{{ parsedSummary.pbmEnabled }}%</td>
+                  </tr>
+                  <tr>
+                    <th>Content blocked</th>
+                    <td>{{ parsedSummary.contentBlocked }}%</td>
+                  </tr>
+                </tbody>
+              </table>
             </td>
           </tr>
           <tr>
@@ -239,6 +309,49 @@ export default {
     prettySignature() {
       return jsonPretty(this.bucket.signature);
     },
+    parsedSummary() {
+      const s = this.bucket.summary;
+      if (!s || s.total === 0) {
+        return null;
+      }
+
+      const formatPercent = (n, total) =>
+        total > 0 ? ((n / total) * 100).toFixed(1) : "0.0";
+
+      const knownOS = ["Windows", "Mac", "Linux", "Android"];
+
+      const parsePlatform = (platform) => {
+        const { total, os, browser_versions } = platform;
+        const osList = [
+          ...knownOS
+            .filter((name) => os[name] !== undefined)
+            .map((name) => ({ name, pct: formatPercent(os[name], total) })),
+          ...Object.entries(os)
+            .filter(([name]) => !knownOS.includes(name))
+            .map(([name, count]) => ({
+              name,
+              pct: formatPercent(count, total),
+            })),
+        ];
+        const browserVersions = Object.entries(browser_versions)
+          .sort((a, b) => b[0] - a[0])
+          .sort((a, b) => b[1] - a[1])
+          .map(([name, count]) => ({ name, pct: formatPercent(count, total) }));
+        return {
+          total,
+          pct: formatPercent(total, s.total),
+          os: osList,
+          browserVersions,
+        };
+      };
+
+      return {
+        desktop: parsePlatform(s.desktop),
+        mobile: parsePlatform(s.mobile),
+        pbmEnabled: formatPercent(s.pbm_enabled, s.total),
+        contentBlocked: formatPercent(s.content_blocked, s.total),
+      };
+    },
   },
   created: function () {
     if (this.$route.hash.startsWith("#")) {
@@ -256,6 +369,19 @@ export default {
   mounted() {},
   methods: {
     formatDate: date,
+    staticLogo(name) {
+      return window.location.origin + "/static/img/os/" + name + ".png";
+    },
+    osLogoKey(name) {
+      return (
+        {
+          Linux: "linux",
+          Mac: "macosx",
+          Windows: "windows",
+          Android: "android",
+        }[name] ?? null
+      );
+    },
     buildQueryParams() {
       const result = {
         query: JSON.stringify({
@@ -443,5 +569,10 @@ button[aria-expanded="false"] .bi-eye-slash-fill {
 .ml-threshold-value {
   font-weight: bold;
   min-width: 60px;
+}
+.summary-list {
+  list-style: none;
+  padding: 0;
+  margin: 0.25em 0 0;
 }
 </style>
