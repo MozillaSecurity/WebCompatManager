@@ -70,6 +70,21 @@ Tests are run using tox:
 uv run --extra=dev -p 3.12 tox
 ```
 
+End-to-end tests can be run separately using:
+```
+uv run --extra=dev -p 3.12 tox -e e2e
+```
+
+Note: E2E tests require the frontend to be built first. Run `npm run build` or `npm run start` in `server/frontend/` before running E2E tests.
+
+
+To run all python tests excluding E2E tests:
+
+```
+uv run --extra=dev tox -e 312 -- -m not ui
+```
+
+
 ### Redis
 
 For some commands e.g, importing data, a [Redis](https://redis.io/)
