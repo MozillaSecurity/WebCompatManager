@@ -89,7 +89,7 @@
               />
             </td>
           </tr>
-          <tr>
+          <tr v-if="parsedSummary">
             <td>Report Breakdown</td>
             <td>
               <div></div>
