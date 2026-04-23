@@ -996,6 +996,67 @@ class BucketViewSet(
 
             response.data["report_history"] = list(hits.values("begin", "count"))
 
+            reports = ReportEntry.objects.filter(bucket_id=response.data["id"])
+
+            os_counts = {
+                (row["os__name"] or "Unknown"): row["count"]
+                for row in reports.values("os__name").annotate(count=Count("id"))
+            }
+
+            desktop_browser_versions: dict[str, int] = {}
+            mobile_browser_versions: dict[str, int] = {}
+            for row in reports.values("app__name", "app__version", "os__name").annotate(
+                count=Count("id")
+            ):
+                app_name = row["app__name"] or "Unknown"
+                app_version = row["app__version"] or "Unknown"
+                os_name = (row["os__name"] or "Unknown").lower()
+                major = app_version.split(".")[0]
+                key = f"{app_name} {major}"
+                if os_name == "android":
+                    mobile_browser_versions[key] = (
+                        mobile_browser_versions.get(key, 0) + row["count"]
+                    )
+                else:
+                    desktop_browser_versions[key] = (
+                        desktop_browser_versions.get(key, 0) + row["count"]
+                    )
+
+            mobile_os = {k: v for k, v in os_counts.items() if k.lower() == "android"}
+            desktop_os = {k: v for k, v in os_counts.items() if k.lower() != "android"}
+
+            agg = reports.aggregate(
+                total=Count("id"),
+                pbm_count=Count(
+                    "id",
+                    filter=Q(
+                        details__boolean__broken_site_report_tab_info_antitracking_is_private_browsing=True
+                    ),
+                ),
+                blocked_count=Count(
+                    "id",
+                    filter=Q(
+                        details__boolean__broken_site_report_tab_info_antitracking_has_tracking_content_blocked=True
+                    ),
+                ),
+            )
+
+            response.data["summary"] = {
+                "total": agg["total"],
+                "desktop": {
+                    "total": sum(desktop_os.values()),
+                    "os": desktop_os,
+                    "browser_versions": desktop_browser_versions,
+                },
+                "mobile": {
+                    "total": sum(mobile_os.values()),
+                    "os": mobile_os,
+                    "browser_versions": mobile_browser_versions,
+                },
+                "pbm_enabled": agg["pbm_count"],
+                "content_blocked": agg["blocked_count"],
+            }
+
         return response
 
     def __validate(self, bucket, submit_save, reassign, limit, offset, created):
