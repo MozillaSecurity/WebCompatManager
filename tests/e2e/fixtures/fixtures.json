@@ -1,0 +1,642 @@
+[
+  {
+    "model": "reportmanager.os",
+    "pk": 1,
+    "fields": {
+      "name": "Windows"
+    }
+  },
+  {
+    "model": "reportmanager.os",
+    "pk": 2,
+    "fields": {
+      "name": "Mac"
+    }
+  },
+  {
+    "model": "reportmanager.os",
+    "pk": 3,
+    "fields": {
+      "name": "Linux"
+    }
+  },
+  {
+    "model": "reportmanager.os",
+    "pk": 4,
+    "fields": {
+      "name": "Android"
+    }
+  },
+  {
+    "model": "reportmanager.breakagecategory",
+    "pk": 1,
+    "fields": {
+      "value": "load"
+    }
+  },
+  {
+    "model": "reportmanager.breakagecategory",
+    "pk": 2,
+    "fields": {
+      "value": "media"
+    }
+  },
+  {
+    "model": "reportmanager.breakagecategory",
+    "pk": 3,
+    "fields": {
+      "value": "content"
+    }
+  },
+  {
+    "model": "reportmanager.breakagecategory",
+    "pk": 4,
+    "fields": {
+      "value": "other"
+    }
+  },
+  {
+    "model": "reportmanager.breakagecategory",
+    "pk": 5,
+    "fields": {
+      "value": "account"
+    }
+  },
+  {
+    "model": "reportmanager.breakagecategory",
+    "pk": 6,
+    "fields": {
+      "value": "notsupported"
+    }
+  },
+  {
+    "model": "reportmanager.breakagecategory",
+    "pk": 7,
+    "fields": {
+      "value": "checkout"
+    }
+  },
+  {
+    "model": "reportmanager.app",
+    "pk": 1,
+    "fields": {
+      "name": "Firefox",
+      "version": "148.0",
+      "channel": "release"
+    }
+  },
+  {
+    "model": "reportmanager.app",
+    "pk": 2,
+    "fields": {
+      "name": "Firefox",
+      "version": "147.0.3",
+      "channel": "release"
+    }
+  },
+  {
+    "model": "reportmanager.app",
+    "pk": 3,
+    "fields": {
+      "name": "Firefox",
+      "version": "134.0",
+      "channel": "release"
+    }
+  },
+  {
+    "model": "reportmanager.bucket",
+    "pk": 131189,
+    "fields": {
+      "bug": null,
+      "color": null,
+      "description": "www.joyn.de [Cluster 70854]",
+      "domain": "www.joyn.de",
+      "hide_until": null,
+      "priority": 0,
+      "signature": "{\"symptoms\": [{\"type\": \"url\", \"part\": \"hostname\", \"value\": \"www.joyn.de\"}]}",
+      "reassign_in_progress": false,
+      "cluster": 70854
+    }
+  },
+  {
+    "model": "reportmanager.bucket",
+    "pk": 133162,
+    "fields": {
+      "bug": null,
+      "color": null,
+      "description": "www.filae.com [Cluster 72827]",
+      "domain": "www.filae.com",
+      "hide_until": null,
+      "priority": 0,
+      "signature": "{\"symptoms\": [{\"type\": \"url\", \"part\": \"hostname\", \"value\": \"www.filae.com\"}]}",
+      "reassign_in_progress": false,
+      "cluster": 72827
+    }
+  },
+  {
+    "model": "reportmanager.bucket",
+    "pk": 132454,
+    "fields": {
+      "bug": null,
+      "color": null,
+      "description": "www.vicroads.vic.gov.au [Cluster 72119]",
+      "domain": "www.vicroads.vic.gov.au",
+      "hide_until": null,
+      "priority": 0,
+      "signature": "{\"symptoms\": [{\"type\": \"url\", \"part\": \"hostname\", \"value\": \"www.vicroads.vic.gov.au\"}]}",
+      "reassign_in_progress": false,
+      "cluster": 72119
+    }
+  },
+  {
+    "model": "reportmanager.bucket",
+    "pk": 132456,
+    "fields": {
+      "bug": null,
+      "color": null,
+      "description": "www.vicroads.vic.gov.au [Cluster 72121]",
+      "domain": "www.vicroads.vic.gov.au",
+      "hide_until": null,
+      "priority": 0,
+      "signature": "{\"symptoms\": [{\"type\": \"url\", \"part\": \"hostname\", \"value\": \"www.vicroads.vic.gov.au\"}]}",
+      "reassign_in_progress": false,
+      "cluster": 72121
+    }
+  },
+  {
+    "model": "reportmanager.bucket",
+    "pk": 152242,
+    "fields": {
+      "bug": null,
+      "color": null,
+      "description": "domain is www.vicroads.vic.gov.au",
+      "domain": "www.vicroads.vic.gov.au",
+      "hide_until": null,
+      "priority": 0,
+      "signature": "{\"symptoms\": [{\"type\": \"url\", \"part\": \"hostname\", \"value\": \"www.vicroads.vic.gov.au\"}]}",
+      "reassign_in_progress": false,
+      "cluster": null
+    }
+  },
+  {
+    "model": "reportmanager.bucket",
+    "pk": 6281,
+    "fields": {
+      "bug": null,
+      "color": null,
+      "description": "domain is www.filae.com",
+      "domain": "www.filae.com",
+      "hide_until": null,
+      "priority": 0,
+      "signature": "{\"symptoms\": [{\"type\": \"url\", \"part\": \"hostname\", \"value\": \"www.filae.com\"}]}",
+      "reassign_in_progress": false,
+      "cluster": null
+    }
+  },
+  {
+    "model": "reportmanager.bucket",
+    "pk": 1602,
+    "fields": {
+      "bug": null,
+      "color": null,
+      "description": "domain is www.joyn.de",
+      "domain": "www.joyn.de",
+      "hide_until": null,
+      "priority": 0,
+      "signature": "{\"symptoms\": [{\"type\": \"url\", \"part\": \"hostname\", \"value\": \"www.joyn.de\"}]}",
+      "reassign_in_progress": false,
+      "cluster": null
+    }
+  },
+  {
+    "model": "reportmanager.reportentry",
+    "pk": 1000,
+    "fields": {
+      "app": 1,
+      "breakage_category": 1,
+      "bucket": 131189,
+      "comments": "Der Videoplayer ladt nicht. Nur schwarzer Bildschirm.",
+      "comments_translated": "The video player doesn't load. Only black screen.",
+      "comments_original_language": "de",
+      "comments_preprocessed": "the video player doesn't load. only black screen.",
+      "details": {},
+      "domain": "www.joyn.de",
+      "ml_valid_probability": 0.842287540435791,
+      "os": 1,
+      "reported_at": "2026-04-22T18:08:26.214371+00:00",
+      "url": "https://www.joyn.de/",
+      "uuid": "8e5c608f-d493-4166-869d-f25e0700defb",
+      "cluster": 70854
+    }
+  },
+  {
+    "model": "reportmanager.reportentry",
+    "pk": 1001,
+    "fields": {
+      "app": 2,
+      "breakage_category": 2,
+      "bucket": 131189,
+      "comments": "Video startet nicht, Player bleibt schwarz",
+      "comments_translated": "Video doesn't start, player stays black",
+      "comments_original_language": "de",
+      "comments_preprocessed": "video doesn't start, player stays black",
+      "details": {},
+      "domain": "www.joyn.de",
+      "ml_valid_probability": 0.9333918690681458,
+      "os": 2,
+      "reported_at": "2026-04-20T18:08:26.214544+00:00",
+      "url": "https://www.joyn.de/",
+      "uuid": "801f2bc8-c920-44f8-a177-e1f9a2bf2eb5",
+      "cluster": 70854
+    }
+  },
+  {
+    "model": "reportmanager.reportentry",
+    "pk": 1002,
+    "fields": {
+      "app": 3,
+      "breakage_category": 1,
+      "bucket": 131189,
+      "comments": "Schwarzer Screen beim Abspielen",
+      "comments_translated": "Black screen when playing",
+      "comments_original_language": "de",
+      "comments_preprocessed": "black screen when playing",
+      "details": {},
+      "domain": "www.joyn.de",
+      "ml_valid_probability": 0.6257511377334595,
+      "os": 3,
+      "reported_at": "2026-04-08T18:08:26.214553+00:00",
+      "url": "https://www.joyn.de/",
+      "uuid": "e6a54010-5177-44f6-a94a-22b0621c4714",
+      "cluster": 70854
+    }
+  },
+  {
+    "model": "reportmanager.reportentry",
+    "pk": 1003,
+    "fields": {
+      "app": 1,
+      "breakage_category": 2,
+      "bucket": 131189,
+      "comments": "Video wird auf Android nicht abgespielt",
+      "comments_translated": "Video doesn't play on Android",
+      "comments_original_language": "de",
+      "comments_preprocessed": "video doesn't play on android",
+      "details": {},
+      "domain": "www.joyn.de",
+      "ml_valid_probability": 0.8234567,
+      "os": 4,
+      "reported_at": "2026-03-09T18:08:26.214559+00:00",
+      "url": "https://www.joyn.de/",
+      "uuid": "1669b40f-dfc0-4574-a561-e47bcd04692e",
+      "cluster": 70854
+    }
+  },
+  {
+    "model": "reportmanager.reportentry",
+    "pk": 1004,
+    "fields": {
+      "app": 1,
+      "breakage_category": 3,
+      "bucket": 133162,
+      "comments": "La page ne charge pas correctement. Je dois actualiser plusieurs fois.",
+      "comments_translated": "The page doesn't load correctly. I have to refresh multiple times.",
+      "comments_original_language": "fr",
+      "comments_preprocessed": "the page doesn't load correctly. i have to refresh multiple times.",
+      "details": {},
+      "domain": "www.filae.com",
+      "ml_valid_probability": 0.9146597981452942,
+      "os": 1,
+      "reported_at": "2026-04-22T18:08:26.214565+00:00",
+      "url": "https://www.filae.com/",
+      "uuid": "409600cd-7a54-450c-908e-5e1d23856258",
+      "cluster": 72827
+    }
+  },
+  {
+    "model": "reportmanager.reportentry",
+    "pk": 1005,
+    "fields": {
+      "app": 2,
+      "breakage_category": 4,
+      "bucket": 133162,
+      "comments": "Impossible d'ouvrir les images, page blanche affich\u00e9e",
+      "comments_translated": "Unable to open images, blank page displayed",
+      "comments_original_language": "fr",
+      "comments_preprocessed": "unable to open images, blank page displayed",
+      "details": {},
+      "domain": "www.filae.com",
+      "ml_valid_probability": 0.7248315811157227,
+      "os": 2,
+      "reported_at": "2026-04-20T18:08:26.214569+00:00",
+      "url": "https://www.filae.com/",
+      "uuid": "91dd00a0-3ffc-4d5f-934a-26c376d76bd0",
+      "cluster": 72827
+    }
+  },
+  {
+    "model": "reportmanager.reportentry",
+    "pk": 1006,
+    "fields": {
+      "app": 3,
+      "breakage_category": 1,
+      "bucket": 133162,
+      "comments": "En cliquant sur un lien, la page reste blanche",
+      "comments_translated": "When clicking a link, the page stays blank",
+      "comments_original_language": "fr",
+      "comments_preprocessed": "when clicking a link, the page stays blank",
+      "details": {},
+      "domain": "www.filae.com",
+      "ml_valid_probability": 0.9729971885681152,
+      "os": 3,
+      "reported_at": "2026-04-08T18:08:26.214573+00:00",
+      "url": "https://www.filae.com/",
+      "uuid": "2d0aa508-1c6c-4b22-b916-1fc5d18c87b9",
+      "cluster": 72827
+    }
+  },
+  {
+    "model": "reportmanager.reportentry",
+    "pk": 1007,
+    "fields": {
+      "app": 1,
+      "breakage_category": 1,
+      "bucket": 132454,
+      "comments": "Site loads but clicking links does nothing",
+      "comments_translated": "Site loads but clicking links does nothing",
+      "comments_original_language": "en",
+      "comments_preprocessed": "site loads but clicking links does nothing",
+      "details": {},
+      "domain": "www.vicroads.vic.gov.au",
+      "ml_valid_probability": 0.9730769395828247,
+      "os": 1,
+      "reported_at": "2026-04-22T18:08:26.214580+00:00",
+      "url": "https://www.vicroads.vic.gov.au/",
+      "uuid": "b8e51e1f-1951-463f-a1bc-87f1624ae599",
+      "cluster": 72119
+    }
+  },
+  {
+    "model": "reportmanager.reportentry",
+    "pk": 1008,
+    "fields": {
+      "app": 2,
+      "breakage_category": 1,
+      "bucket": 132454,
+      "comments": "Cannot navigate the site, links are unresponsive",
+      "comments_translated": "Cannot navigate the site, links are unresponsive",
+      "comments_original_language": "en",
+      "comments_preprocessed": "cannot navigate the site, links are unresponsive",
+      "details": {},
+      "domain": "www.vicroads.vic.gov.au",
+      "ml_valid_probability": 0.9550638198852539,
+      "os": 2,
+      "reported_at": "2026-04-20T18:08:26.214587+00:00",
+      "url": "https://www.vicroads.vic.gov.au/",
+      "uuid": "e02674d2-37a9-4717-b3cd-36a206925ce2",
+      "cluster": 72119
+    }
+  },
+  {
+    "model": "reportmanager.reportentry",
+    "pk": 1009,
+    "fields": {
+      "app": 3,
+      "breakage_category": 4,
+      "bucket": 132454,
+      "comments": "Page reloads when selecting any option, can't get past home page",
+      "comments_translated": "Page reloads when selecting any option, can't get past home page",
+      "comments_original_language": "en",
+      "comments_preprocessed": "page reloads when selecting any option, can't get past home page",
+      "details": {},
+      "domain": "www.vicroads.vic.gov.au",
+      "ml_valid_probability": 0.5003429651260376,
+      "os": 3,
+      "reported_at": "2026-04-08T18:08:26.214591+00:00",
+      "url": "https://www.vicroads.vic.gov.au/",
+      "uuid": "84ba1ac2-8816-4209-9ced-93f9d36baaed",
+      "cluster": 72119
+    }
+  },
+  {
+    "model": "reportmanager.reportentry",
+    "pk": 1010,
+    "fields": {
+      "app": 1,
+      "breakage_category": 5,
+      "bucket": 132456,
+      "comments": "Login button redirects back to main page",
+      "comments_translated": "Login button redirects back to main page",
+      "comments_original_language": "en",
+      "comments_preprocessed": "login button redirects back to main page",
+      "details": {},
+      "domain": "www.vicroads.vic.gov.au",
+      "ml_valid_probability": 0.3770124912261963,
+      "os": 1,
+      "reported_at": "2026-04-22T18:08:26.214595+00:00",
+      "url": "https://www.vicroads.vic.gov.au/",
+      "uuid": "07b36153-a614-41d4-bf38-c67423c7fdb5",
+      "cluster": 72121
+    }
+  },
+  {
+    "model": "reportmanager.reportentry",
+    "pk": 1011,
+    "fields": {
+      "app": 2,
+      "breakage_category": 6,
+      "bucket": 132456,
+      "comments": "Can't access login page, works fine in Chrome",
+      "comments_translated": "Can't access login page, works fine in Chrome",
+      "comments_original_language": "en",
+      "comments_preprocessed": "can't access login page, works fine in chrome",
+      "details": {},
+      "domain": "www.vicroads.vic.gov.au",
+      "ml_valid_probability": 0.9809913039207458,
+      "os": 2,
+      "reported_at": "2026-04-20T18:08:26.214600+00:00",
+      "url": "https://www.vicroads.vic.gov.au/",
+      "uuid": "c8e9d0e2-d89e-40b4-8910-f3e72b5bc813",
+      "cluster": 72121
+    }
+  },
+  {
+    "model": "reportmanager.reportentry",
+    "pk": 1012,
+    "fields": {
+      "app": 1,
+      "breakage_category": 5,
+      "bucket": 152242,
+      "comments": "",
+      "comments_translated": "",
+      "comments_original_language": null,
+      "comments_preprocessed": "",
+      "details": {},
+      "domain": "www.vicroads.vic.gov.au",
+      "ml_valid_probability": null,
+      "os": 1,
+      "reported_at": "2026-04-22T18:08:26.214606+00:00",
+      "url": "https://www.vicroads.vic.gov.au/",
+      "uuid": "0a75f9e6-f7e3-4d16-940a-c4a8109f1fbf",
+      "cluster": null
+    }
+  },
+  {
+    "model": "reportmanager.reportentry",
+    "pk": 1013,
+    "fields": {
+      "app": 2,
+      "breakage_category": 7,
+      "bucket": 152242,
+      "comments": "",
+      "comments_translated": "",
+      "comments_original_language": null,
+      "comments_preprocessed": "",
+      "details": {},
+      "domain": "www.vicroads.vic.gov.au",
+      "ml_valid_probability": null,
+      "os": 2,
+      "reported_at": "2026-04-20T18:08:26.214611+00:00",
+      "url": "https://www.vicroads.vic.gov.au/",
+      "uuid": "89bfb99e-25a4-4fb1-a1e4-2b8c1e3b79ba",
+      "cluster": null
+    }
+  },
+  {
+    "model": "reportmanager.reportentry",
+    "pk": 1014,
+    "fields": {
+      "app": 3,
+      "breakage_category": 5,
+      "bucket": 152242,
+      "comments": "",
+      "comments_translated": "",
+      "comments_original_language": null,
+      "comments_preprocessed": "",
+      "details": {},
+      "domain": "www.vicroads.vic.gov.au",
+      "ml_valid_probability": null,
+      "os": 3,
+      "reported_at": "2026-04-08T18:08:26.214615+00:00",
+      "url": "https://www.vicroads.vic.gov.au/",
+      "uuid": "56afec9f-feb3-4cca-92c6-2ec326871fbe",
+      "cluster": null
+    }
+  },
+  {
+    "model": "reportmanager.reportentry",
+    "pk": 1015,
+    "fields": {
+      "app": 1,
+      "breakage_category": 5,
+      "bucket": 152242,
+      "comments": "",
+      "comments_translated": "",
+      "comments_original_language": null,
+      "comments_preprocessed": "",
+      "details": {},
+      "domain": "www.vicroads.vic.gov.au",
+      "ml_valid_probability": null,
+      "os": 4,
+      "reported_at": "2026-03-09T18:08:26.214618+00:00",
+      "url": "https://www.vicroads.vic.gov.au/",
+      "uuid": "7f453630-4dee-408a-881a-39461702bfff",
+      "cluster": null
+    }
+  },
+  {
+    "model": "reportmanager.reportentry",
+    "pk": 1016,
+    "fields": {
+      "app": 1,
+      "breakage_category": 1,
+      "bucket": 6281,
+      "comments": "",
+      "comments_translated": "",
+      "comments_original_language": null,
+      "comments_preprocessed": "",
+      "details": {},
+      "domain": "www.filae.com",
+      "ml_valid_probability": null,
+      "os": 1,
+      "reported_at": "2026-04-22T18:08:26.214624+00:00",
+      "url": "https://www.filae.com/",
+      "uuid": "16fb33a5-663e-4b55-86d7-0d287e938cd2",
+      "cluster": null
+    }
+  },
+  {
+    "model": "reportmanager.reportentry",
+    "pk": 1017,
+    "fields": {
+      "app": 1,
+      "breakage_category": 2,
+      "bucket": 1602,
+      "comments": "",
+      "comments_translated": "",
+      "comments_original_language": null,
+      "comments_preprocessed": "",
+      "details": {},
+      "domain": "www.joyn.de",
+      "ml_valid_probability": null,
+      "os": 1,
+      "reported_at": "2026-04-22T18:08:26.214628+00:00",
+      "url": "https://www.joyn.de/",
+      "uuid": "0754064b-9cb5-4c4c-8097-20a0fe20ed3b",
+      "cluster": null
+    }
+  },
+  {
+    "model": "reportmanager.reportentry",
+    "pk": 1018,
+    "fields": {
+      "app": 2,
+      "breakage_category": 2,
+      "bucket": 1602,
+      "comments": "",
+      "comments_translated": "",
+      "comments_original_language": null,
+      "comments_preprocessed": "",
+      "details": {},
+      "domain": "www.joyn.de",
+      "ml_valid_probability": null,
+      "os": 2,
+      "reported_at": "2026-04-20T18:08:26.214631+00:00",
+      "url": "https://www.joyn.de/",
+      "uuid": "fbc22954-cec5-407d-990a-e437153af57c",
+      "cluster": null
+    }
+  },
+  {
+    "model": "reportmanager.cluster",
+    "pk": 70854,
+    "fields": {
+      "domain": "www.joyn.de",
+      "centroid": 1000
+    }
+  },
+  {
+    "model": "reportmanager.cluster",
+    "pk": 72827,
+    "fields": {
+      "domain": "www.filae.com",
+      "centroid": 1004
+    }
+  },
+  {
+    "model": "reportmanager.cluster",
+    "pk": 72119,
+    "fields": {
+      "domain": "www.vicroads.vic.gov.au",
+      "centroid": 1007
+    }
+  },
+  {
+    "model": "reportmanager.cluster",
+    "pk": 72121,
+    "fields": {
+      "domain": "www.vicroads.vic.gov.au",
+      "centroid": 1010
+    }
+  }
+]

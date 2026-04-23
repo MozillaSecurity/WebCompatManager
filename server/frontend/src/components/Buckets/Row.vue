@@ -1,5 +1,5 @@
 <template>
-  <tr>
+  <tr data-testid="bucket-row">
     <td>
       <a title="View bucket" :href="bucket.view_url">
         {{ bucket.id }}
