@@ -175,6 +175,10 @@ deps = ["coverage[toml]"]
 commands = [["codecov"]]
 allowlist_externals = ["codecov"]
 
+[tool.tox.env.unit]
+extras = ["dev", "server"]
+commands = [["pytest", "-v", "-m", "not ui", "{posargs}"]]
+
 [tool.tox.env.e2e]
 extras = ["dev", "server"]
 commands = [["pytest", "-m", "ui", "--browser", "firefox", "--browser", "chromium", "--no-cov", "{posargs}"]]

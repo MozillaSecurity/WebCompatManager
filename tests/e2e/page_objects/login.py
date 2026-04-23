@@ -9,8 +9,8 @@ class LoginPage(PageObject):
     def __init__(self, page, live_server):
         super().__init__(page, live_server)
 
-        self.username_input = self.page.get_by_role("textbox", name="Username")
-        self.password_input = self.page.get_by_role("textbox", name="Password")
+        self.username_input = self.page.locator("#username")
+        self.password_input = self.page.locator("#password")
         self.submit_button = self.page.get_by_role("button", name="Login")
 
     def login(self, email, password):

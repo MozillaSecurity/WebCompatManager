@@ -302,6 +302,8 @@ def generate_fixtures():
     report_id_counter = 1000  # Start from arbitrary ID
     cluster_to_centroid = {}  # Track centroid for each cluster
 
+    date_offsets = [1, 3, 14, 30, 60]
+
     for bucket_config in BUCKETS_CONFIG:
         for i, comment_data in enumerate(bucket_config["comments"]):
             report_id = report_id_counter
@@ -327,6 +329,8 @@ def generate_fixtures():
                 comments_translated.lower() if comments_translated else ""
             )
 
+            days_ago = date_offsets[i % len(date_offsets)]
+
             fixture.append(
                 {
                     "model": "reportmanager.reportentry",
@@ -347,7 +351,7 @@ def generate_fixtures():
                         "ml_valid_probability": comment_data["ml_valid_probability"],
                         "os": (i % len(OS_DATA)) + 1,  # Rotate through all OS
                         "reported_at": (
-                            datetime.now(UTC) - timedelta(days=i)
+                            datetime.now(UTC) - timedelta(days=days_ago)
                         ).isoformat(),
                         "url": f"https://{bucket_config['domain']}/",
                         "uuid": str(uuid.uuid4()),

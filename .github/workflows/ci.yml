@@ -24,7 +24,7 @@ jobs:
         run: uv tool install tox
 
       - name: Run tests
-        run: uv run --extra=dev tox -e 312 -- -m not ui
+        run: uv run --extra=dev tox -e unit
 
   linting:
     name: linting
@@ -54,7 +54,7 @@ jobs:
         run: pre-commit run --all-files
 
   frontend-build:
-    name: build frontend node 20
+    name: build frontend and run tests
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -78,26 +78,6 @@ jobs:
         run: |
           cd server/frontend
           npm run production
-
-      - name: Upload frontend build
-        uses: actions/upload-artifact@v4
-        with:
-          name: frontend-dist
-          path: server/frontend/dist/
-          retention-days: 1
-
-  e2e-tests:
-    name: e2e tests
-    runs-on: ubuntu-latest
-    needs: frontend-build
-    steps:
-      - uses: actions/checkout@v4
-
-      - name: Download frontend build
-        uses: actions/download-artifact@v4
-        with:
-          name: frontend-dist
-          path: server/frontend/dist/
 
       - name: Set up Python 3.12
         uses: actions/setup-python@v5
