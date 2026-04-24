@@ -37,12 +37,12 @@ The server is expected to be run using [`uv`](https://docs.astral.sh/uv/)
 To setup the server, run the following commands:
 
 ```
-$ uv run -p 3.12 --extra=server server/manage.py migrate
+$ uv run --extra=server server/manage.py migrate
 ```
 
 Create the webcompatmanager user.
 ```
-$ uv run -p 3.12 --extra=server server/manage.py createsuperuser
+$ uv run --extra=server server/manage.py createsuperuser
 Username (leave blank to use 'user'): webcompatmanager
 Email address: webcompatmanager@internal.com
 Password:
@@ -52,7 +52,7 @@ Superuser created successfully.
 
 It is now possible to run the development server locally:
 ```
-$ uv run -p 3.12 --extra=server server/manage.py runserver
+$ uv run --extra=server server/manage.py runserver
 ```
 
 Log in using the credentials created above.
@@ -62,17 +62,17 @@ Log in using the credentials created above.
 Lints are run with pre-commit. This can be installed as a Git hook, or run manually using:
 
 ```
-uv run --extra=dev -p 3.12 pre-commit run --all
+uv run --extra=dev pre-commit run --all
 ```
 
 Tests are run using tox:
 ```
-uv run --extra=dev -p 3.12 tox
+uv run --extra=dev tox
 ```
 
 End-to-end tests can be run separately using:
 ```
-uv run --extra=dev -p 3.12 tox -e e2e
+uv run --extra=dev tox -e e2e
 ```
 
 Note: E2E tests require the frontend to be built first. Run `npm run build` or `npm run start` in `server/frontend/` before running E2E tests.
@@ -97,7 +97,7 @@ with:
 
 This requires first authenticating with gcloud.
 
-```uv run -p 3.12 --extra=server server/manage.py import_reports_from_bigquery --since <date>```
+```uv run --extra=server server/manage.py import_reports_from_bigquery --since <date>```
 
 
 ### Important changes in settings.py

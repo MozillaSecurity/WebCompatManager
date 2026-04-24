@@ -2,7 +2,7 @@
 
 ## Overview
 
-The clustering mechanism groups similar reports within each domain using unsupervised machine learning (SBERT embeddings and agglomerative clustering) and creates a bucket for each cluster. 
+The clustering mechanism groups similar reports within each domain using unsupervised machine learning (SBERT embeddings and agglomerative clustering) and creates a bucket for each cluster.
 
 ## Running Full Clustering
 Note that running full clustering **will delete existing clusters and cluster-based buckets** and recreate them from scratch. Generally we'll need to do it only once.
@@ -11,10 +11,10 @@ Note that running full clustering **will delete existing clusters and cluster-ba
 
 ```bash
 # Cluster reports for a specific domain only
-uv run -p 3.12 --extra=server server/manage.py cluster_reports --domain example.com
+uv run --extra=server server/manage.py cluster_reports --domain example.com
 
 # Cluster all reports across all domains
-uv run -p 3.12 --extra=server server/manage.py cluster_reports cluster_reports
+uv run --extra=server server/manage.py cluster_reports cluster_reports
 
 ```
 
@@ -78,7 +78,7 @@ Low-quality reports skip clustering and go directly to domain-based buckets.
 
 You can also run triage manually:
 ```bash
-uv run -p 3.12 --extra=server server/manage.py triage_new_reports
+uv run --extra=server server/manage.py triage_new_reports
 ```
 
 Note: This command requires at least one successful full clustering run to have occurred first.
