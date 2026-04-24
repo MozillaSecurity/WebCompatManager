@@ -1594,7 +1594,7 @@ wheels = [
 
 [[package]]
 name = "sentence-transformers"
-version = "5.2.3"
+version = "5.4.1"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "huggingface-hub" },
@@ -1606,9 +1606,9 @@ dependencies = [
     { name = "transformers" },
     { name = "typing-extensions" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/5b/30/21664028fc0776eb1ca024879480bbbab36f02923a8ff9e4cae5a150fa35/sentence_transformers-5.2.3.tar.gz", hash = "sha256:3cd3044e1f3fe859b6a1b66336aac502eaae5d3dd7d5c8fc237f37fbf58137c7", size = 381623, upload-time = "2026-02-17T14:05:20.238Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/4d/68/7f98c221940ce783b492ad6140384daf2e2918cd7175009d6a362c22b9ee/sentence_transformers-5.4.1.tar.gz", hash = "sha256:436bcb1182a0ff42a8fb2b1c43498a70d0a75b688d182f2cd0d1dd115af61ddc", size = 428910, upload-time = "2026-04-14T13:34:59.006Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/46/9f/dba4b3e18ebbe1eaa29d9f1764fbc7da0cd91937b83f2b7928d15c5d2d36/sentence_transformers-5.2.3-py3-none-any.whl", hash = "sha256:6437c62d4112b615ddebda362dfc16a4308d604c5b68125ed586e3e95d5b2e30", size = 494225, upload-time = "2026-02-17T14:05:18.596Z" },
+    { url = "https://files.pythonhosted.org/packages/c5/d9/3a9b6f2ccdedc9dc00fe37b2fc58f58f8efbff44565cf4bf39d8568bb13a/sentence_transformers-5.4.1-py3-none-any.whl", hash = "sha256:a6d640fc363849b63affb8e140e9d328feabab86f83d58ac3e16b1c28140b790", size = 571311, upload-time = "2026-04-14T13:34:57.731Z" },
 ]
 
 [[package]]
@@ -2017,7 +2017,7 @@ requires-dist = [
     { name = "redis", extras = ["hiredis"], marker = "extra == 'server'", specifier = ">=5.0.0" },
     { name = "ruff", marker = "extra == 'dev'", specifier = "==0.15.11" },
     { name = "scikit-learn", marker = "extra == 'server'", specifier = ">=1.3.0" },
-    { name = "sentence-transformers", marker = "extra == 'server'", specifier = ">=2.2.0" },
+    { name = "sentence-transformers", marker = "extra == 'server'", specifier = ">=5.4.1" },
     { name = "setuptools", specifier = "==82.0.0" },
     { name = "tox", marker = "extra == 'dev'", specifier = "==4.53.0" },
     { name = "types-python-dateutil", marker = "extra == 'dev'", specifier = "==2.9.0.20260305" },
