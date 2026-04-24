@@ -213,6 +213,7 @@ class ReportEntrySerializer(serializers.ModelSerializer):
             "comments",
             "comments_translated",
             "comments_original_language",
+            "country",
             "details",
             "id",
             "ml_valid_probability",
