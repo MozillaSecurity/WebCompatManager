@@ -166,7 +166,7 @@ skip_missing_interpreters = true
 extras = ["dev", "server"]
 usedevelop = true
 passenv = ["TOXENV", "CI", "TRAVIS", "TRAVIS_*", "CODECOV_*", "TWINE_*"]
-install_command = ["python", "-m", "pip", "install", "-c", "{toxinidir}/requirements.txt", "{opts}", "{packages}"]
+install_command = ["python", "-m", "pip", "install", "{opts}", "{packages}"]
 commands = [["pytest", "-v", "--cov", "{toxinidir}", "--cov-report", "term-missing", "{posargs}"]]
 
 [tool.tox.env.codecov]
