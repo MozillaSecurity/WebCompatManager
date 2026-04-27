@@ -191,6 +191,7 @@
               <th>ML Label</th>
               <th>Product</th>
               <th>ETP &amp; PBM</th>
+              <th>Country</th>
             </tr>
           </thead>
           <tbody>

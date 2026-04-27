@@ -83,6 +83,7 @@
         )
       }}
     </td>
+    <td>{{ report.country ?? "n/a" }}</td>
   </tr>
 </template>
 
