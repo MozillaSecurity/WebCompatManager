@@ -41,7 +41,7 @@ class Command(BaseCommand):
         result = client.query(
             f"""SELECT
                     r.*, t.language_code, t.translated_text,
-                    c.label as ml_label, c.probability as ml_probability
+                    c.label as ml_label, c.probability as ml_probability,
                 FROM `{settings.BIGQUERY_TABLE}` as r
                 LEFT JOIN `{settings.BIGQUERY_TRANSLATIONS_TABLE}` t
                     ON r.uuid = t.report_uuid
@@ -68,6 +68,7 @@ class Command(BaseCommand):
                 comments=row.comments,
                 comments_translated=row.translated_text,
                 comments_original_language=row.language_code,
+                country=row.country,
                 details=row.details,
                 reported_at=row.reported_at.replace(tzinfo=UTC),
                 url=urlsplit(row.url),
