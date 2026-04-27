@@ -32,19 +32,19 @@
             </td>
             <td v-else>
               No bug associated.
-              <span v-if="bucket.hide_until"
-                >Marked triaged until {{ formatDate(bucket.hide_until) }}.</span
+              <span v-if="bucket.triage_status"
+              >Marked triaged as: <strong> {{ bucket.triage_status_display }} </strong> on
+                {{ formatDate(bucket.triaged_at) }}.</span
               >
               <br v-if="canEdit" /><br v-if="canEdit" />
               <div v-if="canEdit" class="btn-group">
                 <assignbutton :bucket="bucket.id" :providers="providers" />
-                <hidebucketbutton
-                  v-if="!bucket.hide_until"
-                  :bucket="bucket.id"
+                <TriageBucketDropdown
+                  :bucket-id="bucket.id"
+                  :current-status="bucket.triage_status"
+                  :choices="bucket.triage_status_choices || []"
+                  @update="handleTriageStatusUpdate"
                 />
-                <a v-else class="btn btn-default" @click="unhide"
-                  >Unmark triaged</a
-                >
               </div>
               <br v-if="canEdit" /><br v-if="canEdit" />
               <div v-if="canEdit" class="btn-group">
@@ -227,9 +227,9 @@ import {
   assignExternalBug,
   date,
   errorParser,
-  hideBucketUntil,
   jsonPretty,
   parseHash,
+  updateBucketTriageStatus,
 } from "../../helpers";
 import {
   etpStrictReportDescription,
@@ -241,7 +241,7 @@ import * as api from "../../api";
 import PageNav from "../PageNav.vue";
 import ActivityGraph from "../ActivityGraph.vue";
 import AssignBtn from "./AssignBtn.vue";
-import HideBucketBtn from "./HideBucketBtn.vue";
+import TriageBucketDropdown from "./TriageBucketDropdown.vue";
 import ReportPreviewRow from "./ReportPreviewRow.vue";
 
 const pageSize = 50;
@@ -251,7 +251,7 @@ export default {
     activitygraph: ActivityGraph,
     assignbutton: AssignBtn,
     ClipLoader: LoadingSpinner,
-    hidebucketbutton: HideBucketBtn,
+    TriageBucketDropdown,
     PageNav: PageNav,
     ReportPreviewRow: ReportPreviewRow,
   },
@@ -401,15 +401,6 @@ export default {
     submitWatchForm() {
       this.$refs.bucketWatchForm.submit();
     },
-    unhide() {
-      hideBucketUntil(this.bucket.id, null)
-        .then((data) => {
-          window.location.href = data.url;
-        })
-        .catch((err) => {
-          swal("Oops", errorParser(err), "error");
-        });
-    },
     unlink() {
       swal({
         title: "Unlink bug",
@@ -531,6 +522,14 @@ export default {
       searchParams.append("comment", etpStrictReportDescription(reports[0]));
       searchParams.append("dependson", "tp-breakage");
       openPrefilledBugzillaBug(searchParams);
+    },
+    async handleTriageStatusUpdate(newStatus) {
+      try {
+        const data = await updateBucketTriageStatus(this.bucket.id, newStatus);
+        window.location.href = data.url;
+      } catch (err) {
+        swal("Oops", errorParser(err), "error");
+      }
     },
   },
   watch: {

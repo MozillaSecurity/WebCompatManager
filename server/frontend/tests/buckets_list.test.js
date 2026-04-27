@@ -16,7 +16,7 @@ afterEach(jest.resetAllMocks);
 const defaultQueryStr = `{
   "op": "AND",
   "bug__isnull": true,
-  "hide_until__isnull": true
+  "triage_status__isnull": true
 }`;
 
 test("bucket list has no buckets", async () => {

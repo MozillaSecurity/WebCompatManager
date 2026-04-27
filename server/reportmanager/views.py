@@ -1155,8 +1155,14 @@ class BucketViewSet(
 
             bucket.bug = bug
 
-        if "hide_until" in serializer.validated_data:
-            bucket.hide_until = serializer.validated_data["hide_until"]
+        if "triage_status" in serializer.validated_data:
+            new_status = serializer.validated_data["triage_status"]
+            if new_status != bucket.triage_status:
+                bucket.triage_status = new_status
+                if new_status is not None:
+                    bucket.triaged_at = timezone.now()
+                else:
+                    bucket.triaged_at = None
         if "signature" in serializer.validated_data:
             bucket.signature = serializer.validated_data["signature"]
         if "priority" in serializer.validated_data:

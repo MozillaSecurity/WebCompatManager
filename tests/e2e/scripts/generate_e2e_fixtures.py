@@ -289,7 +289,7 @@ def generate_fixtures():
                     "color": None,
                     "description": bucket_config["description"],
                     "domain": bucket_config["domain"],
-                    "hide_until": None,
+                    "triage_status": None,
                     "priority": bucket_config["priority"],
                     "signature": bucket_config["signature"],
                     "reassign_in_progress": False,

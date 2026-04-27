@@ -31,3 +31,6 @@ dist/
 # NPM
 server/frontend/node_modules
 server/frontend/dist
+
+# Git worktrees
+.worktrees/
