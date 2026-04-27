@@ -47,6 +47,7 @@ from logging import getLogger
 
 from django.conf import settings
 from django.core.management import BaseCommand
+from django.db.models import Q
 from google.cloud import bigquery
 from google.oauth2 import service_account
 
@@ -62,6 +63,7 @@ class BackfillData:
     ml_valid_probability: float | None
     language_code: str | None
     translated_text: str | None
+    country: str | None
 
 
 class Command(BaseCommand):
@@ -80,17 +82,19 @@ class Command(BaseCommand):
 
     def run_backfill(self) -> None:
         # Find reports needing ML updates (only those with non-empty comments)
-        reports_to_update = ReportEntry.objects.filter(
-            ml_valid_probability__isnull=True, comments__isnull=False
-        ).exclude(comments="")
+        reports_to_update = (
+            ReportEntry.objects.filter(comments__isnull=False)
+            .exclude(comments="")
+            .filter(Q(ml_valid_probability__isnull=True) | Q(country__isnull=True))
+        )
 
         total_reports = reports_to_update.count()
 
         if total_reports == 0:
-            LOG.info("No reports need ML backfill")
+            LOG.info("No reports need backfill")
             return
 
-        LOG.info("Found %d reports needing ML backfill", total_reports)
+        LOG.info("Found %d reports needing backfill", total_reports)
 
         all_reports = list(reports_to_update)
         batches = list(batched(all_reports, self.BQ_BATCH_SIZE))
@@ -114,12 +118,12 @@ class Command(BaseCommand):
                 len(report_batch),
             )
 
-            uuid_batch: list[str] = [str(report.uuid) for report in report_batch]
+            uuid_batch = {str(report.uuid): report for report in report_batch}
 
             query: str = f"""
                 SELECT r.uuid,
                        c.label as ml_label, c.probability as ml_probability,
-                       t.language_code, t.translated_text
+                       t.language_code, t.translated_text, r.country
                 FROM `{settings.BIGQUERY_TABLE}` as r
                 INNER JOIN `{settings.BIGQUERY_CLASSIFICATION_TABLE}` c
                     ON r.uuid = c.report_uuid
@@ -138,13 +142,18 @@ class Command(BaseCommand):
 
             bq_data: dict[str, BackfillData] = {}
             for row in result:
-                ml_valid_probability = transform_ml_label(
-                    row.ml_label, row.ml_probability
-                )
+                report = uuid_batch[row.uuid]
+                if report.ml_valid_probability is None:
+                    ml_valid_probability = transform_ml_label(
+                        row.ml_label, row.ml_probability
+                    )
+                else:
+                    ml_valid_probability = report.ml_valid_probability
                 bq_data[row.uuid] = BackfillData(
                     ml_valid_probability=ml_valid_probability,
                     language_code=row.language_code,
                     translated_text=row.translated_text,
+                    country=row.country,
                 )
 
             LOG.info("Fetched data for %d reports from BigQuery", len(bq_data))
@@ -160,6 +169,7 @@ class Command(BaseCommand):
                 if uuid in bq_data:
                     data = bq_data[uuid]
                     updated = False
+                    retriage = False
 
                     if (
                         report.ml_valid_probability is None
@@ -167,6 +177,7 @@ class Command(BaseCommand):
                     ):
                         report.ml_valid_probability = data.ml_valid_probability
                         updated = True
+                        retriage = True
 
                     if (
                         report.comments_translated is None
@@ -178,12 +189,17 @@ class Command(BaseCommand):
                             data.translated_text
                         )
                         updated = True
+                        retriage = True
+
+                    if report.country is None and data.country is not None:
+                        report.country = data.country
+                        updated = True
 
                     if updated:
                         reports_to_update.append(report)
 
                         # Clear bucket assignment to re-triage these reports
-                        if report.cluster_id is None:
+                        if retriage and report.cluster_id is None:
                             report.bucket_id = None
 
             if reports_to_update:
@@ -195,6 +211,7 @@ class Command(BaseCommand):
                         "comments_original_language",
                         "comments_preprocessed",
                         "bucket_id",
+                        "country",
                     ],
                     batch_size=self.DB_BATCH_SIZE,
                 )

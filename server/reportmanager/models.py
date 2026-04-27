@@ -655,6 +655,7 @@ class ReportEntryManager(models.Manager):
             cluster_id=cluster_id,
             domain=domain,
             comments_preprocessed=preprocessed,
+            country=report.country,
         )
 
 
@@ -680,6 +681,7 @@ class ReportEntry(models.Model):
     )
     domain: models.CharField = models.CharField(max_length=255, null=True)
     comments_preprocessed: models.TextField = models.TextField(null=True)
+    country: models.TextField = models.TextField(max_length=2, null=True)
 
     objects = ReportEntryManager()
 
