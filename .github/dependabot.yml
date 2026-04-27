@@ -6,6 +6,15 @@
 version: 2
 updates:
   - package-ecosystem: "uv" # See documentation for possible values
-    directory: "/" # Location of package manifests
+    directory: "/"
     schedule:
       interval: "daily"
+    cooldown:
+      default-days: 7
+updates:
+  - package-ecosystem: "npm"
+    directory: "server/frontend/" # Location of package manifests
+    schedule:
+      interval: "daily"
+    cooldown:
+      default-days: 7
