@@ -1,10 +1,10 @@
 <template>
   <div class="triage-bucket-dropdown">
-    <a class="btn btn-default" @click="showPanel">
+    <a class="btn btn-default" data-testid="triage-trigger" @click="showPanel">
       {{ currentStatus ? "Change triage status" : "Mark triaged" }}
     </a>
 
-    <div v-if="isPanelVisible" class="triage-panel">
+    <div v-if="isPanelVisible" class="triage-panel" data-testid="triage-panel">
       <div class="panel-header">Select status</div>
       <div class="panel-options">
         <a
@@ -12,6 +12,7 @@
           :key="choice.value"
           class="panel-option"
           :class="{ 'panel-option--selected': choice.value === currentStatus }"
+          :data-testid="`triage-option-${choice.value}`"
           @click="choice.value !== currentStatus && selectStatus(choice.value)"
         >
           <span class="option-rail"></span>
@@ -24,6 +25,7 @@
       <div v-if="currentStatus" class="panel-danger-zone">
         <a
           class="panel-option panel-option--unmark"
+          data-testid="triage-unmark"
           @click="selectStatus(null)"
         >
           <span class="option-rail"></span>

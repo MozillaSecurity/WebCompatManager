@@ -32,9 +32,14 @@
             </td>
             <td v-else>
               No bug associated.
-              <span v-if="bucket.triage_status"
-              >Marked triaged as: <strong> {{ bucket.triage_status_display }} </strong> on
-                {{ formatDate(bucket.triaged_at) }}.</span
+              <span
+                v-if="bucket.triage_status"
+                data-testid="triage-status-display"
+                >Marked triaged as:
+                <strong data-testid="triage-status-label">
+                  {{ bucket.triage_status_display }}
+                </strong>
+                on {{ formatDate(bucket.triaged_at) }}.</span
               >
               <br v-if="canEdit" /><br v-if="canEdit" />
               <div v-if="canEdit" class="btn-group">

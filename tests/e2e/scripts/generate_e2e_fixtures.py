@@ -20,6 +20,8 @@ BUCKETS_CONFIG = [
         "description": "www.joyn.de [Cluster 70854]",
         "cluster_id": 70854,
         "priority": 0,
+        "triage_status": None,
+        "triaged_at": None,
         "signature": '{"symptoms": [{"type": "url", "part": "hostname", "value": "www.joyn.de"}]}',
         "comments": [
             {
@@ -58,6 +60,8 @@ BUCKETS_CONFIG = [
         "description": "www.filae.com [Cluster 72827]",
         "cluster_id": 72827,
         "priority": 0,
+        "triage_status": None,
+        "triaged_at": None,
         "signature": '{"symptoms": [{"type": "url", "part": "hostname", "value": "www.filae.com"}]}',
         "comments": [
             {
@@ -89,6 +93,8 @@ BUCKETS_CONFIG = [
         "description": "www.vicroads.vic.gov.au [Cluster 72119]",
         "cluster_id": 72119,
         "priority": 0,
+        "triage_status": None,
+        "triaged_at": None,
         "signature": '{"symptoms": [{"type": "url", "part": "hostname", "value": "www.vicroads.vic.gov.au"}]}',
         "comments": [
             {
@@ -120,6 +126,8 @@ BUCKETS_CONFIG = [
         "description": "www.vicroads.vic.gov.au [Cluster 72121]",
         "cluster_id": 72121,
         "priority": 0,
+        "triage_status": None,
+        "triaged_at": None,
         "signature": '{"symptoms": [{"type": "url", "part": "hostname", "value": "www.vicroads.vic.gov.au"}]}',
         "comments": [
             {
@@ -144,6 +152,8 @@ BUCKETS_CONFIG = [
         "description": "domain is www.vicroads.vic.gov.au",
         "cluster_id": None,
         "priority": 0,
+        "triage_status": None,
+        "triaged_at": None,
         "signature": '{"symptoms": [{"type": "url", "part": "hostname", "value": "www.vicroads.vic.gov.au"}]}',
         "comments": [
             {
@@ -182,6 +192,8 @@ BUCKETS_CONFIG = [
         "description": "domain is www.filae.com",
         "cluster_id": None,
         "priority": 0,
+        "triage_status": None,
+        "triaged_at": None,
         "signature": '{"symptoms": [{"type": "url", "part": "hostname", "value": "www.filae.com"}]}',
         "comments": [
             {
@@ -199,6 +211,8 @@ BUCKETS_CONFIG = [
         "description": "domain is www.joyn.de",
         "cluster_id": None,
         "priority": 0,
+        "triage_status": None,
+        "triaged_at": None,
         "signature": '{"symptoms": [{"type": "url", "part": "hostname", "value": "www.joyn.de"}]}',
         "comments": [
             {
@@ -214,6 +228,32 @@ BUCKETS_CONFIG = [
                 "comments_original_language": None,
                 "breakage_category": "media",
                 "ml_valid_probability": None,
+            },
+        ],
+    },
+    {
+        "id": 999999,
+        "domain": "www.example-triaged.com",
+        "description": "www.example-triaged.com [Cluster 99999]",
+        "cluster_id": 99999,
+        "priority": 0,
+        "triage_status": "worksforme",
+        "triaged_at": datetime.now(UTC) - timedelta(days=5),
+        "signature": '{"symptoms": [{"type": "url", "part": "hostname", "value": "www.example-triaged.com"}]}',
+        "comments": [
+            {
+                "comments": "Site is broken on Firefox",
+                "comments_translated": "Site is broken on Firefox",
+                "comments_original_language": "en",
+                "breakage_category": "load",
+                "ml_valid_probability": 0.9,
+            },
+            {
+                "comments": "Page not working as expected",
+                "comments_translated": "Page not working as expected",
+                "comments_original_language": "en",
+                "breakage_category": "load",
+                "ml_valid_probability": 0.85,
             },
         ],
     },
@@ -289,7 +329,12 @@ def generate_fixtures():
                     "color": None,
                     "description": bucket_config["description"],
                     "domain": bucket_config["domain"],
-                    "triage_status": None,
+                    "triage_status": bucket_config["triage_status"],
+                    "triaged_at": (
+                        bucket_config["triaged_at"].isoformat()
+                        if bucket_config["triaged_at"]
+                        else None
+                    ),
                     "priority": bucket_config["priority"],
                     "signature": bucket_config["signature"],
                     "reassign_in_progress": False,

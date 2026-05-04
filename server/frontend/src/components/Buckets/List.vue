@@ -18,6 +18,7 @@
           <button
             type="button"
             class="btn btn-default"
+            data-testid="show-triaged-toggle"
             :disabled="loading"
             @click="updateShowHidden"
           >
