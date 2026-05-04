@@ -181,6 +181,7 @@ commands = [["pytest", "-v", "-m", "not ui", "{posargs}"]]
 
 [tool.tox.env.e2e]
 extras = ["dev", "server"]
+commands_pre = [["playwright", "install", "--with-deps", "chromium", "firefox"]]
 commands = [["pytest", "-m", "ui", "--browser", "firefox", "--browser", "chromium", "--no-cov", "{posargs}"]]
 
 [tool.tox.env.mypy]

@@ -87,8 +87,5 @@ jobs:
       - name: Install uv
         uses: astral-sh/setup-uv@v7
 
-      - name: Install Playwright browsers
-        run: uv run --extra=dev playwright install --with-deps chromium firefox
-
       - name: Run e2e tests
         run: uv run --extra=dev tox -e e2e
