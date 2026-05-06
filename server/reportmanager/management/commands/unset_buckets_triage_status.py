@@ -7,18 +7,9 @@ from logging import getLogger
 from scipy.stats import poisson
 
 from django.core.management import BaseCommand
-from django.db.models import (
-    Exists,
-    F,
-    FloatField,
-    Max,
-    OuterRef,
-    Prefetch,
-    Subquery,
-)
-from django.db.models.functions import Coalesce
+from django.db.models import F, Q, Sum
 
-from reportmanager.models import Bucket, BucketHit, ReportEntry
+from reportmanager.models import Bucket, BucketHit
 
 LOG = getLogger("reportmanager.unset_triage_status")
 
@@ -75,81 +66,29 @@ def is_poisson_spike(baseline_count: int, recent_count: int) -> bool:
 
     # expected number of reports in the recent window based on baseline,
     # i.e. if nothing changed, how many reports would we expect in the last SHORT_WINDOW days?
-    lam = (baseline_count / baseline_days) * SHORT_WINDOW
+    expected = (baseline_count / baseline_days) * SHORT_WINDOW
 
     # We compute the probability of seeing at least this many events (not just exactly
     # this many), because any count >= recent_count would be equally or more extreme.
     # This "right tail" probability tells us how surprising the observed spike is
     # under the baseline rate. We want to include recent_count i.e. P(X >= recent_count),
     # so passing recent_count - 1.
-    p_value = poisson.sf(recent_count - 1, lam)
+    p_value = poisson.sf(recent_count - 1, expected)
 
     return p_value < POISSON_P_VALUE
 
 
 class Command(BaseCommand):
-    help = (
-        "Check triaged buckets and automatically untriage them based on "
-        "quality improvements (incomplete status) or spike detection (all statuses)"
-    )
+    help = "Unset status of triaged buckets if spike is detected."
 
-    def handle(self, *args, **options):
+    def handle(self, *args: object, **options: object) -> None:
         LOG.info("Starting auto-untriage check")
 
-        inomplete_untriaged = self.unset_incomplete()
-        spike_untriaged = self.unset_status_if_spike()
+        untriaged_buckets = self.unset_status_if_spike()
 
-        total = inomplete_untriaged + spike_untriaged
-        LOG.info(
-            f"Auto-untriage complete: {inomplete_untriaged} incomplete, "
-            f"{spike_untriaged} spike-based, {total} total"
-        )
+        LOG.info(f"Auto-untriage complete for {untriaged_buckets} buckets.")
 
-    def unset_incomplete(self):
-        """Untriage incomplete buckets if they received reports with better quality."""
-
-        max_probability_at_triage = Subquery(
-            ReportEntry.objects.filter(
-                bucket=OuterRef("pk"),
-                reported_at__lte=OuterRef("triaged_at"),
-            )
-            .order_by()
-            .values("bucket")
-            .annotate(max_probability_at_triage=Max("ml_valid_probability"))
-            .values("max_probability_at_triage")[:1],
-            output_field=FloatField(),
-        )
-
-        has_better_new_report = Exists(
-            ReportEntry.objects.filter(
-                bucket=OuterRef("pk"),
-                reported_at__gt=OuterRef("triaged_at"),
-                ml_valid_probability__gt=OuterRef("max_probability_at_triage"),
-            )
-        )
-
-        to_untriage = (
-            Bucket.objects.filter(
-                cluster__isnull=False, triage_status=Bucket.TriageStatus.INCOMPLETE
-            )
-            .annotate(
-                max_probability_at_triage=Coalesce(max_probability_at_triage, 0.0)
-            )
-            .annotate(has_better_new_report=has_better_new_report)
-            .filter(has_better_new_report=True)
-        )
-
-        ids = list(to_untriage.values_list("id", flat=True))
-        untriaged_count = Bucket.objects.filter(id__in=ids).update(triage_status=None)
-
-        for bucket_id in ids:
-            LOG.info(
-                f"Auto-untriaged bucket {bucket_id} (incomplete): better quality report"
-            )
-
-        return untriaged_count
-
-    def unset_status_if_spike(self):
+    def unset_status_if_spike(self) -> int:
         """Unset triaged status for cluster buckets experiencing a spike."""
 
         # Reports are delayed by 1 day, so use the
@@ -174,27 +113,26 @@ class Command(BaseCommand):
                 triaged_at__isnull=False,
                 buckethit__begin__gt=F("triaged_at"),
             )
-            .distinct()
-            .prefetch_related(
-                Prefetch(
-                    "buckethit_set",
-                    queryset=BucketHit.objects.filter(begin__gte=long_window_start),
-                    to_attr="recent_hits",
-                )
+            .annotate(
+                recent_count=Sum(
+                    "buckethit__count",
+                    filter=Q(buckethit__begin__gte=short_window_start)
+                    & Q(buckethit__begin__gt=F("triaged_at")),
+                ),
+                baseline_count=Sum(
+                    "buckethit__count",
+                    filter=Q(buckethit__begin__lt=short_window_start)
+                    & Q(buckethit__begin__gte=long_window_start),
+                ),
             )
+            .distinct()
         )
 
         untriaged_count = 0
 
         for bucket in triaged_buckets:
-            recent_count = sum(
-                h.count
-                for h in bucket.recent_hits
-                if h.begin >= short_window_start and h.begin > bucket.triaged_at
-            )
-            baseline_count = sum(
-                h.count for h in bucket.recent_hits if h.begin < short_window_start
-            )
+            recent_count = bucket.recent_count or 0
+            baseline_count = bucket.baseline_count or 0
 
             if is_poisson_spike(baseline_count, recent_count):
                 status = bucket.triage_status

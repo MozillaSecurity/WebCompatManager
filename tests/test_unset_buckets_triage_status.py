@@ -1,4 +1,3 @@
-import uuid
 from datetime import timedelta
 
 import pytest
@@ -10,17 +9,7 @@ from reportmanager.management.commands.unset_buckets_triage_status import (
     SHORT_WINDOW,
     is_poisson_spike,
 )
-from reportmanager.models import App, Bucket, BucketHit, Cluster, OS, ReportEntry
-
-
-@pytest.fixture
-def app(db):
-    return App.objects.create(name="Firefox", version="150.0", channel="release")
-
-
-@pytest.fixture
-def os(db):
-    return OS.objects.create(name="Linux")
+from reportmanager.models import Bucket, BucketHit, Cluster
 
 
 def make_bucket(triage_status, triaged_at):
@@ -32,115 +21,6 @@ def make_bucket(triage_status, triaged_at):
         triaged_at=triaged_at,
         cluster=cluster,
     )
-
-
-def make_report(bucket, reported_at, ml_valid_probability, app, os, comments="test"):
-    return ReportEntry.objects.create(
-        bucket=bucket,
-        cluster=bucket.cluster,
-        reported_at=reported_at,
-        ml_valid_probability=ml_valid_probability,
-        app=app,
-        os=os,
-        comments=comments,
-        details={},
-        url="https://example.com/",
-        uuid=uuid.uuid4(),
-    )
-
-
-@pytest.mark.django_db
-class TestUnsetIncomplete:
-    def test_untriages_when_new_report_beats_baseline(self, app, os):
-        now = timezone.now()
-        bucket = make_bucket("incomplete", now - timedelta(days=1))
-        make_report(bucket, now - timedelta(days=2), 0.7, app, os)
-        make_report(bucket, now, 0.9, app, os)
-
-        count = Command().unset_incomplete()
-
-        assert count == 1
-        bucket.refresh_from_db()
-        assert bucket.triage_status is None
-        assert bucket.triaged_at is not None
-
-    def test_no_untriage_when_new_report_does_not_beat_baseline(self, app, os):
-        now = timezone.now()
-        bucket = make_bucket("incomplete", now - timedelta(days=1))
-        make_report(bucket, now - timedelta(days=2), 0.9, app, os)
-        make_report(bucket, now, 0.2, app, os)
-
-        count = Command().unset_incomplete()
-
-        assert count == 0
-        bucket.refresh_from_db()
-        assert bucket.triage_status == "incomplete"
-
-    def test_untriages_when_no_old_reports_and_new_report_has_positive_probability(
-        self, app, os
-    ):
-        now = timezone.now()
-        bucket = make_bucket("incomplete", now - timedelta(days=1))
-        make_report(bucket, now, 0.2, app, os)  # baseline defaults to 0.0
-
-        count = Command().unset_incomplete()
-
-        assert count == 1
-        bucket.refresh_from_db()
-        assert bucket.triage_status is None
-        assert bucket.triaged_at is not None
-
-    def test_no_untriage_when_no_new_reports(self, app, os):
-        now = timezone.now()
-        bucket = make_bucket("incomplete", now - timedelta(days=1))
-        make_report(bucket, now - timedelta(days=2), 0.9, app, os)
-
-        count = Command().unset_incomplete()
-
-        assert count == 0
-        bucket.refresh_from_db()
-        assert bucket.triage_status == "incomplete"
-
-    def test_no_untriage_when_new_report_probability_is_none(self, app, os):
-        now = timezone.now()
-        bucket = make_bucket("incomplete", now - timedelta(days=1))
-        make_report(bucket, now - timedelta(days=2), 0.6, app, os)
-        make_report(bucket, now, None, app, os)
-
-        count = Command().unset_incomplete()
-
-        assert count == 0
-        bucket.refresh_from_db()
-        assert bucket.triage_status == "incomplete"
-
-    def test_only_affects_incomplete_buckets(self, app, os):
-        now = timezone.now()
-        for status in ("worksforme", "cant_test", "invalid", "non_compat"):
-            b = make_bucket(status, now - timedelta(days=1))
-            make_report(b, now - timedelta(days=2), 0.4, app, os)
-            make_report(b, now, 0.9, app, os)
-
-        count = Command().unset_incomplete()
-
-        assert count == 0
-
-    def test_multiple_buckets_only_qualifying_ones_untriaged(self, app, os):
-        now = timezone.now()
-        good = make_bucket("incomplete", now - timedelta(days=1))
-        make_report(good, now - timedelta(days=2), 0.4, app, os)
-        make_report(good, now, 0.9, app, os)
-
-        bad = make_bucket("incomplete", now - timedelta(days=1))
-        make_report(bad, now - timedelta(days=2), 0.9, app, os)
-        make_report(bad, now, 0.4, app, os)
-
-        count = Command().unset_incomplete()
-
-        assert count == 1
-        good.refresh_from_db()
-        assert good.triage_status is None
-        bad.refresh_from_db()
-        assert bad.triage_status == "incomplete"
 
 
 def make_bucket_hits(bucket, *, recent_count, baseline_count):
