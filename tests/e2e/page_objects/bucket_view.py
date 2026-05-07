@@ -25,9 +25,9 @@ class BucketViewPage(PageObject):
 
     def select_triage_status(self, status_value):
         """Select a triage status option by its value (e.g. 'worksforme')."""
-        self.page.get_by_test_id(f"triage-option-{status_value}").click()
-        self.page.wait_for_load_state("networkidle")
+        with self.page.expect_navigation():
+            self.page.get_by_test_id(f"triage-option-{status_value}").click()
 
     def unmark_triage(self):
-        self.unmark_option.click()
-        self.page.wait_for_load_state("networkidle")
+        with self.page.expect_navigation():
+            self.unmark_option.click()
