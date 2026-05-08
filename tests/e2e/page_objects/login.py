@@ -17,8 +17,8 @@ class LoginPage(PageObject):
         self.navigate()
         self.username_input.fill(email)
         self.password_input.fill(password)
-        self.submit_button.click()
-        self.page.wait_for_load_state("networkidle")
+        with self.page.expect_navigation():
+            self.submit_button.click()
 
         assert not self.page.url.endswith("/login/"), (
             f"Login failed: still on login page ({self.page.url})"
