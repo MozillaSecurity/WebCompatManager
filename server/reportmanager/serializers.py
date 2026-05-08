@@ -80,7 +80,7 @@ class BucketSerializer(serializers.ModelSerializer):
 
     def to_representation(self, obj):
         serialized = super().to_representation(obj)
-        serialized["size"] = obj.size
+        serialized["size"] = getattr(obj, "size", None)
         serialized["latest_entry_id"] = getattr(obj, "latest_entry_id", None)
         serialized["latest_report"] = getattr(obj, "latest_report", None)
         serialized["priority_score"] = getattr(obj, "priority_score", None)

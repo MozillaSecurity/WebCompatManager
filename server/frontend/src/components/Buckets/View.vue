@@ -32,21 +32,19 @@
             </td>
             <td v-else>
               No bug associated.
-              <span
-                v-if="bucket.triage_status"
-                data-testid="triage-status-display"
+              <span v-if="triageStatus" data-testid="triage-status-display"
                 >Marked triaged as:
                 <strong data-testid="triage-status-label">
-                  {{ bucket.triage_status_display }}
+                  {{ triageStatusDisplay }}
                 </strong>
-                on {{ formatDate(bucket.triaged_at) }}.</span
+                on {{ formatDate(triagedAt) }}.</span
               >
               <br v-if="canEdit" /><br v-if="canEdit" />
               <div v-if="canEdit" class="btn-group">
                 <assignbutton :bucket="bucket.id" :providers="providers" />
                 <TriageBucketDropdown
                   :bucket-id="bucket.id"
-                  :current-status="bucket.triage_status"
+                  :current-status="triageStatus"
                   :choices="bucket.triage_status_choices || []"
                   @update="handleTriageStatusUpdate"
                 />
@@ -309,6 +307,9 @@ export default {
       reports: null,
       sortKeys: [...defaultSortKeys],
       totalPages: 1,
+      triageStatus: this.bucket.triage_status,
+      triageStatusDisplay: this.bucket.triage_status_display,
+      triagedAt: this.bucket.triaged_at,
     };
   },
   computed: {
@@ -530,8 +531,13 @@ export default {
     },
     async handleTriageStatusUpdate(newStatus) {
       try {
-        const data = await updateBucketTriageStatus(this.bucket.id, newStatus);
-        window.location.href = data.url;
+        const { bucket } = await updateBucketTriageStatus(
+          this.bucket.id,
+          newStatus,
+        );
+        this.triageStatus = bucket.triage_status;
+        this.triageStatusDisplay = bucket.triage_status_display;
+        this.triagedAt = bucket.triaged_at;
       } catch (err) {
         swal("Oops", errorParser(err), "error");
       }

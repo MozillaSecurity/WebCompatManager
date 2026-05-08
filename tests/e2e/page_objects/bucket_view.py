@@ -1,3 +1,5 @@
+from playwright.sync_api import expect
+
 from .base import PageObject
 
 
@@ -25,9 +27,15 @@ class BucketViewPage(PageObject):
 
     def select_triage_status(self, status_value):
         """Select a triage status option by its value (e.g. 'worksforme')."""
-        with self.page.expect_navigation():
-            self.page.get_by_test_id(f"triage-option-{status_value}").click()
+        self.page.get_by_test_id(f"triage-option-{status_value}").click()
+        self.triage_panel.wait_for(state="hidden")
 
     def unmark_triage(self):
-        with self.page.expect_navigation():
-            self.unmark_option.click()
+        self.unmark_option.click()
+        self.triage_panel.wait_for(state="hidden")
+
+    def expect_triage_label(self, text):
+        expect(self.triage_status_label).to_have_text(text)
+
+    def expect_triage_trigger(self, text):
+        expect(self.triage_trigger).to_have_text(text)

@@ -1120,6 +1120,7 @@ class BucketViewSet(
                 data["url"] = reverse(
                     "reportmanager:bucketview", kwargs={"sig_id": bucket.pk}
                 )
+            data["bucket"] = self.get_serializer(bucket).data
         else:
             data["warning_message"] = "This is a preview, don't forget to save!"
 
