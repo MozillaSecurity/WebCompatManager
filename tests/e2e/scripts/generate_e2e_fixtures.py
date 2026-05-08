@@ -9,9 +9,10 @@ Usage:
 # ruff: noqa: E501, PERF401
 
 import json
-import uuid
 from datetime import UTC, datetime, timedelta
 from pathlib import Path
+
+ANCHOR_DATE = datetime(2026, 4, 15, 18, 5, 0, tzinfo=UTC)
 
 BUCKETS_CONFIG = [
     {
@@ -238,7 +239,7 @@ BUCKETS_CONFIG = [
         "cluster_id": 99999,
         "priority": 0,
         "triage_status": "worksforme",
-        "triaged_at": datetime.now(UTC) - timedelta(days=5),
+        "triaged_at": ANCHOR_DATE - timedelta(days=5),
         "signature": '{"symptoms": [{"type": "url", "part": "hostname", "value": "www.example-triaged.com"}]}',
         "comments": [
             {
@@ -396,10 +397,10 @@ def generate_fixtures():
                         "ml_valid_probability": comment_data["ml_valid_probability"],
                         "os": (i % len(OS_DATA)) + 1,  # Rotate through all OS
                         "reported_at": (
-                            datetime.now(UTC) - timedelta(days=days_ago)
+                            ANCHOR_DATE - timedelta(days=days_ago)
                         ).isoformat(),
                         "url": f"https://{bucket_config['domain']}/",
-                        "uuid": str(uuid.uuid4()),
+                        "uuid": f"00000000-0000-0000-0000-{report_id:012d}",
                         "cluster": bucket_config["cluster_id"],
                     },
                 }

@@ -1,19 +1,23 @@
 import pytest
 
-from .fixtures.defaults import TEST_USER_EMAIL, TEST_USER_PASSWORD
 from .page_objects.bucket_view import BucketViewPage
-from .page_objects.login import LoginPage
+
+
+@pytest.fixture()
+def bucket_view_page(page, live_server, logged_in):
+    def load(bucket_id):
+        view = BucketViewPage(page, live_server, bucket_id)
+        view.navigate()
+        view.wait_for_loaded()
+        return view
+
+    return load
 
 
 @pytest.mark.ui
 @pytest.mark.django_db(transaction=True)
-def test_mark_bucket_triaged(page, live_server, e2e_data):
-    login_page = LoginPage(page, live_server)
-    login_page.login(TEST_USER_EMAIL, TEST_USER_PASSWORD)
-
-    bucket_view = BucketViewPage(page, live_server, e2e_data["untriaged_bucket_id"])
-    bucket_view.navigate()
-    bucket_view.wait_for_loaded()
+def test_mark_bucket_triaged(bucket_view_page, e2e_data):
+    bucket_view = bucket_view_page(e2e_data["untriaged_bucket_id"])
 
     # No triage status set yet, button reads "Mark triaged" and the status
     # display is absent.
@@ -31,13 +35,8 @@ def test_mark_bucket_triaged(page, live_server, e2e_data):
 
 @pytest.mark.ui
 @pytest.mark.django_db(transaction=True)
-def test_change_and_unmark_triage_status(page, live_server, e2e_data):
-    login_page = LoginPage(page, live_server)
-    login_page.login(TEST_USER_EMAIL, TEST_USER_PASSWORD)
-
-    bucket_view = BucketViewPage(page, live_server, e2e_data["triaged_bucket_id"])
-    bucket_view.navigate()
-    bucket_view.wait_for_loaded()
+def test_change_and_unmark_triage_status(bucket_view_page, e2e_data):
+    bucket_view = bucket_view_page(e2e_data["triaged_bucket_id"])
 
     # Already has "worksforme" status
     assert bucket_view.triage_trigger.inner_text().strip() == "Change triage status"

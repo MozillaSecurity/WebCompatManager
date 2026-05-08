@@ -1,16 +1,11 @@
 import pytest
 
-from .fixtures.defaults import TEST_USER_EMAIL, TEST_USER_PASSWORD
 from .page_objects.buckets import BucketsPage
-from .page_objects.login import LoginPage
 
 
 @pytest.mark.ui
 @pytest.mark.django_db(transaction=True)
-def test_buckets_page(page, live_server, e2e_data):
-    login_page = LoginPage(page, live_server)
-    login_page.login(TEST_USER_EMAIL, TEST_USER_PASSWORD)
-
+def test_buckets_page(page, live_server, logged_in, e2e_data):
     buckets_page = BucketsPage(page, live_server)
     buckets_page.navigate()
     buckets_page.wait_for_buckets_to_load()
@@ -25,10 +20,7 @@ def test_buckets_page(page, live_server, e2e_data):
 
 @pytest.mark.ui
 @pytest.mark.django_db(transaction=True)
-def test_buckets_list_show_hide_triaged(page, live_server, e2e_data):
-    login_page = LoginPage(page, live_server)
-    login_page.login(TEST_USER_EMAIL, TEST_USER_PASSWORD)
-
+def test_buckets_list_show_hide_triaged(page, live_server, logged_in, e2e_data):
     buckets_page = BucketsPage(page, live_server)
     buckets_page.navigate()
     buckets_page.wait_for_buckets_to_load()
