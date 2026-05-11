@@ -12,4 +12,6 @@ class PageObject:
 
     def navigate(self):
         """Navigate to this page's URL."""
+        if self.page.url != "about:blank":
+            self.page.wait_for_load_state("networkidle")
         self.page.goto(f"{self.live_server.url}{self.url}")

@@ -52,6 +52,13 @@ class BreakageCategory(models.Model):
 
 
 class Bucket(models.Model):
+    class TriageStatus(models.TextChoices):
+        WORKS_FOR_ME = "worksforme", "Works For Me"
+        CANT_TEST = "cant_test", "Can't Test"
+        INCOMPLETE = "incomplete", "Incomplete"
+        INVALID = "invalid", "Invalid"
+        NON_COMPAT = "non_compat", "Non-Compat"
+
     id: models.AutoField = models.AutoField(primary_key=True)
     bug: models.ForeignKey = models.ForeignKey(
         "Bug", null=True, on_delete=models.deletion.CASCADE
@@ -63,8 +70,10 @@ class Bucket(models.Model):
     # store the domain outside the signature only if the signature includes
     # a non-regex domain symptom and no other symptoms (for quick exclusion)
     domain: models.CharField = models.CharField(max_length=255, null=True)
-    # bucket can be hidden from view until given date, without being logged
-    hide_until: models.DateTimeField = models.DateTimeField(blank=True, null=True)
+    triage_status: models.CharField = models.CharField(
+        max_length=20, null=True, choices=TriageStatus.choices
+    )
+    triaged_at: models.DateTimeField = models.DateTimeField(null=True)
     # higher priority = earlier match
     priority: models.IntegerField = models.IntegerField(
         default=0, validators=(MinValueValidator(-2), MaxValueValidator(2))

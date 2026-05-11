@@ -32,19 +32,22 @@
             </td>
             <td v-else>
               No bug associated.
-              <span v-if="bucket.hide_until"
-                >Marked triaged until {{ formatDate(bucket.hide_until) }}.</span
+              <span v-if="triageStatus" data-testid="triage-status-display"
+                >Marked triaged as:
+                <strong data-testid="triage-status-label">
+                  {{ triageStatusDisplay }}
+                </strong>
+                on {{ formatDate(triagedAt) }}.</span
               >
               <br v-if="canEdit" /><br v-if="canEdit" />
               <div v-if="canEdit" class="btn-group">
                 <assignbutton :bucket="bucket.id" :providers="providers" />
-                <hidebucketbutton
-                  v-if="!bucket.hide_until"
-                  :bucket="bucket.id"
+                <TriageBucketDropdown
+                  :bucket-id="bucket.id"
+                  :current-status="triageStatus"
+                  :choices="bucket.triage_status_choices || []"
+                  @update="handleTriageStatusUpdate"
                 />
-                <a v-else class="btn btn-default" @click="unhide"
-                  >Unmark triaged</a
-                >
               </div>
               <br v-if="canEdit" /><br v-if="canEdit" />
               <div v-if="canEdit" class="btn-group">
@@ -227,9 +230,9 @@ import {
   assignExternalBug,
   date,
   errorParser,
-  hideBucketUntil,
   jsonPretty,
   parseHash,
+  updateBucketTriageStatus,
 } from "../../helpers";
 import {
   etpStrictReportDescription,
@@ -241,7 +244,7 @@ import * as api from "../../api";
 import PageNav from "../PageNav.vue";
 import ActivityGraph from "../ActivityGraph.vue";
 import AssignBtn from "./AssignBtn.vue";
-import HideBucketBtn from "./HideBucketBtn.vue";
+import TriageBucketDropdown from "./TriageBucketDropdown.vue";
 import ReportPreviewRow from "./ReportPreviewRow.vue";
 
 const pageSize = 50;
@@ -251,7 +254,7 @@ export default {
     activitygraph: ActivityGraph,
     assignbutton: AssignBtn,
     ClipLoader: LoadingSpinner,
-    hidebucketbutton: HideBucketBtn,
+    TriageBucketDropdown,
     PageNav: PageNav,
     ReportPreviewRow: ReportPreviewRow,
   },
@@ -304,6 +307,9 @@ export default {
       reports: null,
       sortKeys: [...defaultSortKeys],
       totalPages: 1,
+      triageStatus: this.bucket.triage_status,
+      triageStatusDisplay: this.bucket.triage_status_display,
+      triagedAt: this.bucket.triaged_at,
     };
   },
   computed: {
@@ -400,15 +406,6 @@ export default {
     },
     submitWatchForm() {
       this.$refs.bucketWatchForm.submit();
-    },
-    unhide() {
-      hideBucketUntil(this.bucket.id, null)
-        .then((data) => {
-          window.location.href = data.url;
-        })
-        .catch((err) => {
-          swal("Oops", errorParser(err), "error");
-        });
     },
     unlink() {
       swal({
@@ -531,6 +528,19 @@ export default {
       searchParams.append("comment", etpStrictReportDescription(reports[0]));
       searchParams.append("dependson", "tp-breakage");
       openPrefilledBugzillaBug(searchParams);
+    },
+    async handleTriageStatusUpdate(newStatus) {
+      try {
+        const { bucket } = await updateBucketTriageStatus(
+          this.bucket.id,
+          newStatus,
+        );
+        this.triageStatus = bucket.triage_status;
+        this.triageStatusDisplay = bucket.triage_status_display;
+        this.triagedAt = bucket.triaged_at;
+      } catch (err) {
+        swal("Oops", errorParser(err), "error");
+      }
     },
   },
   watch: {

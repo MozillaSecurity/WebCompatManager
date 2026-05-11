@@ -32,46 +32,6 @@
   <script src="{% static 'js/params.js' %}"/></script>
   <script src="{% static 'js/cookie-csrf.js' %}"/></script>
 
-  <script>
-  (() => {
-    const notify_badge_class = 'badge';
-    const notify_api_url = '/inbox/notifications/api/unread_count/';
-    const notify_fetch_count = '5';
-    const notify_refresh_period = 0;
-    const consecutive_misfires = 0;
-
-    function fill_notification_badge(data) {
-      const badges = document.getElementsByClassName(notify_badge_class);
-      for (let i = 0; i < badges.length|0; i++) {
-        badges[i].innerHTML = data;
-      }
-    }
-
-    function fetch_api_data() {
-      fetch(notify_api_url+'?max='+notify_fetch_count, {credentials: 'same-origin'})
-      .then(response => {
-        if (response.ok) {
-          response.json()
-          .then(data => {
-            fill_notification_badge(data.unread_count);
-          })
-          if (notify_refresh_period) {
-            setTimeout(fetch_api_data, notify_refresh_period);
-          }
-        } else {
-          swal('Oops', E_SERVER_ERROR, 'error');
-          console.debug(response);
-        }
-      })
-      .catch(e => {
-        fill_notification_badge('!');
-      });
-    }
-
-    document.addEventListener("DOMContentLoaded", fetch_api_data)
-  })()
-  </script>
-
 {% endblock js%}
 {% if debug %}
   <script>

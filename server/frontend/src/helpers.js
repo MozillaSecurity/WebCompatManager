@@ -89,9 +89,9 @@ export const assignExternalBug = (bucketId, bugId, providerId) => {
   }
 };
 
-export const hideBucketUntil = (bucketId, dateObj) => {
+export const updateBucketTriageStatus = (bucketId, triageStatus) => {
   const payload = {
-    hide_until: dateObj ? dateObj.toISOString() : null,
+    triage_status: triageStatus,
   };
 
   try {

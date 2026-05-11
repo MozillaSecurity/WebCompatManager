@@ -311,10 +311,6 @@ CELERY_BEAT_SCHEDULE = {
         "task": "reportmanager.cron.cleanup_old_reports",
         "schedule": 30 * 60,
     },
-    "Unhide hidden buckets every minute": {
-        "task": "reportmanager.cron.unhide_buckets",
-        "schedule": 60,
-    },
     "Backfill missing report data evry 12 hours": {
         "task": "reportmanager.cron.backfill_missing_report_data",
         "schedule": 60 * 60 * 12,

@@ -18,6 +18,7 @@
           <button
             type="button"
             class="btn btn-default"
+            data-testid="show-triaged-toggle"
             :disabled="loading"
             @click="updateShowHidden"
           >
@@ -293,7 +294,7 @@ export default {
       pageSize: 100,
       queryError: "",
       queryStr: JSON.stringify(
-        { op: "AND", bug__isnull: true, hide_until__isnull: true },
+        { op: "AND", bug__isnull: true, triage_status__isnull: true },
         null,
         2,
       ),
@@ -325,7 +326,7 @@ export default {
       return !this.queryStr.includes('"bug__isnull": true');
     },
     showHidden() {
-      return !this.queryStr.includes('"hide_until__isnull": true');
+      return !this.queryStr.includes('"triage_status__isnull": true');
     },
   },
   created() {
@@ -385,7 +386,7 @@ export default {
       if (this.showHidden) {
         this.queryStr = JSON.stringify(
           Object.assign(
-            { hide_until__isnull: true },
+            { triage_status__isnull: true },
             JSON.parse(this.queryStr),
           ),
           null,
@@ -393,7 +394,7 @@ export default {
         );
       } else {
         const query = JSON.parse(this.queryStr);
-        delete query["hide_until__isnull"];
+        delete query["triage_status__isnull"];
         this.queryStr = JSON.stringify(query, null, 2);
       }
       this.fetch();

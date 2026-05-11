@@ -42,6 +42,9 @@ class BucketSerializer(serializers.ModelSerializer):
     )
     size = serializers.IntegerField(write_only=True, required=False)
     priority_score = serializers.FloatField(write_only=True, required=False)
+    triage_status_display = serializers.CharField(
+        source="get_triage_status_display", read_only=True
+    )
 
     class Meta:
         model = Bucket
@@ -51,19 +54,22 @@ class BucketSerializer(serializers.ModelSerializer):
             "color",
             "description",
             "domain",
-            "hide_until",
             "id",
             "latest_entry_id",
             "latest_report",
             "priority",
             "signature",
             "size",
+            "triage_status",
+            "triage_status_display",
+            "triaged_at",
             "reassign_in_progress",
             "priority_score",
         ]
         ordering = ("-id",)
         read_only_fields = [
             "id",
+            "triaged_at",
         ]
 
     def to_internal_value(self, data):
@@ -74,10 +80,14 @@ class BucketSerializer(serializers.ModelSerializer):
 
     def to_representation(self, obj):
         serialized = super().to_representation(obj)
-        serialized["size"] = obj.size
+        serialized["size"] = getattr(obj, "size", None)
         serialized["latest_entry_id"] = getattr(obj, "latest_entry_id", None)
         serialized["latest_report"] = getattr(obj, "latest_report", None)
         serialized["priority_score"] = getattr(obj, "priority_score", None)
+        serialized["triage_status_choices"] = [
+            {"value": choice[0], "label": choice[1]}
+            for choice in Bucket.TriageStatus.choices
+        ]
         return serialized
 
 
