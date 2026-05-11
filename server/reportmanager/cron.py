@@ -59,6 +59,11 @@ def update_report_stats():
 
 
 @app.task(ignore_result=True)
+def unset_buckets_triage_status():
+    call_command("unset_buckets_triage_status")
+
+
+@app.task(ignore_result=True)
 def bug_update_status():
     call_command("bug_update_status")
 

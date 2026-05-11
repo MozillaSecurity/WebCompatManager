@@ -311,6 +311,10 @@ CELERY_BEAT_SCHEDULE = {
         "task": "reportmanager.cron.cleanup_old_reports",
         "schedule": 30 * 60,
     },
+    "Unset triage status for buckets every 6 hours": {
+        "task": "reportmanager.cron.unset_buckets_triage_status",
+        "schedule": 60 * 60 * 6,
+    },
     "Backfill missing report data evry 12 hours": {
         "task": "reportmanager.cron.backfill_missing_report_data",
         "schedule": 60 * 60 * 12,
