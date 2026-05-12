@@ -258,6 +258,45 @@ BUCKETS_CONFIG = [
             },
         ],
     },
+    {
+        "id": 888888,
+        "domain": "www.example-spike.com",
+        "description": "www.example-spike.com [Cluster 88888]",
+        "cluster_id": 88888,
+        "priority": 0,
+        "triage_status": None,
+        "triaged_at": ANCHOR_DATE - timedelta(days=5),
+        "signature": '{"symptoms": [{"type": "url", "part": "hostname", "value": "www.example-spike.com"}]}',
+        "comments": [
+            {
+                # reported 7 days before ANCHOR_DATE = 2 days before triaged_at -> not highlighted
+                "reported_at": ANCHOR_DATE - timedelta(days=7),
+                "comments": "Old report before triage",
+                "comments_translated": "Old report before triage",
+                "comments_original_language": "en",
+                "breakage_category": "load",
+                "ml_valid_probability": 0.9,
+            },
+            {
+                # reported 3 days before ANCHOR_DATE = 2 days after triaged_at -> highlighted
+                "reported_at": ANCHOR_DATE - timedelta(days=3),
+                "comments": "New report after spike untriage",
+                "comments_translated": "New report after spike untriage",
+                "comments_original_language": "en",
+                "breakage_category": "load",
+                "ml_valid_probability": 0.88,
+            },
+            {
+                # reported 1 day before ANCHOR_DATE = 4 days after triaged_at -> highlighted
+                "reported_at": ANCHOR_DATE - timedelta(days=1),
+                "comments": "Another new report after spike untriage",
+                "comments_translated": "Another new report after spike untriage",
+                "comments_original_language": "en",
+                "breakage_category": "media",
+                "ml_valid_probability": 0.85,
+            },
+        ],
+    },
 ]
 
 # Supporting data
@@ -375,7 +414,11 @@ def generate_fixtures():
                 comments_translated.lower() if comments_translated else ""
             )
 
-            days_ago = date_offsets[i % len(date_offsets)]
+            if "reported_at" in comment_data:
+                reported_at = comment_data["reported_at"]
+            else:
+                days_ago = date_offsets[i % len(date_offsets)]
+                reported_at = ANCHOR_DATE - timedelta(days=days_ago)
 
             fixture.append(
                 {
@@ -396,9 +439,7 @@ def generate_fixtures():
                         "domain": bucket_config["domain"],
                         "ml_valid_probability": comment_data["ml_valid_probability"],
                         "os": (i % len(OS_DATA)) + 1,  # Rotate through all OS
-                        "reported_at": (
-                            ANCHOR_DATE - timedelta(days=days_ago)
-                        ).isoformat(),
+                        "reported_at": reported_at.isoformat(),
                         "url": f"https://{bucket_config['domain']}/",
                         "uuid": f"00000000-0000-0000-0000-{report_id:012d}",
                         "cluster": bucket_config["cluster_id"],

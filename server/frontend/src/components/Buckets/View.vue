@@ -31,6 +31,17 @@
               </div>
             </td>
             <td v-else>
+              <div
+                v-if="lastTriagedAt"
+                class="alert alert-warning last-triaged"
+                data-testid="untriage-warning"
+              >
+                <i class="bi bi-exclamation-triangle-fill"></i>
+                This bucket was last triaged on
+                {{ formatDate(lastTriagedAt) }} but was automatically untriaged
+                due to a spike in activity. Reports causing the spike are
+                highlighted below.
+              </div>
               No bug associated.
               <span v-if="triageStatus" data-testid="triage-status-display"
                 >Marked triaged as:
@@ -208,6 +219,7 @@
               v-else
               :key="report.id"
               :report="report"
+              :triaged-at="lastTriagedAt"
             />
           </tbody>
         </table>
@@ -313,6 +325,9 @@ export default {
     };
   },
   computed: {
+    lastTriagedAt() {
+      return !this.triageStatus && this.triagedAt ? this.triagedAt : null;
+    },
     prettySignature() {
       return jsonPretty(this.bucket.signature);
     },
@@ -585,5 +600,9 @@ button[aria-expanded="false"] .bi-eye-slash-fill {
   list-style: none;
   padding: 0;
   margin: 0.25em 0 0;
+}
+
+.last-triaged {
+  max-width: 500px;
 }
 </style>

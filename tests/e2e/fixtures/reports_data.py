@@ -5,7 +5,7 @@ from django.contrib.auth.models import User as DjangoUser
 from django.contrib.contenttypes.models import ContentType
 from django.core.management import call_command
 
-from reportmanager.models import Bucket
+from reportmanager.models import Bucket, ReportEntry
 from reportmanager.models import User as ReportManagerUser
 
 from .defaults import TEST_USER_EMAIL, TEST_USER_PASSWORD
@@ -28,6 +28,9 @@ def e2e_data(db):
     )
     user.user_permissions.add(write_perm)
 
+    spike_bucket = Bucket.objects.get(pk=888888)
+    spike_triaged_at = spike_bucket.triaged_at
+
     return {
         "bucket_count": Bucket.objects.count(),
         "triaged_bucket_id": Bucket.objects.filter(triage_status__isnull=False)
@@ -39,4 +42,8 @@ def e2e_data(db):
         .first()
         .id,
         "triaged_count": Bucket.objects.filter(triage_status__isnull=False).count(),
+        "spike_bucket_id": spike_bucket.id,
+        "spike_new_report_count": ReportEntry.objects.filter(
+            bucket=spike_bucket, reported_at__gt=spike_triaged_at
+        ).count(),
     }

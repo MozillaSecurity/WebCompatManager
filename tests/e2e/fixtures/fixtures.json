@@ -232,6 +232,22 @@
     }
   },
   {
+    "model": "reportmanager.bucket",
+    "pk": 888888,
+    "fields": {
+      "bug": null,
+      "color": null,
+      "description": "www.example-spike.com [Cluster 88888]",
+      "domain": "www.example-spike.com",
+      "triage_status": null,
+      "triaged_at": "2026-04-10T18:05:00+00:00",
+      "priority": 0,
+      "signature": "{\"symptoms\": [{\"type\": \"url\", \"part\": \"hostname\", \"value\": \"www.example-spike.com\"}]}",
+      "reassign_in_progress": false,
+      "cluster": 88888
+    }
+  },
+  {
     "model": "reportmanager.reportentry",
     "pk": 1000,
     "fields": {
@@ -673,6 +689,69 @@
     }
   },
   {
+    "model": "reportmanager.reportentry",
+    "pk": 1021,
+    "fields": {
+      "app": 1,
+      "breakage_category": 1,
+      "bucket": 888888,
+      "comments": "Old report before triage",
+      "comments_translated": "Old report before triage",
+      "comments_original_language": "en",
+      "comments_preprocessed": "old report before triage",
+      "details": {},
+      "domain": "www.example-spike.com",
+      "ml_valid_probability": 0.9,
+      "os": 1,
+      "reported_at": "2026-04-08T18:05:00+00:00",
+      "url": "https://www.example-spike.com/",
+      "uuid": "00000000-0000-0000-0000-000000001021",
+      "cluster": 88888
+    }
+  },
+  {
+    "model": "reportmanager.reportentry",
+    "pk": 1022,
+    "fields": {
+      "app": 2,
+      "breakage_category": 1,
+      "bucket": 888888,
+      "comments": "New report after spike untriage",
+      "comments_translated": "New report after spike untriage",
+      "comments_original_language": "en",
+      "comments_preprocessed": "new report after spike untriage",
+      "details": {},
+      "domain": "www.example-spike.com",
+      "ml_valid_probability": 0.88,
+      "os": 2,
+      "reported_at": "2026-04-12T18:05:00+00:00",
+      "url": "https://www.example-spike.com/",
+      "uuid": "00000000-0000-0000-0000-000000001022",
+      "cluster": 88888
+    }
+  },
+  {
+    "model": "reportmanager.reportentry",
+    "pk": 1023,
+    "fields": {
+      "app": 3,
+      "breakage_category": 2,
+      "bucket": 888888,
+      "comments": "Another new report after spike untriage",
+      "comments_translated": "Another new report after spike untriage",
+      "comments_original_language": "en",
+      "comments_preprocessed": "another new report after spike untriage",
+      "details": {},
+      "domain": "www.example-spike.com",
+      "ml_valid_probability": 0.85,
+      "os": 3,
+      "reported_at": "2026-04-14T18:05:00+00:00",
+      "url": "https://www.example-spike.com/",
+      "uuid": "00000000-0000-0000-0000-000000001023",
+      "cluster": 88888
+    }
+  },
+  {
     "model": "reportmanager.cluster",
     "pk": 70854,
     "fields": {
@@ -710,6 +789,14 @@
     "fields": {
       "domain": "www.example-triaged.com",
       "centroid": 1019
+    }
+  },
+  {
+    "model": "reportmanager.cluster",
+    "pk": 88888,
+    "fields": {
+      "domain": "www.example-spike.com",
+      "centroid": 1021
     }
   }
 ]
