@@ -25,7 +25,7 @@
   },
   "devDependencies": {
     "@babel/core": "^7.26.0",
-    "@babel/preset-env": "^7.29.2",
+    "@babel/preset-env": "^7.29.5",
     "@eslint/js": "^9.6.0",
     "@testing-library/vue": "^8.1.0",
     "@vue/compiler-sfc": "^3.5.33",
