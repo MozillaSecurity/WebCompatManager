@@ -228,6 +228,19 @@ import PageNav from "../PageNav.vue";
 import Row from "./Row.vue";
 import HelpJSONQueryPopover from "../HelpJSONQueryPopover.vue";
 
+const domainFilterSignature = {
+  op: "AND",
+  1: {
+    op: "AND",
+    0: {
+      op: "OR",
+      domain: MatchObjects.ANY,
+      domain__endswith: MatchObjects.ANY,
+    },
+    domain__isnull: MatchObjects.ANY,
+  },
+};
+
 export default {
   components: {
     ClipLoader: LoadingSpinner,
@@ -268,18 +281,6 @@ export default {
       "size",
     ];
     const defaultSortKeys = ["-priority_score", "-size", "-latest_report"];
-    const domainFilterSignature = {
-      op: "AND",
-      1: {
-        op: "AND",
-        0: {
-          op: "OR",
-          domain: MatchObjects.ANY,
-          domain__endswith: MatchObjects.ANY,
-        },
-        domain__isnull: MatchObjects.ANY,
-      },
-    };
 
     return {
       advancedQuery: false,
@@ -288,7 +289,6 @@ export default {
       currentPage: 1,
       defaultSortKeys: defaultSortKeys,
       domainFilter: "",
-      domainFilterSignature: domainFilterSignature,
       loading: false,
       modifiedCache: {},
       pageSize: 100,
@@ -352,7 +352,7 @@ export default {
         this.queryStr = JSON.stringify(parsedQuery, null, 2);
         // Extract domain filter if present
         const matcher = new MatchObjects();
-        if (matcher.match(parsedQuery, this.domainFilterSignature)) {
+        if (matcher.match(parsedQuery, domainFilterSignature)) {
           this.domainFilter = parsedQuery[1][0].domain;
         } else if (parsedQuery.domain) {
           this.domainFilter = parsedQuery.domain;
@@ -404,7 +404,7 @@ export default {
       let query = JSON.parse(this.queryStr);
 
       const matcher = new MatchObjects();
-      if (matcher.match(query, this.domainFilterSignature)) {
+      if (matcher.match(query, domainFilterSignature)) {
         query = query[0];
       }
 
