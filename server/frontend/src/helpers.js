@@ -122,14 +122,39 @@ export const jsonPretty = (orig) => {
 };
 
 export const parseHash = (hash) => {
-  return hash
+  const result = {};
+  hash
     .substring(1)
     .split("&")
-    .map((v) => v.split("="))
-    .reduce(
-      (pre, [key, value]) => ({ ...pre, [key]: decodeURIComponent(value) }),
-      {},
-    );
+    .filter(Boolean)
+    .forEach((part) => {
+      const eqIdx = part.indexOf("=");
+      const key = part.substring(0, eqIdx);
+      const value = decodeURIComponent(part.substring(eqIdx + 1));
+      if (Object.prototype.hasOwnProperty.call(result, key)) {
+        result[key] = [].concat(result[key], value);
+      } else {
+        result[key] = value;
+      }
+    });
+  return result;
+};
+
+export const buildHash = ({
+  activeState,
+  domainFilter,
+  triageStatus,
+  currentPage,
+  sort,
+}) => {
+  const parts = [];
+  if (activeState !== "needs_triage") parts.push(`status=${activeState}`);
+  if (domainFilter) parts.push(`domain=${encodeURIComponent(domainFilter)}`);
+  if (triageStatus)
+    parts.push(`triage_status=${encodeURIComponent(triageStatus)}`);
+  if (currentPage !== 1) parts.push(`page=${currentPage}`);
+  if (sort) parts.push(`sort=${sort}`);
+  return parts.length ? "#" + parts.join("&") : "";
 };
 
 export const multiSort = {
@@ -203,35 +228,3 @@ export const multiSort = {
     },
   },
 };
-
-export class MatchObjects {
-  static ANY = {};
-
-  match(obj, signature) {
-    const objKeys = Object.keys(obj);
-    const sigKeys = Object.keys(signature);
-    // Check if signature keys are a subset of obj keys
-    for (const key of sigKeys) {
-      if (!objKeys.includes(key)) {
-        return false;
-      }
-    }
-    for (const [key, sigValue] of Object.entries(signature)) {
-      let value = obj[key];
-      if (sigValue === MatchObjects.ANY) {
-        continue;
-      }
-      if (typeof value != typeof sigValue) {
-        return false;
-      }
-      if (typeof value == "object" && value !== null) {
-        if (!this.match(value, sigValue)) {
-          return false;
-        }
-      } else if (value !== sigValue) {
-        return false;
-      }
-    }
-    return true;
-  }
-}
