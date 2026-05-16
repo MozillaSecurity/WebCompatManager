@@ -16,6 +16,7 @@ class BucketViewPage(PageObject):
         self.triage_status_display = self.page.get_by_test_id("triage-status-display")
         self.triage_status_label = self.page.get_by_test_id("triage-status-label")
         self.unmark_option = self.page.get_by_test_id("triage-unmark")
+        self.untriage_warning = self.page.get_by_test_id("untriage-warning")
 
     def wait_for_loaded(self):
         """Wait for the bucket view's triage trigger to be visible."""
@@ -39,3 +40,6 @@ class BucketViewPage(PageObject):
 
     def expect_triage_trigger(self, text):
         expect(self.triage_trigger).to_have_text(text)
+
+    def highlighted_report_rows(self):
+        return self.page.locator("tr.warning")
