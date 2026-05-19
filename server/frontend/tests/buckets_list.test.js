@@ -32,7 +32,6 @@ test("bucket list has no buckets", async () => {
     props: {
       canEdit: true,
       providers: [],
-      createBucketUrl: "",
       watchUrl: "",
       activityRange: 14,
     },
@@ -66,7 +65,6 @@ test("bucket list has two buckets", async () => {
     props: {
       canEdit: true,
       providers: [],
-      createBucketUrl: "",
       watchUrl: "",
       activityRange: 14,
     },
