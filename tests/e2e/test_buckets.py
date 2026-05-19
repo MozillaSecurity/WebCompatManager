@@ -28,12 +28,36 @@ def test_buckets_list_show_hide_triaged(page, live_server, logged_in, e2e_data):
     untriaged_count = e2e_data["bucket_count"] - e2e_data["triaged_count"]
     assert buckets_page.bucket_count() == untriaged_count
 
-    # Show Triaged - all buckets visible
-    buckets_page.click_show_triaged_toggle()
+    # Click to show buckets in All states
+    buckets_page.click_show_all()
     buckets_page.wait_for_buckets_to_load()
     assert buckets_page.bucket_count() == e2e_data["bucket_count"]
 
-    # Hide Triaged again
-    buckets_page.click_show_triaged_toggle()
+    # Back to Needs Triage - triaged buckets hidden again
+    buckets_page.click_needs_triage()
     buckets_page.wait_for_buckets_to_load()
     assert buckets_page.bucket_count() == untriaged_count
+
+
+@pytest.mark.ui
+@pytest.mark.django_db(transaction=True)
+def test_buckets_list_triaged_tab(page, live_server, logged_in, e2e_data):
+    buckets_page = BucketsPage(page, live_server)
+    buckets_page.navigate()
+    buckets_page.wait_for_buckets_to_load()
+
+    buckets_page.click_triaged()
+    buckets_page.wait_for_buckets_to_load()
+    assert buckets_page.bucket_count() == e2e_data["triaged_count"]
+
+
+@pytest.mark.ui
+@pytest.mark.django_db(transaction=True)
+def test_buckets_list_domain_filter(page, live_server, logged_in, e2e_data):
+    buckets_page = BucketsPage(page, live_server)
+    buckets_page.navigate()
+    buckets_page.wait_for_buckets_to_load()
+
+    buckets_page.search_domain("vicroads.vic.gov.au")
+    buckets_page.wait_for_buckets_to_load()
+    assert buckets_page.bucket_count() == 3

@@ -10,6 +10,7 @@
           activeState === tab.key ? 'btn-primary' : 'btn-default',
         ]"
         :disabled="disabled"
+        :data-testid="tab.key"
         @click="setStatus(tab.key)"
       >
         {{ tab.label }}
@@ -25,6 +26,7 @@
           type="text"
           class="form-control"
           placeholder="Domain filter…"
+          data-testid="domain-input"
           :disabled="disabled"
           @change="onDomainChange"
           @keyup.enter="onDomainChange"
@@ -33,6 +35,8 @@
           <button
             class="btn btn-default btn-sm"
             type="button"
+            aria-label="Search"
+            data-testid="domain-search-btn"
             :disabled="disabled"
             @click="onDomainSearch"
           >
