@@ -1,3 +1,4 @@
+import { afterEach, expect, test, vi } from "vitest";
 import { nextTick } from "vue";
 import { fireEvent, render } from "@testing-library/vue";
 import Inbox from "../src/components/Notifications/Inbox.vue";
@@ -13,9 +14,9 @@ import {
   unreadNotifications,
 } from "./fixtures.js";
 // This line will mock all calls to functions in ../src/api.js
-jest.mock("../src/api.js");
+vi.mock("../src/api.js");
 
-afterEach(jest.resetAllMocks);
+afterEach(() => vi.resetAllMocks());
 
 test("inbox displays an error if notification fetching failed", async () => {
   listUnreadNotifications.mockImplementation(() => {

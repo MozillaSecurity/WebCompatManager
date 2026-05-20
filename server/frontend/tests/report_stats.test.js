@@ -1,3 +1,4 @@
+import { afterEach, expect, test, vi } from "vitest";
 import { nextTick } from "vue";
 import { createRouter, createWebHistory } from "vue-router";
 import { render } from "@testing-library/vue";
@@ -5,14 +6,13 @@ import { mount } from "@vue/test-utils";
 import Stats from "../src/components/ReportStats.vue";
 import { reportStats, listBuckets } from "../src/api.js";
 import { emptyReportStats, reportStatsData, buckets } from "./fixtures.js";
-import "lodash/throttle";
 
 // This line will mock all calls to functions in ../src/api.js
-jest.mock("../src/api.js");
+vi.mock("../src/api.js");
 // Mocking calls to lodash._throttle during tests
-jest.mock("lodash/throttle", () => jest.fn((fn) => fn));
+vi.mock("lodash/throttle", () => ({ default: vi.fn((fn) => fn) }));
 
-afterEach(jest.resetAllMocks);
+afterEach(() => vi.resetAllMocks());
 
 test("empty stats doesn't break", async () => {
   const router = createRouter({
@@ -121,7 +121,7 @@ test("stats are sortable", async () => {
 
   // Create a mock router with push method
   const router = {
-    push: jest.fn((value) => {
+    push: vi.fn((value) => {
       const newHash = value.hash.slice(1);
       const currentHash = route.hash.slice(1);
 

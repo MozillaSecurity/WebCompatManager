@@ -1,17 +1,17 @@
+import { afterEach, expect, test, vi } from "vitest";
 import { nextTick } from "vue";
 import { createRouter, createWebHistory } from "vue-router";
 import { render } from "@testing-library/vue";
 import List from "../src/components/Buckets/List.vue";
 import { listBuckets } from "../src/api.js";
 import { emptyBuckets, buckets } from "./fixtures.js";
-import "lodash/throttle";
 
 // This line will mock all calls to functions in ../src/api.js
-jest.mock("../src/api.js");
+vi.mock("../src/api.js");
 // Mocking calls to lodash._throttle during tests
-jest.mock("lodash/throttle", () => jest.fn((fn) => fn));
+vi.mock("lodash/throttle", () => ({ default: vi.fn((fn) => fn) }));
 
-afterEach(jest.resetAllMocks);
+afterEach(() => vi.resetAllMocks());
 
 const defaultQueryStr = `{
   "op": "AND",
