@@ -1,23 +1,15 @@
+import { afterEach, expect, test, vi } from "vitest";
 import { nextTick } from "vue";
 import { fireEvent, render } from "@testing-library/vue";
 import ProviderKey from "../src/components/ProviderKey.vue";
 import { whoAmI } from "../src/bugzilla_api.js";
 
 // This line will mock all calls to functions in ../src/bugzilla_api.js
-jest.mock("../src/bugzilla_api.js");
-
-// Mocking localStorage
-const localStorageMock = {
-  getItem: jest.fn(),
-  setItem: jest.fn(),
-  removeItem: jest.fn(),
-  clear: jest.fn(),
-};
-global.localStorage = localStorageMock;
+vi.mock("../src/bugzilla_api.js");
 
 afterEach(() => {
   localStorage.clear();
-  jest.resetAllMocks();
+  vi.resetAllMocks();
 });
 
 test("providerKey displays an empty input when there isn't an API key in the localStorage", async () => {
