@@ -825,6 +825,27 @@ class BugzillaTemplate(models.Model):
         return self.name
 
 
+class DomainSource(models.Model):
+    name: models.CharField = models.CharField(max_length=255, unique=True)
+    bq_table: models.CharField = models.CharField(max_length=500)
+    bq_source_field: models.CharField = models.CharField(max_length=255)
+    last_synced_at: models.DateTimeField = models.DateTimeField(null=True)
+
+
+class DomainEntry(models.Model):
+    domain_source: models.ForeignKey = models.ForeignKey(
+        DomainSource, on_delete=models.CASCADE, related_name="entries"
+    )
+    domain: models.CharField = models.CharField(max_length=255, db_index=True)
+
+    class Meta(TypedModelMeta):
+        constraints = (
+            models.UniqueConstraint(
+                fields=("domain_source", "domain"), name="unique_domain_per_source"
+            ),
+        )
+
+
 class User(models.Model):
     class Meta(TypedModelMeta):
         permissions = (

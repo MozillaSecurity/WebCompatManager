@@ -104,3 +104,8 @@ def import_reports():
 @app.task(ignore_result=True)
 def backfill_missing_report_data():
     call_command("backfill_missing_report_data")
+
+
+@app.task(ignore_result=True)
+def sync_domain_list(name: str) -> None:
+    call_command("import_domain_list", name=name)
