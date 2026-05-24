@@ -1,4 +1,5 @@
 import pytest
+from playwright.sync_api import expect
 
 from .page_objects.bucket_view import BucketViewPage
 
@@ -50,3 +51,16 @@ def test_change_and_unmark_triage_status(bucket_view_page, e2e_data):
     bucket_view.unmark_triage()
     bucket_view.expect_triage_trigger("Mark triaged")
     assert bucket_view.triage_status_display.count() == 0
+
+
+@pytest.mark.ui
+@pytest.mark.django_db(transaction=True)
+def test_spike_untriage_warning_shown(bucket_view_page, e2e_data):
+    bucket_view = bucket_view_page(e2e_data["spike_bucket_id"])
+
+    # Warning banner should be visible since triage_status is None but triaged_at is set
+    expect(bucket_view.untriage_warning).to_be_visible()
+    expect(bucket_view.untriage_warning).to_contain_text("spike in activity")
+    expect(bucket_view.highlighted_report_rows()).to_have_count(
+        e2e_data["spike_new_report_count"]
+    )

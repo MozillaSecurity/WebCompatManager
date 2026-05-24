@@ -1,7 +1,9 @@
 <template>
-  <tr @click="report.view_url">
+  <tr @click="report.view_url" :class="{ warning: isNewAfterUntriage }">
     <td class="wrap-normal">
-      {{ formatShorterDate(report.reported_at) }}<br />
+      <span v-if="isNewAfterUntriage" class="label label-warning">new</span
+      ><br />
+      {{ formatShorterDate(report.reported_at) }}
       (<a :href="report.view_url">Full details</a>)
     </td>
     <td class="url-col">
@@ -95,6 +97,16 @@ export default {
     report: {
       type: Object,
       required: true,
+    },
+    triagedAt: {
+      type: String,
+      default: null,
+    },
+  },
+  computed: {
+    isNewAfterUntriage() {
+      if (!this.triagedAt || !this.report.reported_at) return false;
+      return new Date(this.report.reported_at) > new Date(this.triagedAt);
     },
   },
   methods: {
