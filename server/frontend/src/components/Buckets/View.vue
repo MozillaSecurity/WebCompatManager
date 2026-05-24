@@ -326,7 +326,11 @@ export default {
   },
   computed: {
     lastTriagedAt() {
-      return !this.triageStatus && this.triagedAt ? this.triagedAt : null;
+      if (!this.triageStatus && this.triagedAt) {
+        return this.triagedAt;
+      }
+
+      return null;
     },
     prettySignature() {
       return jsonPretty(this.bucket.signature);
