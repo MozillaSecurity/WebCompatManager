@@ -134,6 +134,23 @@ BIGQUERY_CLASSIFICATION_TABLE = (
 )
 BIGQUERY_SERVICE_ACCOUNT = ""
 
+BIGQUERY_DOMAIN_SOURCES = [
+    {
+        "name": "nsfw",
+        "bq_table": "oisd.nsfw",
+        "bq_source_field": "domain",
+        "normalize": False,
+        "sync_schedule": 60 * 60 * 24 * 30,  # monthly
+    },
+    {
+        "name": "worldcup_2026",
+        "bq_table": "webcompat_knowledge_base.world_cup_2026_urls",
+        "bq_source_field": "url",
+        "normalize": True,
+        "sync_schedule": 60 * 60 * 24,  # daily
+    },
+]
+
 # Modify the way we generate our usernames, based on the email address
 # OIDC_USERNAME_ALGO = 'server.auth.generate_username'
 #
@@ -318,6 +335,14 @@ CELERY_BEAT_SCHEDULE = {
     "Backfill missing report data evry 12 hours": {
         "task": "reportmanager.cron.backfill_missing_report_data",
         "schedule": 60 * 60 * 12,
+    },
+    **{
+        f"Sync domain list {source['name']}": {
+            "task": "reportmanager.cron.sync_domain_list",
+            "schedule": source["sync_schedule"],
+            "args": [source["name"]],
+        }
+        for source in BIGQUERY_DOMAIN_SOURCES
     },
 }
 

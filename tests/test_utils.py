@@ -2,7 +2,7 @@
 
 import pytest
 
-from reportmanager.utils import preprocess_text, transform_ml_label
+from reportmanager.utils import normalize_domain, preprocess_text, transform_ml_label
 
 
 class TestPreprocessText:
@@ -113,3 +113,35 @@ class TestTransformMLLabel:
     def test_empty_string_label_returns_none(self):
         """Test transformation of empty string label returns None."""
         assert transform_ml_label("", 0.5) is None
+
+
+class TestNormalizeDomain:
+    def test_normalize_domain_plain(self):
+        assert normalize_domain("example.com") == "example.com"
+
+    def test_normalize_domain_strips_www(self):
+        assert normalize_domain("www.youtube.com") == "youtube.com"
+
+    def test_normalize_domain_strips_m(self):
+        assert normalize_domain("https://m.facebook.com") == "facebook.com"
+
+    def test_normalize_domain_keeps_meaningful_subdomain(self):
+        assert normalize_domain("https://help.hulu.com") == "help.hulu.com"
+
+    def test_normalize_domain_from_url_with_path(self):
+        assert normalize_domain("https://m.example.com/some/path") == "example.com"
+
+    def test_normalize_domain_m(self):
+        assert normalize_domain("m.exposed") == "m.exposed"
+
+    def test_normalize_domain_www_m(self):
+        assert normalize_domain("www.m.exposed") == "m.exposed"
+
+    def test_normalize_domain_www_m365(self):
+        assert normalize_domain("m365.cloud.microsoft") == "m365.cloud.microsoft"
+
+    def test_normalize_domain_empty_returns_none(self):
+        assert normalize_domain("") is None
+
+    def test_normalize_domain_none_returns_none(self):
+        assert normalize_domain(None) is None

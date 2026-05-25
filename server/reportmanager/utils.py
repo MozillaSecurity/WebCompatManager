@@ -3,6 +3,7 @@
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 import html
 import re
+from urllib.parse import urlsplit
 
 
 def preprocess_text(text: str | None) -> str:
@@ -44,3 +45,25 @@ def transform_ml_label(
         case "valid":
             ml_valid_probability = ml_probability
     return ml_valid_probability
+
+
+def normalize_domain(value: str | None) -> str | None:
+    if not value:
+        return None
+
+    value = value.strip().lower()
+
+    if "://" in value or value.startswith("//"):
+        parsed = urlsplit(value)
+        hostname = parsed.hostname or ""
+    else:
+        hostname = value
+
+    for prefix in ("www.", "m."):
+        if hostname.startswith(prefix):
+            stripped = hostname[len(prefix) :]
+            if "." in stripped:
+                hostname = stripped
+            break
+
+    return hostname or None
