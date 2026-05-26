@@ -14,6 +14,7 @@ from django.conf import settings
 from django.contrib.auth.models import Permission
 from django.contrib.auth.models import User as DjangoUser
 from django.contrib.contenttypes.models import ContentType
+from django.core.management import call_command
 from django.core.validators import MaxValueValidator, MinValueValidator
 from django.db import models, transaction
 from django.db.models.functions import Length
@@ -22,7 +23,7 @@ from django.dispatch.dispatcher import receiver
 from django.utils import timezone
 from django_stubs_ext.db.models import TypedModelMeta
 
-from reportmanager.utils import preprocess_text
+from reportmanager.utils import normalize_domain, preprocess_text
 from webcompat.models import Report, Signature
 from webcompat.symptoms import URLSymptom, ValueMatcher
 
@@ -70,6 +71,9 @@ class Bucket(models.Model):
     # store the domain outside the signature only if the signature includes
     # a non-regex domain symptom and no other symptoms (for quick exclusion)
     domain: models.CharField = models.CharField(max_length=255, null=True)
+    domain_normalized: models.CharField = models.CharField(
+        max_length=255, null=True, db_index=True
+    )
     triage_status: models.CharField = models.CharField(
         max_length=20, null=True, choices=TriageStatus.choices
     )
@@ -111,7 +115,6 @@ class Bucket(models.Model):
     def save(self, *args, **kwargs):
         modified = set()
 
-        # Sanitize signature line endings so we end up with the same hash
         new_signature = json.dumps(json.loads(self.signature), sort_keys=True)
         if new_signature != self.signature:
             modified.add("signature")
@@ -131,6 +134,11 @@ class Bucket(models.Model):
                 self.domain = None
             if original_domain != self.domain:
                 modified.add("domain")
+
+        new_normalized = normalize_domain(self.domain) if self.domain else None
+        if new_normalized != self.domain_normalized:
+            self.domain_normalized = new_normalized
+            modified.add("domain_normalized")
 
         # required in Django 4.2+
         if "update_fields" in kwargs and kwargs["update_fields"] is not None:
@@ -316,6 +324,26 @@ class Bucket(models.Model):
         if self.cluster and self.cluster.centroid:
             return self.cluster.centroid.comments_preprocessed
         return None
+
+
+@receiver(post_save, sender=Bucket)
+def Bucket_save(sender, instance, created, **kwargs):
+    if not created or not instance.domain_normalized:
+        return
+
+    if getattr(settings, "USE_CELERY", None):
+        bucket_pk = instance.pk
+
+        def enqueue_label_bucket() -> None:
+            from reportmanager.tasks import label_bucket
+
+            label_bucket.apply_async((bucket_pk,))
+
+        transaction.on_commit(enqueue_label_bucket)
+    else:
+        transaction.on_commit(
+            lambda: call_command("label_buckets", bucket_id=instance.pk)
+        )
 
 
 class BucketColor(models.Model):
@@ -873,6 +901,37 @@ class User(models.Model):
     inaccessible_bug: models.BooleanField = models.BooleanField(
         blank=False, default=False
     )
+
+
+class Label(models.Model):
+    name: models.CharField = models.CharField(max_length=50, unique=True)
+    description: models.TextField = models.TextField(blank=True, default="")
+    domain_source: models.OneToOneField = models.OneToOneField(
+        DomainSource,
+        null=True,
+        blank=True,
+        on_delete=models.SET_NULL,
+        related_name="label",
+    )
+
+    def __str__(self) -> str:
+        return self.name
+
+
+class BucketLabel(models.Model):
+    bucket: models.ForeignKey = models.ForeignKey(
+        Bucket, on_delete=models.CASCADE, related_name="labels"
+    )
+    label: models.ForeignKey = models.ForeignKey(
+        Label, on_delete=models.CASCADE, related_name="bucket_labels"
+    )
+
+    class Meta(TypedModelMeta):
+        constraints = (
+            models.UniqueConstraint(
+                fields=("bucket", "label"), name="unique_bucket_label"
+            ),
+        )
 
 
 @receiver(post_save, sender=DjangoUser)
