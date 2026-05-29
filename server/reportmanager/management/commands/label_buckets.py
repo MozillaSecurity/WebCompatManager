@@ -31,9 +31,6 @@ def get_or_create_source_label(source_name: str) -> Label | None:
         domain_source=domain_source,
         defaults={"name": source_name},
     )
-    if label.name != source_name:
-        label.name = source_name
-        label.save(update_fields=["name"])
     return label
 
 
@@ -87,15 +84,19 @@ def reconcile_all_buckets_for_source(source_name: str) -> tuple[int, int]:
         ignore_conflicts=True,
     )
 
-    stale_labels = BucketLabel.objects.filter(label=label).annotate(
-        has_domain_match=Exists(
-            DomainEntry.objects.filter(
-                domain_source__name=source_name,
-                domain=OuterRef("bucket__domain_normalized"),
+    stale_labels = (
+        BucketLabel.objects.filter(label=label)
+        .annotate(
+            has_domain_match=Exists(
+                DomainEntry.objects.filter(
+                    domain_source__name=source_name,
+                    domain=OuterRef("bucket__domain_normalized"),
+                )
             )
         )
+        .filter(has_domain_match=False)
     )
-    removed_count, _ = stale_labels.filter(has_domain_match=False).delete()
+    removed_count, _ = stale_labels.delete()
     return len(created), removed_count
 
 
