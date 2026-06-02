@@ -75,8 +75,7 @@ export function etpStrictReportDescription(report) {
     Firefox version: ${report.app_name} ${report.app_version} (${report.app_channel})
 
     **Preconditions:**
-    - ETP set to STRICT
-    - Clean profile
+    - ETP set to Standard in Private Browsing Mode
 
     **Steps to reproduce:**
     1. Navigate to: ${report.url}
@@ -89,8 +88,9 @@ export function etpStrictReportDescription(report) {
     text
 
     **Notes:**
-    - Not reproducible with ETP STANDARD/turned OFF (both Normal and Private Browsing)
-    - Reproducible on the latest Nightly
+    - Reproduces in ETP Strict (Normal mode) and ETP Standard (Private Browsing mode)
+    - Reproduces in firefox-nightly, and firefox-release
+    - Does not reproduce in chrome
 
     ---
 
