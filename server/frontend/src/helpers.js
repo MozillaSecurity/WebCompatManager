@@ -129,6 +129,9 @@ export const parseHash = (hash) => {
     .filter(Boolean)
     .forEach((part) => {
       const eqIdx = part.indexOf("=");
+      if (eqIdx === -1) {
+        return;
+      }
       const key = part.substring(0, eqIdx);
       const value = decodeURIComponent(part.substring(eqIdx + 1));
       if (Object.prototype.hasOwnProperty.call(result, key)) {
@@ -138,23 +141,6 @@ export const parseHash = (hash) => {
       }
     });
   return result;
-};
-
-export const buildHash = ({
-  activeState,
-  domainFilter,
-  triageStatus,
-  currentPage,
-  sort,
-}) => {
-  const parts = [];
-  if (activeState !== "needs_triage") parts.push(`status=${activeState}`);
-  if (domainFilter) parts.push(`domain=${encodeURIComponent(domainFilter)}`);
-  if (triageStatus)
-    parts.push(`triage_status=${encodeURIComponent(triageStatus)}`);
-  if (currentPage !== 1) parts.push(`page=${currentPage}`);
-  if (sort) parts.push(`sort=${sort}`);
-  return parts.length ? "#" + parts.join("&") : "";
 };
 
 export const multiSort = {
