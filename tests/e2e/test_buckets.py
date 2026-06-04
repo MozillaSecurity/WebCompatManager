@@ -58,6 +58,6 @@ def test_buckets_list_domain_filter(page, live_server, logged_in, e2e_data):
     buckets_page.navigate()
     buckets_page.wait_for_buckets_to_load()
 
-    buckets_page.search_domain("vicroads.vic.gov.au")
+    buckets_page.search_query("domain:vicroads.vic.gov.au")
     buckets_page.wait_for_buckets_to_load()
     assert buckets_page.bucket_count() == 3

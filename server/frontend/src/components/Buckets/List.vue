@@ -4,13 +4,21 @@
     <div class="panel-body">
       <!-- Simple filter mode -->
       <div v-if="!advancedMode">
-        <FilterBar
+        <StatusFilter
           :active-state="activeState"
-          :domain-filter="domainFilter"
           :triage-status="triageStatus"
           :triage-status-options="triageStatusOptions"
           :disabled="loading"
           @filter-change="onFilterChange"
+        />
+        <FilterBar
+          :query-str="queryStr"
+          :countries="countries"
+          :labels="labels"
+          :error="queryError"
+          :disabled="loading"
+          @filter-change="onFilterChange"
+          @query-input="queryStr = $event"
           @show-advanced="showAdvancedQuery"
         />
       </div>
@@ -123,23 +131,38 @@
         </tbody>
       </table>
     </div>
+    <div class="panel-footer" v-if="!loading && buckets.length > 10">
+      <PageNav
+        :initial="currentPage"
+        :pages="totalPages"
+        :show="5"
+        @page-changed="currentPage = $event"
+      />
+    </div>
   </div>
 </template>
 
 <script>
 import _throttle from "lodash/throttle";
 import LoadingSpinner from "../LoadingSpinner.vue";
-import { errorParser, multiSort, parseHash, buildHash } from "../../helpers";
-import { buildQuery } from "../../filter_helpers";
+import { errorParser, multiSort, parseHash } from "../../helpers";
+import {
+  buildQuery,
+  buildBucketHash,
+  BUCKET_STATES,
+  validateQL,
+} from "../../bucket_filter";
 import * as api from "../../api";
 import PageNav from "../PageNav.vue";
 import Row from "./Row.vue";
+import StatusFilter from "./StatusFilter.vue";
 import FilterBar from "./FilterBar.vue";
 import QueryEditor from "./QueryEditor.vue";
 
 export default {
   components: {
     ClipLoader: LoadingSpinner,
+    StatusFilter,
     FilterBar,
     PageNav,
     QueryEditor,
@@ -151,6 +174,8 @@ export default {
     canEdit: { type: Boolean, required: true },
     watchUrl: { type: String, required: true },
     providers: { type: Array, required: true },
+    countries: { type: Array, default: () => [] },
+    labels: { type: Array, default: () => [] },
   },
   data() {
     const validSortKeys = [
@@ -170,10 +195,10 @@ export default {
       currentEntries: "?",
       currentPage: 1,
       defaultSortKeys,
-      domainFilter: "",
       loading: false,
       pageSize: 100,
       queryError: "",
+      queryStr: "",
       sortKeys: [...defaultSortKeys],
       totalEntries: "?",
       totalPages: 1,
@@ -200,12 +225,15 @@ export default {
           console.debug(`parsing '#page=\\d+': ${e}`);
         }
       }
-      const validStatuses = ["all", "needs_triage", "logged", "triaged"];
-      if (hash.status && validStatuses.includes(hash.status)) {
-        this.activeState = hash.status;
+      if (hash.state in BUCKET_STATES) {
+        this.activeState = hash.state;
       }
-      if (hash.domain) this.domainFilter = hash.domain;
-      if (hash.triage_status) this.triageStatus = hash.triage_status;
+      if (hash.triage_status) {
+        this.triageStatus = hash.triage_status;
+      }
+      if (hash.q) {
+        this.queryStr = hash.q;
+      }
     }
     this.fetch();
   },
@@ -218,7 +246,7 @@ export default {
     showAdvancedQuery() {
       this.advancedQueryStr = buildQuery({
         activeState: this.activeState,
-        domainFilter: this.domainFilter,
+        queryStr: this.queryStr,
         triageStatus: this.triageStatus,
       });
       this.advancedMode = true;
@@ -231,7 +259,7 @@ export default {
         ? this.advancedQueryStr
         : buildQuery({
             activeState: this.activeState,
-            domainFilter: this.domainFilter,
+            queryStr: this.queryStr,
             triageStatus: this.triageStatus,
           });
       return {
@@ -244,8 +272,16 @@ export default {
     },
     fetch: _throttle(
       async function () {
+        if (!this.advancedMode) {
+          const { valid, error } = validateQL(this.queryStr);
+          if (!valid) {
+            this.queryError = error;
+            this.buckets = [];
+            return;
+          }
+        }
         this.loading = true;
-        this.buckets = null;
+        this.buckets = [];
         this.queryError = "";
         try {
           const data = await api.listBuckets(this.buildParams());
@@ -268,17 +304,16 @@ export default {
         } catch (err) {
           if (err.response?.status === 400 && err.response?.data) {
             this.queryError = err.response.data.detail;
-            this.loading = false;
           } else {
             // if the page loaded, but the fetch failed, either the network went away or
             // we need to refresh auth
 
             console.debug(errorParser(err));
             this.$router.go(0);
-            return;
           }
+        } finally {
+          this.loading = false;
         }
-        this.loading = false;
       },
       500,
       { trailing: true },
@@ -286,9 +321,9 @@ export default {
     updateHash() {
       const hashSort = {};
       this.updateHashSort(hashSort);
-      const routeHash = buildHash({
+      const routeHash = buildBucketHash({
         activeState: this.activeState,
-        domainFilter: this.domainFilter,
+        queryStr: this.queryStr,
         triageStatus: this.triageStatus,
         currentPage: this.currentPage,
         sort: hashSort.sort,

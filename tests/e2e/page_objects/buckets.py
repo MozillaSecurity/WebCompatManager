@@ -13,8 +13,8 @@ class BucketsPage(PageObject):
         self.show_all = self.page.get_by_test_id("all")
         self.show_needs_triage = self.page.get_by_test_id("needs_triage")
         self.show_triaged = self.page.get_by_test_id("triaged")
-        self.domain_input = self.page.get_by_test_id("domain-input")
-        self.domain_search_btn = self.page.get_by_test_id("domain-search-btn")
+        self.query_input = self.page.get_by_test_id("query-input")
+        self.query_error = self.page.get_by_test_id("query-error")
 
     def bucket_count(self):
         """Return the number of buckets displayed on the page."""
@@ -43,11 +43,16 @@ class BucketsPage(PageObject):
         """Click Triaged to show only triaged buckets."""
         self.click_on_state(self.show_triaged)
 
-    def search_domain(self, domain):
-        """Type a domain into the filter input and click Search."""
-        self.domain_input.fill(domain)
+    def search_query(self, text):
+        """Type a complete query into the typed filter field and run it.
+
+        For a complete term (e.g. "domain:youtube.com") pressing Enter submits
+        the query directly — the field detects the term is already complete and
+        does not re-accept the autocomplete suggestion.
+        """
+        self.query_input.fill(text)
         with self.page.expect_response(
             lambda r: "/reportmanager/rest/buckets/" in r.url
             and r.request.method == "GET"
         ):
-            self.domain_search_btn.click()
+            self.query_input.press("Enter")
