@@ -4,7 +4,7 @@
 from logging import getLogger
 
 from django.conf import settings
-from django.core.management import BaseCommand, CommandError
+from django.core.management import BaseCommand, CommandError, call_command
 from django.db import transaction
 from django.utils import timezone
 from google.cloud import bigquery
@@ -45,8 +45,7 @@ class Command(BaseCommand):
             help="Name of the domain source as configured in settings.BIGQUERY_DOMAIN_SOURCES",
         )
 
-    def handle(self, *args: object, **options: object) -> None:
-        name = options["name"]
+    def handle(self, name: str, **options: object) -> None:
         sources = getattr(settings, "BIGQUERY_DOMAIN_SOURCES", [])
         config = next((source for source in sources if source["name"] == name), None)
 
@@ -69,13 +68,14 @@ class Command(BaseCommand):
         result = client.query(f"SELECT `{bq_source_field}` FROM `{full_table}`")
 
         should_normalize = config.get("normalize", False)
+        exclude = set(config.get("exclude", []))
         domains = set()
 
         for row in result:
             value = row[bq_source_field]
             if should_normalize:
                 value = normalize_domain(value)
-            if value:
+            if value and value not in exclude:
                 domains.add(value)
 
         with transaction.atomic():
@@ -87,6 +87,8 @@ class Command(BaseCommand):
                 },
             )
             added, removed = sync_domain_source(domain_source, domains)
+
+        call_command("label_buckets", source_name=name)
 
         LOG.info(
             "Synced source '%s': %d added, %d removed, %d total",

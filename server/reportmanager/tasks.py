@@ -10,3 +10,8 @@ from . import cron  # noqa ensure cron tasks get registered
 @app.task(ignore_result=True)
 def triage_new_report(pk):
     call_command("triage_new_report", pk)
+
+
+@app.task(ignore_result=True)
+def label_bucket(pk):
+    call_command("label_buckets", bucket_id=pk)

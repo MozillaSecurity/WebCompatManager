@@ -143,10 +143,11 @@ BIGQUERY_DOMAIN_SOURCES = [
         "sync_schedule": 60 * 60 * 24 * 30,  # monthly
     },
     {
-        "name": "worldcup_2026",
+        "name": "worldcup2026",
         "bq_table": "webcompat_knowledge_base.world_cup_2026_urls",
         "bq_source_field": "url",
         "normalize": True,
+        "exclude": ["youtube.com"],
         "sync_schedule": 60 * 60 * 24,  # daily
     },
 ]
