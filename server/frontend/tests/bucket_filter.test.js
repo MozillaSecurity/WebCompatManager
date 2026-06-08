@@ -1,6 +1,8 @@
 import {
   validateQL,
   queryStrToJson,
+  buildSuggestions,
+  acceptSuggestion,
   buildQuery,
   buildBucketHash,
 } from "../src/bucket_filter.js";
@@ -76,6 +78,136 @@ describe("queryStrToJson", () => {
   test("mixed AND/OR without parens binds left-to-right (liqe)", () => {
     const json = queryStrToJson("country:GB OR domain:a AND domain:b");
     expect(json.op).toBe("AND");
+  });
+});
+
+describe("buildSuggestions", () => {
+  const opts = {
+    countries: [{ code: "GB", name: "United Kingdom" }],
+    labels: [{ name: "nsfw" }, { name: "worldcup2026" }],
+  };
+  test("explicit label: fragment suggests labels", () => {
+    const menu = buildSuggestions("label:world", "label:world".length, opts);
+    expect(menu.groups.map((g) => g.name)).toEqual(["Label"]);
+    expect(menu.items.map((i) => i.value)).toEqual(["worldcup2026"]);
+  });
+  test("explicit country: fragment suggests countries", () => {
+    const menu = buildSuggestions("country:g", "country:g".length, opts);
+    expect(menu.groups[0].name).toBe("Country");
+    expect(menu.items[0].value).toBe("GB");
+  });
+  test("bare fragment suggests across keys + no operators when first", () => {
+    const menu = buildSuggestions("you", "you".length, opts);
+    const names = menu.groups.map((g) => g.name);
+    expect(names).toContain("Domain");
+    expect(names).not.toContain("Operators");
+  });
+  test("operators appear once a term precedes the fragment", () => {
+    const str = "domain:a ";
+    const menu = buildSuggestions(str, str.length, opts);
+    expect(menu.groups.map((g) => g.name)).toContain("Operators");
+  });
+  test("operator-like fragment after a term suggests only operators", () => {
+    const str = "domain:a OR";
+    const menu = buildSuggestions(str, str.length, opts);
+    const names = menu.groups.map((g) => g.name);
+    expect(names).toContain("Operators");
+    expect(names).not.toContain("Domain");
+    expect(names).not.toContain("Country");
+  });
+  test("operator-like fragment with no preceding term still suggests keys", () => {
+    // No term before it, so "or" is just a value fragment, not an operator.
+    const menu = buildSuggestions("or", "or".length, opts);
+    const names = menu.groups.map((g) => g.name);
+    expect(names).not.toContain("Operators");
+  });
+  test("a fully-typed term is flagged exactMatch", () => {
+    // country:GB with GB available — accepting would re-insert it, so the
+    // caller (FilterBar) treats Enter as "submit", not "accept".
+    const menu = buildSuggestions("country:GB", "country:GB".length, opts);
+    expect(menu.exactMatch).toBe(true);
+  });
+  test("a partial term is not exactMatch", () => {
+    const menu = buildSuggestions("country:g", "country:g".length, opts);
+    expect(menu.exactMatch).toBe(false);
+  });
+
+  test("fragStart and frag are read from the caret, not the whole string", () => {
+    // caret sits right after "do" in "do country:GB" -> fragment is "do"
+    const str = "do country:GB";
+    const menu = buildSuggestions(str, 2, opts);
+    expect(menu.frag).toBe("do");
+    expect(menu.fragStart).toBe(0);
+  });
+
+  test("explicit domain: fragment yields a single domain entry", () => {
+    const menu = buildSuggestions("domain:you", "domain:you".length, opts);
+    expect(menu.groups.map((g) => g.name)).toEqual(["Domain"]);
+    expect(menu.items[0].value).toBe("you");
+    expect(menu.items[0].key).toBe("domain");
+  });
+
+  test("country is matched by name as well as code", () => {
+    const menu = buildSuggestions("country:king", "country:king".length, opts);
+    expect(menu.items.map((i) => i.value)).toContain("GB");
+  });
+
+  test("needsConnector is true after a completed term", () => {
+    const str = "country:GB ";
+    const menu = buildSuggestions(str, str.length, opts);
+    expect(menu.needsConnector).toBe(true);
+  });
+
+  test("no suggestions when the caret is inside an existing term", () => {
+    // Caret at the start of "label:nsfw" (to prepend - or NOT): the term is
+    // already complete to the right of the caret, so suggesting a completion
+    // would duplicate text. Menu must be empty.
+    const str = "label:nsfw";
+    expect(buildSuggestions(str, 0, opts).items).toEqual([]);
+    // Caret between the key and value ("label:|nsfw") — same reasoning.
+    expect(buildSuggestions(str, "label:".length, opts).items).toEqual([]);
+    // Caret mid-word in the key ("lab|el:nsfw").
+    expect(buildSuggestions(str, 3, opts).items).toEqual([]);
+  });
+
+  test("suggestions still appear at the end of a term being typed", () => {
+    // Caret at the very end (nothing, or a space, to its right) is a real
+    // completion point and must keep working.
+    const menu = buildSuggestions("label:nsf", "label:nsf".length, opts);
+    expect(menu.items.length).toBeGreaterThan(0);
+  });
+});
+
+describe("acceptSuggestion", () => {
+  test("inserts key:value and a trailing space", () => {
+    const str = "you";
+    const menu = buildSuggestions(str, str.length, {
+      countries: [],
+    });
+    const sug = { key: "domain", value: "you", bare: true, idx: 0 };
+    const r = acceptSuggestion(str, str.length, menu, sug);
+    expect(r.queryStr).toBe("domain:you ");
+  });
+  test("prepends AND when a connector is needed", () => {
+    const str = "domain:a coun";
+    const caret = str.length;
+    const menu = buildSuggestions(str, caret, {
+      countries: [{ code: "GB", name: "United Kingdom" }],
+    });
+    const sug = { key: "country", value: "GB", bare: true, idx: 0 };
+    const r = acceptSuggestion(str, caret, menu, sug);
+    expect(r.queryStr).toBe("domain:a AND country:GB ");
+  });
+  test("typed fragment in an empty field gets no AND connector", () => {
+    // Typing "g" to filter the country list must not be treated as a
+    // preceding term — accepting GB yields just "country:GB ", no "AND".
+    const str = "g";
+    const menu = buildSuggestions(str, str.length, {
+      countries: [{ code: "GB", name: "United Kingdom" }],
+    });
+    const sug = { key: "country", value: "GB", bare: true, idx: 0 };
+    const r = acceptSuggestion(str, str.length, menu, sug);
+    expect(r.queryStr).toBe("country:GB ");
   });
 });
 

@@ -4,6 +4,9 @@
  * `queryStrToJson` walks liqe's AST and forms JSON Q-object
  * via each filter key's `toQuery`.
  *
+ * Autocomplete (buildSuggestions / acceptSuggestion) is independent
+ * of the parser and uses lightweight string analysis of the caret fragment.
+ *
  * Grammar accepted:
  *   - term:        `key:value` (keys: domain, country);
  *   - operators:   AND, OR, NOT;
@@ -40,16 +43,41 @@ export const BUCKET_FILTERS = {
   country: {
     key: "country",
     label: "Country",
+    suggest: (fragment, options) => {
+      const q = fragment.toLowerCase();
+      return (options.countries ?? [])
+        .filter(
+          (c) =>
+            c.code.toLowerCase().includes(q) ||
+            c.name.toLowerCase().includes(q),
+        )
+        .map((c) => ({
+          value: c.code,
+          display: `${c.name}`,
+          badge: c.code,
+          key: "country",
+        }));
+    },
     toQuery: (value) => ({ op: "AND", reportentry__country: value }),
   },
   label: {
     key: "label",
     label: "Label",
+    suggest: (fragment, options) => {
+      const q = fragment.toLowerCase();
+      return (options.labels ?? [])
+        .filter((l) => l.name.toLowerCase().includes(q))
+        .map((l) => ({ value: l.name, display: l.name, key: "label" }));
+    },
     toQuery: (value) => ({ op: "AND", labels__label__name: value }),
   },
   domain: {
     key: "domain",
     label: "Domain",
+    suggest: (fragment) =>
+      fragment
+        ? [{ value: fragment, display: `domain: ${fragment}`, key: "domain" }]
+        : [],
     toQuery: (value) => ({
       op: "OR",
       domain: value,
@@ -57,6 +85,8 @@ export const BUCKET_FILTERS = {
     }),
   },
 };
+
+const OPS = ["AND", "OR", "NOT"];
 
 // validation: block fetch when the query can't be parsed
 // liqe throws a SyntaxError on malformed input (unbalanced parens, dangling
@@ -146,6 +176,148 @@ export const queryStrToJson = (str) => {
     return null; // malformed; validateQL surfaces the user-facing error
   }
   return nodeToQuery(ast);
+};
+
+// autocomplete menu from the caret fragment
+const needConnector = (before) => {
+  const t = before.replace(/\s+$/, "");
+  if (!t || t.endsWith("(")) {
+    return false;
+  }
+  const lastWord = (t.match(/[\w:.-]+$/) || [""])[0].toUpperCase();
+
+  return !OPS.includes(lastWord);
+};
+
+// The "fragment" is the word the caret sits in: the run of non-space,
+// non-paren characters immediately to the left of the caret. Every suggestion
+// decision below is made from this fragment.
+const fragmentAt = (str, caret) =>
+  (str.slice(0, caret).match(/[^\s()]*$/) || [""])[0];
+
+// True when the caret sits in the *interior* of a token, i.e. a word character
+// is immediately to its right. fragmentAt only looks left, so editing the
+// middle/start of an existing term (e.g. caret before "nsfw" in "label:nsfw")
+// would otherwise suggest a completion the right-hand text already provides —
+// accepting it would duplicate text. We suppress suggestions in that case.
+const caretMidToken = (str, caret) => /[^\s()]/.test(str.charAt(caret));
+
+// --- the three suggestion modes ---
+// Each returns an array of { name, opts } groups (possibly empty).
+
+// Mode 1: fragment is "key:partial" — complete a value for that one filter.
+const valueSuggestions = (frag, options) => {
+  const ci = frag.indexOf(":");
+  const key = frag.slice(0, ci).toLowerCase();
+  const def = BUCKET_FILTERS[key];
+  if (!def) {
+    return []; // unknown key — nothing to suggest
+  }
+  const valPart = frag.slice(ci + 1);
+  return [
+    {
+      name: def.label,
+      opts: def.suggest(valPart, options).map((s) => ({ ...s, bare: false })),
+    },
+  ];
+};
+
+// Mode 2: bare word (no colon) — search values across every filter. Tagged
+// `bare: true` so acceptSuggestion knows to prepend an AND connector when one
+// is needed.
+const bareSuggestions = (frag, options) =>
+  Object.values(BUCKET_FILTERS).map((def) => ({
+    name: def.label,
+    opts: def.suggest(frag, options).map((s) => ({ ...s, bare: true })),
+  }));
+
+// Mode 3: AND/OR/NOT, narrowed to what the user has typed so far.
+const operatorSuggestions = (frag) => {
+  const q = frag.toLowerCase();
+  return [
+    {
+      name: "Operators",
+      opts: OPS.filter((o) => !q || o.toLowerCase().startsWith(q)).map((o) => ({
+        type: "op",
+        insert: `${o} `,
+        display: o,
+      })),
+    },
+  ];
+};
+
+// Returns { groups:[{name,opts}], items:[...flat], fragStart, frag, needsConnector }
+export const buildSuggestions = (str, caret, options = {}) => {
+  const frag = fragmentAt(str, caret);
+  const fragStart = caret - frag.length;
+  const groups = [];
+  const items = [];
+  const addGroup = ({ name, opts }) => {
+    if (!opts.length) {
+      return;
+    }
+    opts.forEach((it) => {
+      it.idx = items.length;
+      items.push(it);
+    });
+    groups.push({ name, opts });
+  };
+
+  // When the caret sits in the interior of an existing term, the text to its
+  // right already completes it — there's nothing to suggest, so we leave
+  // groups/items empty (closing the dropdown) and fall through to the return.
+  if (!caretMidToken(str, caret)) {
+    if (frag.includes(":")) {
+      // completing a value for an explicit key:partial
+      valueSuggestions(frag, options).forEach(addGroup);
+    } else {
+      // operators only make sense once a term precedes the fragment
+      const hasPrecedingTerm = Boolean(str.slice(0, fragStart).trim());
+      // When the fragment looks like the start of an operator (e.g. "O", "AN"),
+      // the user is reaching for AND/OR/NOT — show operators only, not key
+      // values like "domain: OR".
+      const looksLikeOp =
+        hasPrecedingTerm &&
+        frag !== "" &&
+        OPS.some((o) => o.toLowerCase().startsWith(frag.toLowerCase()));
+
+      if (!looksLikeOp) {
+        bareSuggestions(frag, options).forEach(addGroup);
+      }
+      if (hasPrecedingTerm) {
+        operatorSuggestions(frag).forEach(addGroup);
+      }
+    }
+  }
+  // The fragment is "complete" when it already equals a value suggestion's
+  // key:value (e.g. "country:GB" with GB suggested) — accepting it would just
+  // re-insert the same term, so Enter should submit the query instead.
+  const exactMatch = items.some(
+    (it) => it.type !== "op" && frag === `${it.key}:${it.value}`,
+  );
+
+  return {
+    groups,
+    items,
+    fragStart,
+    frag,
+    exactMatch,
+    // Connector depends on the text BEFORE the fragment being completed, not on
+    // the fragment itself — typing "g" to filter the country list must not be
+    // treated as a preceding term that needs an "AND".
+    needsConnector: needConnector(str.slice(0, fragStart)),
+  };
+};
+
+// Compute the new query string + caret after accepting a suggestion.
+// Returns { queryStr, caret }.
+export const acceptSuggestion = (str, caret, menu, sug) => {
+  const head = str.slice(0, menu.fragStart);
+  const after = str.slice(caret);
+  const connector = sug.bare && menu.needsConnector ? "AND " : "";
+  const insert = sug.type === "op" ? sug.insert : `${sug.key}:${sug.value} `;
+  const newHead = head + connector + insert;
+  return { queryStr: newHead + after, caret: newHead.length };
 };
 
 /*
