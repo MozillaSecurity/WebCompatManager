@@ -19,72 +19,7 @@
  * explicit; pure-AND, pure-OR, and parenthesized queries are unambiguous.
  */
 import { parse } from "liqe";
-
-export const BUCKET_STATES = {
-  all: { label: "All", queryFields: () => ({}) },
-  needs_triage: {
-    label: "Needs Triage",
-    queryFields: () => ({ bug__isnull: true, triage_status__isnull: true }),
-  },
-  has_bug: {
-    label: "Has a bug",
-    queryFields: () => ({ bug__isnull: false }),
-  },
-  triaged: {
-    label: "Triaged",
-    queryFields: ({ triageStatus }) =>
-      triageStatus
-        ? { triage_status: triageStatus }
-        : { triage_status__isnull: false },
-  },
-};
-
-export const BUCKET_FILTERS = {
-  country: {
-    key: "country",
-    label: "Country",
-    suggest: (fragment, options) => {
-      const q = fragment.toLowerCase();
-      return (options.countries ?? [])
-        .filter(
-          (c) =>
-            c.code.toLowerCase().includes(q) ||
-            c.name.toLowerCase().includes(q),
-        )
-        .map((c) => ({
-          value: c.code,
-          display: c.name,
-          badge: c.code,
-          key: "country",
-        }));
-    },
-    toQuery: (value) => ({ op: "AND", reportentry__country: value }),
-  },
-  label: {
-    key: "label",
-    label: "Label",
-    suggest: (fragment, options) => {
-      const q = fragment.toLowerCase();
-      return (options.labels ?? [])
-        .filter((l) => l.name.toLowerCase().includes(q))
-        .map((l) => ({ value: l.name, display: l.name, key: "label" }));
-    },
-    toQuery: (value) => ({ op: "AND", labels__label__name: value }),
-  },
-  domain: {
-    key: "domain",
-    label: "Domain",
-    suggest: (fragment) =>
-      fragment
-        ? [{ value: fragment, display: `domain: ${fragment}`, key: "domain" }]
-        : [],
-    toQuery: (value) => ({
-      op: "OR",
-      domain: value,
-      domain__endswith: `.${value}`,
-    }),
-  },
-};
+import { BUCKET_FILTERS, BUCKET_STATES } from "./bucket_filter_config";
 
 const OPS = ["AND", "OR", "NOT"];
 

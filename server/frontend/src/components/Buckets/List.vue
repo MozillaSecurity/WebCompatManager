@@ -146,10 +146,10 @@
 import _throttle from "lodash/throttle";
 import LoadingSpinner from "../LoadingSpinner.vue";
 import { errorParser, multiSort, parseHash } from "../../helpers";
+import { BUCKET_STATES } from "../../bucket_filter_config";
 import {
   buildQuery,
   buildBucketHash,
-  BUCKET_STATES,
   queryStrToServerQuery,
 } from "../../bucket_filter";
 import * as api from "../../api";
