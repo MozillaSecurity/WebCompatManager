@@ -1,7 +1,7 @@
 /*
  * Parsing is delegated to the  `liqe` library, which understands
  *  `key:value`, AND/OR/NOT, parentheses, and NOT negation.
- * `queryStrToJson` walks liqe's AST and forms JSON Q-object
+ * `queryStrToServerQuery` walks liqe's AST and forms JSON Q-object
  * via each filter key's `toQuery`.
  *
  * Autocomplete (buildSuggestions / acceptSuggestion) is independent
@@ -53,7 +53,7 @@ export const BUCKET_FILTERS = {
         )
         .map((c) => ({
           value: c.code,
-          display: `${c.name}`,
+          display: c.name,
           badge: c.code,
           key: "country",
         }));
@@ -88,92 +88,108 @@ export const BUCKET_FILTERS = {
 
 const OPS = ["AND", "OR", "NOT"];
 
-// validation: block fetch when the query can't be parsed
-// liqe throws a SyntaxError on malformed input (unbalanced parens, dangling
-// operators, etc.). Parsing runs only on submit, so a throw here is fine.
-// Returns { valid: boolean, error: string }.
-export const validateQL = (str) => {
-  if (!str || !str.trim()) {
-    return { valid: true, error: "" };
-  }
-  try {
-    parse(str);
-    return { valid: true, error: "" };
-  } catch (e) {
-    // liqe's parser messages are cryptic for end users; log the detail for
-    // debugging and surface a different message.
-    console.debug("query parse error:", e);
-    return {
-      valid: false,
-      error: "Invalid query. Check for unbalanced parentheses or operators.",
-    };
-  }
-};
+// Walk a liqe AST node into our backend Q-object, returning
+// { result, error }: at most one is non-null.
+//   - result non-null, error null  -> the node mapped to a Q-object
+//   - result null, error null      -> the node legitimately contributes
+//                                     nothing (empty expression)
+//   - result null, error non-null  -> the node can't be turned into a real
+//                                     query; `error` is a user-facing message
+// An unknown field, a bare free-text term, or any node type we
+// don't understand is an error rather than being silently dropped, so the user
+// never gets results that don't reflect what they typed.
+//
+// liqe node types: Tag (field:value), LogicalExpression (left/right + boolean
+// operator), UnaryOperator ('-'|'NOT'), ParenthesizedExpression,
+// EmptyExpression, LiteralExpression (bare free text).
+const ok = (result) => ({ result, error: null });
+const empty = { result: null, error: null };
+const fail = (error) => ({ result: null, error });
 
-// serializer: liqe AST -> backend JSON Q-object
-const toQueryForKey = (key, value) => {
-  const def = BUCKET_FILTERS[key];
-  return def ? def.toQuery(value) : null; // unknown key ignored
-};
-
-// Walk a liqe AST node into our backend Q-object (or null if it contributes
-// nothing). liqe node types: Tag (field:value), LogicalExpression (left/right +
-// boolean operator), UnaryOperator ('-'|'NOT'), ParenthesizedExpression,
-// EmptyExpression, LiteralExpression (bare free text — ignored, lenient).
 const nodeToQuery = (node) => {
   if (!node) {
-    return null;
+    return empty;
   }
   switch (node.type) {
+    case "EmptyExpression":
+      return empty;
     case "ParenthesizedExpression":
       return nodeToQuery(node.expression);
     case "Tag": {
-      // Only `field:value` tags map to a query; bare literals are ignored.
       if (
         node.field?.type !== "Field" ||
         node.expression?.value === undefined
       ) {
-        return null;
+        return fail(
+          "Free-text search isn't supported yet. Use field:value without a space in between, e.g. domain:example.com.",
+        );
       }
-      const key = String(node.field.name).toLowerCase();
-      return toQueryForKey(key, String(node.expression.value));
+      // We only support equality (`field:value`) for now. liqe also parses comparison
+      // operators (`field:>=10`, `field:<5`, …); reject them.
+      if (node.operator?.operator !== ":") {
+        return fail(
+          `Unsupported operator "${node.operator?.operator}". Only field:value is supported.`,
+        );
+      }
+      const key = node.field.name.toLowerCase();
+      const def = BUCKET_FILTERS[key];
+      if (!def) {
+        return fail(`Unknown field "${node.field.name}".`);
+      }
+      return ok(def.toQuery(node.expression.value));
     }
     case "UnaryOperator": {
       // both '-' and 'NOT' negate the operand
       const inner = nodeToQuery(node.operand);
-      return inner ? { op: "NOT", 0: inner } : null;
+      if (inner.error) {
+        return inner;
+      }
+      return inner.result ? ok({ op: "NOT", 0: inner.result }) : empty;
     }
     case "LogicalExpression": {
-      const op = node.operator?.operator === "OR" ? "OR" : "AND";
-      const children = [nodeToQuery(node.left), nodeToQuery(node.right)].filter(
-        Boolean,
-      );
+      const op = node.operator.operator;
+      const left = nodeToQuery(node.left);
+      const right = nodeToQuery(node.right);
+      const childError = left.error ?? right.error;
+      if (childError) {
+        return fail(childError);
+      }
+      const children = [left.result, right.result].filter(Boolean);
       if (!children.length) {
-        return null;
+        return empty;
       }
       if (children.length === 1) {
-        return children[0];
+        return ok(children[0]);
       }
       const out = { op };
       children.forEach((child, i) => {
         out[i] = child;
       });
-      return out;
+      return ok(out);
     }
     default:
-      return null;
+      return fail("Unsupported query.");
   }
 };
 
-export const queryStrToJson = (str) => {
+// Convert a query string to the backend Q-object, returning { result, error }
+// (see nodeToQuery). An empty/whitespace query is { result: null, error: null }.
+// liqe throws a SyntaxError on malformed input (unbalanced parens, dangling
+// operators); we surface that as an error too. Parsing runs only on submit.
+export const queryStrToServerQuery = (str) => {
   if (!str || !str.trim()) {
-    return null;
+    return empty;
   }
   let ast;
   try {
     ast = parse(str);
-  } catch {
-    return null; // malformed; validateQL surfaces the user-facing error
+  } catch (e) {
+    // liqe's parser messages are cryptic for end users; log the detail for
+    // debugging and surface a friendlier message.
+    console.debug("query parse error:", e);
+    return fail(
+      "Invalid query. Check for unbalanced parentheses or operators.",
+    );
   }
   return nodeToQuery(ast);
 };
@@ -323,14 +339,14 @@ export const acceptSuggestion = (str, caret, menu, sug) => {
 /*
  * Build the backend JSON query by AND-combining contributions:
  *   1. state (BUCKET_STATES[activeState].queryFields)
- *   2. the typed query (queryStr -> queryStrToJson)
+ *   2. the typed query (queryStr -> queryStrToServerQuery)
  *   and triage status is already folded into (1) for the triaged tab.
  */
 export const buildQuery = ({ activeState, queryStr, triageStatus }) => {
   const state = BUCKET_STATES[activeState] ?? BUCKET_STATES.all;
   const stateQuery = { op: "AND", ...state.queryFields({ triageStatus }) };
 
-  const typed = queryStrToJson(queryStr);
+  const { result: typed } = queryStrToServerQuery(queryStr);
   if (!typed) {
     return JSON.stringify(stateQuery, null, 2);
   }
