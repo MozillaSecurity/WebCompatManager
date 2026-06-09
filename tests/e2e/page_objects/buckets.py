@@ -46,9 +46,7 @@ class BucketsPage(PageObject):
     def search_query(self, text):
         """Type a complete query into the typed filter field and run it.
 
-        For a complete term (e.g. "domain:youtube.com") pressing Enter submits
-        the query directly — the field detects the term is already complete and
-        does not re-accept the autocomplete suggestion.
+        Pressing Enter submits the query directly.
         """
         self.query_input.fill(text)
         with self.page.expect_response(
