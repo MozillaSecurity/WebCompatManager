@@ -44,13 +44,13 @@ class LabelBucketFilter extends BucketFilter {
     super("label", "Label");
   }
 
-  suggest(fragment, options) {
-    const q = fragment.toLowerCase();
+   suggest(fragment, options) {
+     const q = fragment.toLowerCase();
 
-    return (options.labels ?? [])
-      .filter((l) => l.name.toLowerCase().includes(q))
-      .map((l) => ({ value: l.name, display: l.name, key: this.key }));
-  }
+     return (options.labels ?? [])
+       .filter((l) => l.name.toLowerCase().includes(q))
+       .map((l) => ({ value: l.name, display: l.name, key: this.key }));
+   }
 
   toQuery(value) {
     return { op: "AND", labels__label__name: value };

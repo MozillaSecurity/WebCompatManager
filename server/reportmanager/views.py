@@ -58,6 +58,7 @@ from .models import (
     BugzillaTemplateMode,
     Cluster,
     ClusteringJob,
+    Label,
     ReportEntry,
     ReportHit,
     User,
@@ -546,13 +547,32 @@ def signature_find(request, report_id):
         )
 
 
+# TODO: temporary hardcoded list for testing the country filter UI. Replace
+# with a Country table sourced from BigQuery
+TEST_COUNTRIES = [
+    {"code": "CA", "name": "Canada"},
+    {"code": "CN", "name": "China"},
+    {"code": "IT", "name": "Italy"},
+    {"code": "JP", "name": "Japan"},
+    {"code": "PL", "name": "Poland"},
+    {"code": "GB", "name": "United Kingdom"},
+    {"code": "US", "name": "United States"},
+]
+
+
 def signature_list(request):
     providers = BugProviderSerializer(BugProvider.objects.all(), many=True).data
+    labels = [
+        {"name": name}
+        for name in Label.objects.order_by("name").values_list("name", flat=True)
+    ]
     return render(
         request,
         "buckets/index.html",
         {
             "providers": json.dumps(providers),
+            "countries": json.dumps(TEST_COUNTRIES),
+            "labels": json.dumps(labels),
             "activity_range": getattr(
                 django_settings, "CLEANUP_REPORTS_AFTER_DAYS", 14
             ),
