@@ -33,13 +33,6 @@
 
       <br />
       <p>Displaying {{ currentEntries }}/{{ totalEntries }} buckets.</p>
-
-      <PageNav
-        :initial="currentPage"
-        :pages="totalPages"
-        :show="5"
-        @page-changed="currentPage = $event"
-      />
     </div>
     <div class="table-responsive">
       <table class="table table-condensed table-hover table-bordered table-db">
@@ -129,7 +122,7 @@
         </tbody>
       </table>
     </div>
-    <div class="panel-footer" v-if="!loading && buckets.length > 10">
+    <div class="panel-footer">
       <PageNav
         :initial="currentPage"
         :pages="totalPages"
