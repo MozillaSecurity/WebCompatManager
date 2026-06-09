@@ -40,7 +40,7 @@
 </template>
 
 <script>
-import { BUCKET_STATES } from "../../bucket_filter";
+import { BUCKET_STATES } from "../../bucket_filter_config";
 
 export default {
   name: "StatusFilter",
