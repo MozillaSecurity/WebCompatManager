@@ -1,6 +1,5 @@
 import {
-  validateQL,
-  queryStrToJson,
+  queryStrToServerQuery,
   buildSuggestions,
   acceptSuggestion,
   buildQuery,
@@ -8,76 +7,91 @@ import {
 } from "../src/bucket_filter.js";
 import { parseHash } from "../src/helpers.js";
 
-describe("validateQL", () => {
-  test("balanced is valid", () => {
-    expect(validateQL("(domain:a OR domain:b)")).toEqual({
-      valid: true,
-      error: "",
-    });
-  });
-  test("unbalanced paren invalid", () => {
-    expect(validateQL("(domain:a").valid).toBe(false);
-  });
-});
-
-describe("queryStrToJson", () => {
+describe("queryStrToServerQuery", () => {
   test("domain term -> OR endswith form", () => {
-    expect(queryStrToJson("domain:youtube.com")).toEqual({
+    expect(queryStrToServerQuery("domain:youtube.com").result).toEqual({
       op: "OR",
       domain: "youtube.com",
       domain__endswith: ".youtube.com",
     });
   });
   test("country term -> reverse-relation lookup", () => {
-    expect(queryStrToJson("country:GB")).toEqual({
+    expect(queryStrToServerQuery("country:GB").result).toEqual({
       op: "AND",
       reportentry__country: "GB",
     });
   });
   test("label term -> reverse-relation lookup", () => {
-    expect(queryStrToJson("label:nsfw")).toEqual({
+    expect(queryStrToServerQuery("label:nsfw").result).toEqual({
       op: "AND",
       labels__label__name: "nsfw",
     });
   });
   test("NOT wraps the inner term", () => {
-    expect(queryStrToJson("NOT country:GB")).toEqual({
+    expect(queryStrToServerQuery("NOT country:GB").result).toEqual({
       op: "NOT",
       0: { op: "AND", reportentry__country: "GB" },
     });
   });
   test("AND of two terms indexes children", () => {
-    expect(queryStrToJson("country:GB AND domain:a")).toEqual({
+    expect(queryStrToServerQuery("country:GB AND domain:a").result).toEqual({
       op: "AND",
       0: { op: "AND", reportentry__country: "GB" },
       1: { op: "OR", domain: "a", domain__endswith: ".a" },
     });
   });
   test("implicit AND between adjacent terms", () => {
-    expect(queryStrToJson("domain:a country:GB")).toEqual({
+    expect(queryStrToServerQuery("domain:a country:GB").result).toEqual({
       op: "AND",
       0: { op: "OR", domain: "a", domain__endswith: ".a" },
       1: { op: "AND", reportentry__country: "GB" },
     });
   });
+  test("a successful parse reports no error", () => {
+    expect(queryStrToServerQuery("country:GB").error).toBeNull();
+  });
   test("nested group -> nested JSON", () => {
-    const json = queryStrToJson("domain:x AND (country:GB OR country:US)");
-    expect(json.op).toBe("AND");
-    expect(json[1].op).toBe("OR");
-    expect(json[1][0]).toEqual({ op: "AND", reportentry__country: "GB" });
+    const { result } = queryStrToServerQuery(
+      "domain:x AND (country:GB OR country:US)",
+    );
+    expect(result.op).toBe("AND");
+    expect(result[1].op).toBe("OR");
+    expect(result[1][0]).toEqual({ op: "AND", reportentry__country: "GB" });
   });
-  test("empty/whitespace query contributes nothing", () => {
-    expect(queryStrToJson("")).toBeNull();
-    expect(queryStrToJson("   ")).toBeNull();
+  test("empty parens contribute nothing and are not an error", () => {
+    expect(queryStrToServerQuery("()")).toEqual({ result: null, error: null });
   });
-  test("unknown key is ignored", () => {
-    expect(queryStrToJson("bogus:x")).toBeNull();
+  test("a term AND-ed with empty parens reduces to the term", () => {
+    expect(queryStrToServerQuery("country:GB AND ()").result).toEqual({
+      op: "AND",
+      reportentry__country: "GB",
+    });
+  });
+  test("unknown field is an error, not silently ignored", () => {
+    const { result, error } = queryStrToServerQuery("bogus:x");
+    expect(result).toBeNull();
+    expect(error).toContain("bogus");
+  });
+  test("an unknown field anywhere in the query errors the whole query", () => {
+    expect(
+      queryStrToServerQuery("bogus:test AND label:valid").error,
+    ).not.toBeNull();
+  });
+  test("comparison operator on a known field is an error", () => {
+    expect(queryStrToServerQuery("label:>=10").error).not.toBeNull();
+  });
+  test("syntax error surfaces an error", () => {
+    const { result, error } = queryStrToServerQuery("(domain:a");
+    expect(result).toBeNull();
+    expect(error).not.toBeNull();
   });
   // liqe binds AND/OR left-to-right at equal precedence (NOT conventional
   // OR-lowest). Documented so the behavior is intentional, not accidental.
   test("mixed AND/OR without parens binds left-to-right (liqe)", () => {
-    const json = queryStrToJson("country:GB OR domain:a AND domain:b");
-    expect(json.op).toBe("AND");
+    const { result } = queryStrToServerQuery(
+      "country:GB OR domain:a AND domain:b",
+    );
+    expect(result.op).toBe("AND");
   });
 });
 

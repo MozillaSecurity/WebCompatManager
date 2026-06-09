@@ -150,7 +150,7 @@ import {
   buildQuery,
   buildBucketHash,
   BUCKET_STATES,
-  validateQL,
+  queryStrToServerQuery,
 } from "../../bucket_filter";
 import * as api from "../../api";
 import PageNav from "../PageNav.vue";
@@ -273,8 +273,8 @@ export default {
     fetch: _throttle(
       async function () {
         if (!this.advancedMode) {
-          const { valid, error } = validateQL(this.queryStr);
-          if (!valid) {
+          const { error } = queryStrToServerQuery(this.queryStr);
+          if (error) {
             this.queryError = error;
             this.buckets = [];
             return;
