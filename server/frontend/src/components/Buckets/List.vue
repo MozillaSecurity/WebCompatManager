@@ -13,6 +13,8 @@
         />
         <FilterBar
           :query-str="queryStr"
+          :countries="countries"
+          :labels="labels"
           :error="queryError"
           :disabled="loading"
           @filter-change="onFilterChange"
@@ -172,6 +174,8 @@ export default {
     canEdit: { type: Boolean, required: true },
     watchUrl: { type: String, required: true },
     providers: { type: Array, required: true },
+    countries: { type: Array, default: () => [] },
+    labels: { type: Array, default: () => [] },
   },
   data() {
     const validSortKeys = [
