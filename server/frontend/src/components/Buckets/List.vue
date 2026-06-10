@@ -2,129 +2,37 @@
   <div class="panel panel-default">
     <div class="panel-heading"><i class="bi bi-tag-fill"></i> Buckets</div>
     <div class="panel-body">
-      <div v-if="!advancedQuery">
-        <div class="btn-group" role="group">
-          <a v-if="canEdit" :href="createBucketUrl" class="btn btn-success"
-            >Create bucket</a
-          >
-          <button
-            type="button"
-            class="btn btn-default"
-            :disabled="loading"
-            @click="updateShowLogged"
-          >
-            {{ showLogged ? "Hide Logged" : "Show Logged" }}
-          </button>
-          <button
-            type="button"
-            class="btn btn-default"
-            data-testid="show-triaged-toggle"
-            :disabled="loading"
-            @click="updateShowHidden"
-          >
-            {{ showHidden ? "Hide Triaged" : "Show Triaged" }}
-          </button>
-        </div>
-        <details>
-          <summary>Filters</summary>
-          <div class="input-group">
-            <label for="domain-filter">Domain:</label>
-            <input
-              id="domain-filter"
-              v-model="domainFilter"
-              type="text"
-              placeholder="e.g., example.com (includes subdomains)"
-              :disabled="loading"
-              style="max-width: 400px"
-              @keyup.enter="updateDomainFilter"
-            />
-          </div>
-          <div class="input-group">
-            <button
-              type="button"
-              class="btn btn-secondary"
-              :disabled="loading"
-              title="Apply filters"
-              @click="updateDomainFilter"
-            >
-              Apply
-            </button>
-          </div>
-          <a
-            title="Show advanced query for the current search/filters"
-            class="pointer"
-            @click="showAdvancedQuery"
-            >Advanced query</a
-          >
-        </details>
-      </div>
-      <div v-else>
-        <div v-if="canEdit" class="btn-group" role="group">
-          <a :href="createBucketUrl" class="btn btn-success">Create bucket</a>
-        </div>
-        <p v-if="canEdit"></p>
-        <label for="id_query">Search Query</label>
-        <HelpJSONQueryPopover
-          :parameters="[
-            { name: 'id', type: 'Integer (ID)' },
-            { name: 'bug', type: 'Integer (ID)' },
-            { name: 'bug__closed', type: 'Date' },
-            { name: 'bug__external_id', type: 'String' },
-            { name: 'bug__external_type', type: 'Integer (ID)' },
-            { name: 'bug__external_type__classname', type: 'String' },
-            { name: 'bug__external_type__hostname', type: 'String' },
-            { name: 'description', type: 'String' },
-            { name: 'domain', type: 'String' },
-            { name: 'domain__endswith', type: 'String' },
-            { name: 'domain__isnull', type: 'Boolean' },
-            { name: 'priority', type: 'Integer' },
-            { name: 'signature', type: 'String' },
-            { name: 'size', type: 'Integer' },
-          ]"
+      <!-- Simple filter mode -->
+      <div v-if="!advancedMode">
+        <StatusFilter
+          :active-state="activeState"
+          :triage-status="triageStatus"
+          :triage-status-options="triageStatusOptions"
+          :disabled="loading"
+          @filter-change="onFilterChange"
         />
-        <textarea
-          id="id_query"
-          v-model="queryStr"
-          class="form-control"
-          name="query"
-          spellcheck="false"
-          :rows="(queryStr.match(/\n/g) || '').length + 1"
-        ></textarea>
-        <br v-if="queryError" />
-        <div v-if="queryError" class="alert alert-warning" role="alert">
-          {{ queryError }}
-        </div>
-        <a class="pointer" @click="hideAdvancedQuery">Hide advanced query</a
-        ><br />
-        <button
-          :disabled="!modified || loading"
-          :title="queryButtonTitle"
-          @click="fetch"
-        >
-          Query
-        </button>
+        <FilterBar
+          :query-str="queryStr"
+          :error="queryError"
+          :disabled="loading"
+          @filter-change="onFilterChange"
+          @query-input="queryStr = $event"
+          @show-advanced="showAdvancedQuery"
+        />
       </div>
-      <br />
-      <p>
-        <span v-if="showLogged">
-          Displaying {{ currentEntries }}/{{ totalEntries }} buckets in the
-          database
-        </span>
-        <span v-else>
-          Displaying {{ currentEntries }}/{{ totalEntries }} unlogged buckets in
-          the database
-        </span>
-        (<span v-if="showHidden">including</span>
-        <span v-else>excluding</span>
-        triaged).
-      </p>
 
-      <PageNav
-        :initial="currentPage"
-        :pages="totalPages"
-        :show="5"
-        @page-changed="currentPage = $event"
+      <!-- Advanced query mode -->
+      <QueryEditor
+        v-else
+        v-model="advancedQueryStr"
+        :error="queryError"
+        :loading="loading"
+        @run="fetch"
+        @close="hideAdvancedQuery"
       />
+
+      <br />
+      <p>Displaying {{ currentEntries }}/{{ totalEntries }} buckets.</p>
     </div>
     <div class="table-responsive">
       <table class="table table-condensed table-hover table-bordered table-db">
@@ -214,64 +122,51 @@
         </tbody>
       </table>
     </div>
+    <div class="panel-footer">
+      <PageNav
+        :initial="currentPage"
+        :pages="totalPages"
+        :show="5"
+        @page-changed="currentPage = $event"
+      />
+    </div>
   </div>
 </template>
 
 <script>
 import _throttle from "lodash/throttle";
-import _isEqual from "lodash/isEqual";
 import LoadingSpinner from "../LoadingSpinner.vue";
 import { errorParser, multiSort, parseHash } from "../../helpers";
+import { BUCKET_STATES } from "../../bucket_filter_config";
+import {
+  buildQuery,
+  buildBucketHash,
+  queryStrToServerQuery,
+} from "../../bucket_filter";
 import * as api from "../../api";
-import { MatchObjects } from "../../helpers";
 import PageNav from "../PageNav.vue";
 import Row from "./Row.vue";
-import HelpJSONQueryPopover from "../HelpJSONQueryPopover.vue";
-
-const domainFilterSignature = {
-  op: "AND",
-  1: {
-    op: "AND",
-    0: {
-      op: "OR",
-      domain: MatchObjects.ANY,
-      domain__endswith: MatchObjects.ANY,
-    },
-    domain__isnull: MatchObjects.ANY,
-  },
-};
+import StatusFilter from "./StatusFilter.vue";
+import FilterBar from "./FilterBar.vue";
+import QueryEditor from "./QueryEditor.vue";
 
 export default {
   components: {
     ClipLoader: LoadingSpinner,
-    HelpJSONQueryPopover,
+    StatusFilter,
+    FilterBar,
     PageNav,
+    QueryEditor,
     Row,
   },
   mixins: [multiSort],
   props: {
-    activityRange: {
-      type: Number,
-      required: true,
-    },
-    canEdit: {
-      type: Boolean,
-      required: true,
-    },
-    createBucketUrl: {
-      type: String,
-      required: true,
-    },
-    watchUrl: {
-      type: String,
-      required: true,
-    },
-    providers: {
-      type: Array,
-      required: true,
-    },
+    activityRange: { type: Number, required: true },
+    canEdit: { type: Boolean, required: true },
+    watchUrl: { type: String, required: true },
+    providers: { type: Array, required: true },
   },
-  data: function () {
+  data() {
     const validSortKeys = [
       "bug__external_id",
       "id",
@@ -281,175 +176,101 @@ export default {
       "size",
     ];
     const defaultSortKeys = ["-priority_score", "-size", "-latest_report"];
-
     return {
-      advancedQuery: false,
+      activeState: "needs_triage",
+      advancedMode: false,
+      advancedQueryStr: "",
       buckets: [],
       currentEntries: "?",
       currentPage: 1,
-      defaultSortKeys: defaultSortKeys,
-      domainFilter: "",
+      defaultSortKeys,
       loading: false,
-      modifiedCache: {},
       pageSize: 100,
       queryError: "",
-      queryStr: JSON.stringify(
-        { op: "AND", bug__isnull: true, triage_status__isnull: true },
-        null,
-        2,
-      ),
-      searchStr: "",
+      queryStr: "",
       sortKeys: [...defaultSortKeys],
       totalEntries: "?",
       totalPages: 1,
-      validSortKeys: validSortKeys,
+      triageStatus: null,
+      triageStatusOptions: [],
+      validSortKeys,
     };
   },
   computed: {
-    modified() {
-      const queryStr = (() => {
-        try {
-          return JSON.parse(this.queryStr);
-        } catch (e) {} // eslint-disable-line no-unused-vars, no-empty
-      })();
-      return !_isEqual(queryStr, this.modifiedCache.queryStr);
-    },
     orderedBuckets() {
       return this.sortData(this.buckets);
     },
-    queryButtonTitle() {
-      if (this.loading) return "Query in progress";
-      if (!this.modified) return "Results match current query";
-      return "Submit query";
-    },
-    showLogged() {
-      return !this.queryStr.includes('"bug__isnull": true');
-    },
-    showHidden() {
-      return !this.queryStr.includes('"triage_status__isnull": true');
-    },
   },
   created() {
-    if (this.$route.query.all)
-      this.queryStr = JSON.stringify({ op: "AND" }, null, 2);
-    if (this.$route.query.ids)
-      this.queryStr = JSON.stringify(
-        { op: "AND", id__in: this.$route.query.ids.split(",") },
-        null,
-        2,
-      );
+    if (this.$route.query.all) {
+      this.activeState = "all";
+    }
     if (this.$route.hash.startsWith("#")) {
       const hash = parseHash(this.$route.hash);
-      if (Object.prototype.hasOwnProperty.call(hash, "page")) {
+      if (hash.page) {
         try {
           this.currentPage = Number.parseInt(hash.page, 10);
         } catch (e) {
           console.debug(`parsing '#page=\\d+': ${e}`);
         }
       }
-      if (Object.prototype.hasOwnProperty.call(hash, "query")) {
-        const parsedQuery = JSON.parse(hash.query || "");
-        this.queryStr = JSON.stringify(parsedQuery, null, 2);
-        // Extract domain filter if present
-        const matcher = new MatchObjects();
-        if (matcher.match(parsedQuery, domainFilterSignature)) {
-          this.domainFilter = parsedQuery[1][0].domain;
-        } else if (parsedQuery.domain) {
-          this.domainFilter = parsedQuery.domain;
-        }
+      if (hash.state in BUCKET_STATES) {
+        this.activeState = hash.state;
+      }
+      if (hash.triage_status) {
+        this.triageStatus = hash.triage_status;
+      }
+      if (hash.q) {
+        this.queryStr = hash.q;
       }
     }
     this.fetch();
   },
   methods: {
-    hideAdvancedQuery() {
-      this.advancedQuery = false;
+    onFilterChange(update) {
+      Object.assign(this, update);
+      this.currentPage = 1;
+      this.fetch();
     },
     showAdvancedQuery() {
-      this.advancedQuery = true;
+      this.advancedQueryStr = buildQuery({
+        activeState: this.activeState,
+        queryStr: this.queryStr,
+        triageStatus: this.triageStatus,
+      });
+      this.advancedMode = true;
     },
-    updateShowLogged() {
-      if (this.showLogged) {
-        this.queryStr = JSON.stringify(
-          Object.assign({ bug__isnull: true }, JSON.parse(this.queryStr)),
-          null,
-          2,
-        );
-      } else {
-        const query = JSON.parse(this.queryStr);
-        delete query["bug__isnull"];
-        this.queryStr = JSON.stringify(query, null, 2);
-      }
-      this.fetch();
-    },
-    updateShowHidden() {
-      if (this.showHidden) {
-        this.queryStr = JSON.stringify(
-          Object.assign(
-            { triage_status__isnull: true },
-            JSON.parse(this.queryStr),
-          ),
-          null,
-          2,
-        );
-      } else {
-        const query = JSON.parse(this.queryStr);
-        delete query["triage_status__isnull"];
-        this.queryStr = JSON.stringify(query, null, 2);
-      }
-      this.fetch();
-    },
-    updateDomainFilter() {
-      const domainFilter = this.domainFilter.trim();
-      let query = JSON.parse(this.queryStr);
-
-      const matcher = new MatchObjects();
-      if (matcher.match(query, domainFilterSignature)) {
-        query = query[0];
-      }
-
-      if (domainFilter) {
-        const domainQuery = {
-          op: "AND",
-          0: {
-            op: "OR",
-            domain: domainFilter,
-            domain__endswith: "." + domainFilter,
-          },
-          domain__isnull: false,
-        };
-
-        query = {
-          op: "AND",
-          0: query,
-          1: domainQuery,
-        };
-      }
-      this.queryStr = JSON.stringify(query, null, 2);
-
-      this.fetch();
+    hideAdvancedQuery() {
+      this.advancedMode = false;
     },
     buildParams() {
+      const query = this.advancedMode
+        ? this.advancedQueryStr
+        : buildQuery({
+            activeState: this.activeState,
+            queryStr: this.queryStr,
+            triageStatus: this.triageStatus,
+          });
       return {
         vue: "1",
         limit: this.pageSize,
         offset: `${(this.currentPage - 1) * this.pageSize}`,
         ordering: this.sortKeys.join(),
-        query: this.queryStr,
+        query,
       };
-    },
-    updateModifiedCache() {
-      this.modifiedCache.ignoreToolFilter = this.ignoreToolFilter;
-      try {
-        // ignore query errors
-        this.modifiedCache.queryStr = JSON.parse(this.queryStr);
-      } catch (e) {} // eslint-disable-line no-unused-vars, no-empty
     },
     fetch: _throttle(
       async function () {
+        if (!this.advancedMode) {
+          const { error } = queryStrToServerQuery(this.queryStr);
+          if (error) {
+            this.queryError = error;
+            this.buckets = [];
+            return;
+          }
+        }
         this.loading = true;
-        this.updateModifiedCache();
-        this.buckets = null;
+        this.buckets = [];
         this.queryError = "";
         try {
           const data = await api.listBuckets(this.buildParams());
@@ -460,51 +281,44 @@ export default {
             Math.ceil(this.totalEntries / this.pageSize),
             1,
           );
+          if (!this.triageStatusOptions.length && data.results.length) {
+            this.triageStatusOptions =
+              data.results[0].triage_status_choices ?? [];
+          }
           if (this.currentPage > this.totalPages) {
             this.currentPage = this.totalPages;
             return;
           }
           this.updateHash();
         } catch (err) {
-          if (
-            err.response &&
-            err.response.status === 400 &&
-            err.response.data
-          ) {
+          if (err.response?.status === 400 && err.response?.data) {
             this.queryError = err.response.data.detail;
-            this.loading = false;
           } else {
             // if the page loaded, but the fetch failed, either the network went away or
             // we need to refresh auth
 
             console.debug(errorParser(err));
             this.$router.go(0);
-            return;
           }
+        } finally {
+          this.loading = false;
         }
-        this.loading = false;
       },
       500,
       { trailing: true },
     ),
     updateHash() {
-      let hash = {};
-      if (this.currentPage !== 1) {
-        hash.page = this.currentPage;
-      }
-      this.updateHashSort(hash);
-      if (this.queryStr) hash.query = encodeURIComponent(this.queryStr);
-      if (Object.entries(hash).length) {
-        const routeHash =
-          "#" +
-          Object.entries(hash)
-            .map((kv) => kv.join("="))
-            .join("&");
-        if (this.$route.hash !== routeHash)
-          this.$router.push({ path: this.$route.path, hash: routeHash });
-      } else {
-        if (this.$route.hash !== "")
-          this.$router.push({ path: this.$route.path, hash: "" });
+      const hashSort = {};
+      this.updateHashSort(hashSort);
+      const routeHash = buildBucketHash({
+        activeState: this.activeState,
+        queryStr: this.queryStr,
+        triageStatus: this.triageStatus,
+        currentPage: this.currentPage,
+        sort: hashSort.sort,
+      });
+      if (this.$route.hash !== routeHash) {
+        this.$router.push({ path: this.$route.path, hash: routeHash });
       }
     },
   },
@@ -520,21 +334,8 @@ export default {
 </script>
 
 <style scoped>
-details {
-  margin-top: 1.5rem;
-}
-details::details-content {
-  margin-left: 1.5rem;
-}
-summary {
-  font-weight: bold;
-  display: list-item;
-}
 .m-strong {
   margin-top: 1.5rem;
   margin-bottom: 1.5rem;
-}
-.pointer {
-  cursor: pointer;
 }
 </style>
