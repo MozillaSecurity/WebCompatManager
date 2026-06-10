@@ -59,7 +59,13 @@ class Command(BaseCommand):
         params = {"project": settings.BIGQUERY_PROJECT}
         if svc_acct := getattr(settings, "BIGQUERY_SERVICE_ACCOUNT", None):
             params["credentials"] = (
-                service_account.Credentials.from_service_account_info(svc_acct)
+                service_account.Credentials.from_service_account_info(
+                    svc_acct,
+                    scopes=[
+                        "https://www.googleapis.com/auth/bigquery",
+                        "https://www.googleapis.com/auth/drive",
+                    ],
+                )
             )
 
         client = bigquery.Client(**params)
