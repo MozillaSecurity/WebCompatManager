@@ -934,6 +934,22 @@ class BucketLabel(models.Model):
         )
 
 
+class BucketCountryRank(models.Model):
+    bucket = models.ForeignKey(
+        Bucket, on_delete=models.CASCADE, related_name="country_ranks"
+    )
+    country = models.CharField(max_length=50)  # BQ column name, e.g. "poland_rank"
+    rank = models.IntegerField()
+    updated_at = models.DateTimeField(default=timezone.now)
+
+    class Meta:
+        constraints = [
+            models.UniqueConstraint(
+                fields=["bucket", "country"], name="unique_bucket_country_rank"
+            )
+        ]
+
+
 @receiver(post_save, sender=DjangoUser)
 def add_default_perms(sender, instance, created, **kwargs):
     if created:
