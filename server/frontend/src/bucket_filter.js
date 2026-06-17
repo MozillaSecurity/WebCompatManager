@@ -54,11 +54,14 @@ const nodeToQuery = (node) => {
           "Free-text search isn't supported yet. Use field:value without a space in between, e.g. domain:example.com.",
         );
       }
-      // We only support equality (`field:value`) for now. liqe also parses comparison
-      // operators (`field:>=10`, `field:<5`, …); reject them.
-      if (node.operator?.operator !== ":") {
+      // liqe parses comparison operators as composite operator strings like
+      // ":<", ":<=", ":>", ":>=". Allow them for filters that opt in via
+      // supportsComparison; reject them for everything else.
+      const op = node.operator?.operator;
+      const isComparison = op !== ":";
+      if (isComparison && op !== ":<" && op !== ":<=" && op !== ":>" && op !== ":>=") {
         return fail(
-          `Unsupported operator "${node.operator?.operator}". Only field:value is supported.`,
+          `Unsupported operator "${op}". Only field:value is supported.`,
         );
       }
       const key = node.field.name.toLowerCase();
@@ -66,7 +69,13 @@ const nodeToQuery = (node) => {
       if (!def) {
         return fail(`Unknown field "${node.field.name}".`);
       }
-      return ok(def.toQuery(node.expression.value));
+      if (isComparison && !def.supportsComparison) {
+        return fail(
+          `Comparison operators are not supported for field "${node.field.name}".`,
+        );
+      }
+      // Strip the leading ":" so toQuery receives "", "<", "<=", ">", ">="
+      return ok(def.toQuery(node.expression.value, op.slice(1)));
     }
     case "UnaryOperator": {
       // both '-' and 'NOT' negate the operand

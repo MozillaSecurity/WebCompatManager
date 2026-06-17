@@ -130,6 +130,30 @@ class TriagedBucketState extends BucketState {
   }
 }
 
+class CountryRankBucketFilter extends BucketFilter {
+  supportsComparison = true;
+
+  constructor(countryColumn) {
+    super(countryColumn, `Rank (${countryColumn})`);
+    this.countryColumn = countryColumn;
+  }
+
+  toQuery(value, op = "<=") {
+    if (typeof value !== "number" || isNaN(value)) {
+      throw new Error(
+        `Invalid rank value: ${value}. Use a number, e.g. poland_rank:<=1000.`,
+      );
+    }
+    const opMap = { "<=": "lte", "<": "lt", ">=": "gte", ">": "gt", "": "lte" };
+    const djangoOp = opMap[op] ?? "lte";
+    return {
+      op: "AND",
+      country_ranks__country: this.countryColumn,
+      [`country_ranks__rank__${djangoOp}`]: value,
+    };
+  }
+}
+
 const bucketFilterList = [
   new CountryBucketFilter(),
   new LabelBucketFilter(),
@@ -146,6 +170,13 @@ const bucketStateList = [
 export const BUCKET_FILTERS = Object.fromEntries(
   bucketFilterList.map((filter) => [filter.key, filter]),
 );
+
+export function registerCountryRankFilters(countryColumns) {
+  for (const col of countryColumns) {
+    const filter = new CountryRankBucketFilter(col);
+    BUCKET_FILTERS[filter.key] = filter;
+  }
+}
 
 export const BUCKET_STATES = Object.fromEntries(
   bucketStateList.map((state) => [state.key, state]),

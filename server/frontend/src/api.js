@@ -55,3 +55,6 @@ export const dismissAllNotifications = async () =>
 
 export const getCurrentBucketSpikes = async (params) =>
   (await mainAxios.get("/reportmanager/rest/bucket-spikes/", { params })).data;
+
+export const listCountryRankColumns = async () =>
+  (await mainAxios.get("/reportmanager/rest/country-rank-columns/")).data;
