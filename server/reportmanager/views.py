@@ -34,6 +34,7 @@ from django.views.generic import TemplateView
 from django.views.generic.edit import CreateView, DeleteView, UpdateView
 from django.views.generic.list import ListView
 from rest_framework import mixins, status, viewsets
+from rest_framework.views import APIView
 from rest_framework.authentication import SessionAuthentication, TokenAuthentication
 from rest_framework.decorators import action
 from rest_framework.exceptions import MethodNotAllowed, ValidationError
@@ -50,6 +51,7 @@ from .forms import (
 )
 from .models import (
     Bucket,
+    BucketCountryRank,
     BucketHit,
     BucketWatch,
     Bug,
@@ -1762,3 +1764,20 @@ class ClusteringJobViewSet(mixins.ListModelMixin, viewsets.GenericViewSet):
     authentication_classes = (TokenAuthentication, SessionAuthentication)
     queryset = ClusteringJob.objects.all().order_by("-started_at")
     serializer_class = ClusteringJobSerializer
+
+
+class CountryRankColumnsView(APIView):
+    """Returns the distinct country rank column names present in BucketCountryRank.
+
+    Used by the frontend to register rank filters dynamically (e.g. poland_rank:<=1000).
+    """
+
+    authentication_classes = (TokenAuthentication, SessionAuthentication)
+
+    def get(self, request):
+        columns = list(
+            BucketCountryRank.objects.values_list("country", flat=True)
+            .distinct()
+            .order_by("country")
+        )
+        return Response(columns)

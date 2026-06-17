@@ -150,4 +150,9 @@ urlpatterns = [
         r"^usersettings/$", views.UserSettingsEditView.as_view(), name="usersettings"
     ),
     re_path(r"^rest/", include(router.urls)),
+    re_path(
+        r"^rest/country-rank-columns/$",
+        views.CountryRankColumnsView.as_view(),
+        name="country-rank-columns",
+    ),
 ]
