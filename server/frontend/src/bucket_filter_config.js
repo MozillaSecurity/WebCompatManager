@@ -1,3 +1,5 @@
+import { listCountryRankColumns } from "./api.js";
+
 class BucketFilter {
   constructor(key, label) {
     this.key = key;
@@ -176,6 +178,19 @@ export function registerCountryRankFilters(countryColumns) {
     const filter = new CountryRankBucketFilter(col);
     BUCKET_FILTERS[filter.key] = filter;
   }
+}
+
+let countryRankReady = null;
+
+// Ensures country rank filters (poland_rank:<=1000) are registered before
+// a query is parsed, so deep links using them work on first load.
+export function ensureCountryRankFilters() {
+  if (!countryRankReady) {
+    countryRankReady = listCountryRankColumns()
+      .then((columns) => registerCountryRankFilters(columns))
+      .catch((e) => console.debug("Failed to load country rank columns:", e));
+  }
+  return countryRankReady;
 }
 
 export const BUCKET_STATES = Object.fromEntries(

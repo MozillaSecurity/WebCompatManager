@@ -2,8 +2,6 @@ import { createApp } from "vue";
 import FloatingVue from "floating-vue";
 
 import router from "./router.js";
-import { listCountryRankColumns } from "./api.js";
-import { registerCountryRankFilters } from "./bucket_filter_config.js";
 import ActivityGraph from "./components/ActivityGraph.vue";
 import AssignBtn from "./components/Buckets/AssignBtn.vue";
 import BugPublicationForm from "./components/Bugs/PublicationForm.vue";
@@ -45,11 +43,6 @@ const app = createApp({
 app.use(router);
 app.use(FloatingVue);
 
-// Fetch country rank columns before mounting so rank filters (poland_rank:<=1000)
-// are available immediately when the user interacts with the filter bar.
 document.addEventListener("DOMContentLoaded", function () {
-  listCountryRankColumns()
-    .then((columns) => registerCountryRankFilters(columns))
-    .catch((e) => console.debug("Failed to load country rank columns:", e))
-    .finally(() => app.mount("#app"));
+  app.mount("#app");
 });

@@ -1,9 +1,10 @@
-import { afterEach, expect, test, vi } from "vitest";
+import { afterEach, beforeEach, expect, test, vi } from "vitest";
 import { nextTick } from "vue";
 import { createRouter, createWebHistory } from "vue-router";
 import { render, fireEvent } from "@testing-library/vue";
 import List from "../src/components/Buckets/List.vue";
-import { listBuckets } from "../src/api.js";
+import { listBuckets, listCountryRankColumns } from "../src/api.js";
+import { ensureCountryRankFilters } from "../src/bucket_filter_config.js";
 import { emptyBuckets, buckets } from "./fixtures.js";
 
 // This line will mock all calls to functions in ../src/api.js
@@ -11,6 +12,12 @@ vi.mock("../src/api.js");
 // Mocking calls to lodash._throttle during tests
 vi.mock("lodash/throttle", () => ({ default: vi.fn((fn) => fn) }));
 
+// ensureCountryRankFilters() memoizes its result, so priming it here means
+// List.vue's fetch() (which awaits it) resolves synchronously in every test.
+beforeEach(async () => {
+  listCountryRankColumns.mockResolvedValue([]);
+  await ensureCountryRankFilters();
+});
 afterEach(() => vi.resetAllMocks());
 
 const defaultQueryStr = `{
