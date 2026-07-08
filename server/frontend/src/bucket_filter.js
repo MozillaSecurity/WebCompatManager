@@ -59,7 +59,13 @@ const nodeToQuery = (node) => {
       // supportsComparison; reject them for everything else.
       const op = node.operator?.operator;
       const isComparison = op !== ":";
-      if (isComparison && op !== ":<" && op !== ":<=" && op !== ":>" && op !== ":>=") {
+      if (
+        isComparison &&
+        op !== ":<" &&
+        op !== ":<=" &&
+        op !== ":>" &&
+        op !== ":>="
+      ) {
         return fail(
           `Unsupported operator "${op}". Only field:value is supported.`,
         );

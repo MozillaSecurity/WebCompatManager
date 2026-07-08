@@ -40,8 +40,6 @@ def make_bq_client(host_rows: list[dict], rank_cols: list[str]) -> MagicMock:
     return client
 
 
-
-
 @pytest.mark.django_db
 class TestImportCountryRanks:
     def _run_command(self, client_mock):
@@ -79,9 +77,7 @@ class TestImportCountryRanks:
     def test_stale_rows_are_deleted(self):
         bucket = make_bucket(domain="example.com")
         # Pre-create a stale row for a domain that is no longer in BQ
-        BucketCountryRank.objects.create(
-            bucket=bucket, country="germany_rank", rank=50
-        )
+        BucketCountryRank.objects.create(bucket=bucket, country="germany_rank", rank=50)
 
         # BQ data no longer contains example.com at all
         client = make_bq_client(

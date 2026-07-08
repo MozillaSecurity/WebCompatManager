@@ -32,7 +32,9 @@ class Command(BaseCommand):
             help="Limit import to these specific domains. If omitted, imports for all bucket domains.",
         )
 
-    def handle(self, bq_project: str | None, domains: list[str] | None, **options: object) -> None:
+    def handle(
+        self, bq_project: str | None, domains: list[str] | None, **options: object
+    ) -> None:
         project = bq_project or settings.BIGQUERY_PROJECT
 
         params: dict = {"project": project}
@@ -55,17 +57,11 @@ class Command(BaseCommand):
             # Normalize incoming domains to match the domain_normalized field
             domains = list({nd for d in domains if (nd := normalize_domain(d))})
             # Only import for buckets that don't already have rank data.
-            already_ranked = set(
-                BucketCountryRank.objects.filter(
-                    bucket__domain_normalized__in=domains
-                ).values_list("bucket__domain_normalized", flat=True)
-            )
             buckets = list(
-                Bucket.objects.filter(domain_normalized__in=domains)
-                .exclude(domain_normalized__in=already_ranked)
-                .only("id", "domain_normalized")
+                Bucket.objects.filter(
+                    domain_normalized__in=domains, country_ranks__isnull=True
+                ).only("id", "domain_normalized")
             )
-            domains = [b.domain_normalized for b in buckets]
         else:
             # Default: import for all bucket domains.
             buckets = list(
@@ -73,11 +69,12 @@ class Command(BaseCommand):
                 .exclude(domain_normalized="")
                 .only("id", "domain_normalized")
             )
-            domains = [b.domain_normalized for b in buckets]
 
-        if not domains:
+        if not buckets:
             LOG.info("No buckets with a normalized domain — nothing to import")
             return
+
+        domains = [b.domain_normalized for b in buckets]
 
         LOG.info("Querying ranks for %d bucket domains", len(domains))
 
@@ -145,7 +142,9 @@ class Command(BaseCommand):
         # Only clean up stale rows on a full import. The partial (--domains)
         # path only fills in missing data, so there's nothing to clean up.
         if not partial:
-            deleted_count, _ = BucketCountryRank.objects.exclude(updated_at=now).delete()
+            deleted_count, _ = BucketCountryRank.objects.exclude(
+                updated_at=now
+            ).delete()
         else:
             deleted_count = 0
 
