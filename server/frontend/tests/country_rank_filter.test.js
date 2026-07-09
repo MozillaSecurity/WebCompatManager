@@ -15,45 +15,50 @@ describe("CountryRankBucketFilter", () => {
   test("toQuery with <= produces lte lookup", () => {
     const filter = BUCKET_FILTERS["poland_rank"];
     expect(filter.toQuery(1000, "<=")).toEqual({
-      op: "AND",
-      country_ranks__country: "poland_rank",
-      country_ranks__rank__lte: 1000,
+      op: "EXISTS",
+      relation: "country_ranks",
+      country: "poland_rank",
+      rank__lte: 1000,
     });
   });
 
   test("toQuery with < produces lt lookup", () => {
     const filter = BUCKET_FILTERS["poland_rank"];
     expect(filter.toQuery(1000, "<")).toEqual({
-      op: "AND",
-      country_ranks__country: "poland_rank",
-      country_ranks__rank__lt: 1000,
+      op: "EXISTS",
+      relation: "country_ranks",
+      country: "poland_rank",
+      rank__lt: 1000,
     });
   });
 
   test("toQuery with >= produces gte lookup", () => {
     const filter = BUCKET_FILTERS["poland_rank"];
     expect(filter.toQuery(500, ">=")).toEqual({
-      op: "AND",
-      country_ranks__country: "poland_rank",
-      country_ranks__rank__gte: 500,
+      op: "EXISTS",
+      relation: "country_ranks",
+      country: "poland_rank",
+      rank__gte: 500,
     });
   });
 
   test("toQuery with > produces gt lookup", () => {
     const filter = BUCKET_FILTERS["poland_rank"];
     expect(filter.toQuery(500, ">")).toEqual({
-      op: "AND",
-      country_ranks__country: "poland_rank",
-      country_ranks__rank__gt: 500,
+      op: "EXISTS",
+      relation: "country_ranks",
+      country: "poland_rank",
+      rank__gt: 500,
     });
   });
 
   test("toQuery with no op defaults to lte", () => {
     const filter = BUCKET_FILTERS["poland_rank"];
     expect(filter.toQuery(1000)).toEqual({
-      op: "AND",
-      country_ranks__country: "poland_rank",
-      country_ranks__rank__lte: 1000,
+      op: "EXISTS",
+      relation: "country_ranks",
+      country: "poland_rank",
+      rank__lte: 1000,
     });
   });
 

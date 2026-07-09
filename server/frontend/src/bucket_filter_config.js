@@ -148,10 +148,14 @@ class CountryRankBucketFilter extends BucketFilter {
     }
     const opMap = { "<=": "lte", "<": "lt", ">=": "gte", ">": "gt", "": "lte" };
     const djangoOp = opMap[op] ?? "lte";
+    // Match one country_ranks row on both country and rank. This avoids
+    // Django's multi-valued relation behavior where separate related-field filters
+    // may be satisfied by different rows for the same bucket.
     return {
-      op: "AND",
-      country_ranks__country: this.countryColumn,
-      [`country_ranks__rank__${djangoOp}`]: value,
+      op: "EXISTS",
+      relation: "country_ranks",
+      country: this.countryColumn,
+      [`rank__${djangoOp}`]: value,
     };
   }
 }
