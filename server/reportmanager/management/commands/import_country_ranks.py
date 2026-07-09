@@ -11,7 +11,6 @@ from google.oauth2 import service_account
 from django.core.management import BaseCommand
 
 from reportmanager.models import Bucket, BucketCountryRank
-from reportmanager.utils import normalize_domain
 
 LOG = getLogger("reportmanager.import_country_ranks")
 
@@ -54,27 +53,26 @@ class Command(BaseCommand):
 
         partial = domains is not None
         if partial:
-            # Normalize incoming domains to match the domain_normalized field
-            domains = list({nd for d in domains if (nd := normalize_domain(d))})
+            domains = list({nd for d in domains if (nd := d.strip().lower())})
             # Only import for buckets that don't already have rank data.
             buckets = list(
                 Bucket.objects.filter(
-                    domain_normalized__in=domains, country_ranks__isnull=True
-                ).only("id", "domain_normalized")
+                    domain__in=domains, country_ranks__isnull=True
+                ).only("id", "domain")
             )
         else:
             # Default: import for all bucket domains.
             buckets = list(
-                Bucket.objects.exclude(domain_normalized__isnull=True)
-                .exclude(domain_normalized="")
-                .only("id", "domain_normalized")
+                Bucket.objects.exclude(domain__isnull=True)
+                .exclude(domain="")
+                .only("id", "domain")
             )
 
         if not buckets:
-            LOG.info("No buckets with a normalized domain — nothing to import")
+            LOG.info("No buckets with a domain — nothing to import")
             return
 
-        domains = [b.domain_normalized for b in buckets]
+        domains = [b.domain for b in buckets]
 
         LOG.info("Querying ranks for %d bucket domains", len(domains))
 
@@ -114,7 +112,7 @@ class Command(BaseCommand):
         to_upsert: list[BucketCountryRank] = []
 
         for bucket in buckets:
-            ranks = host_ranks.get(bucket.domain_normalized)
+            ranks = host_ranks.get(bucket.domain)
             if ranks:
                 for country, rank in ranks.items():
                     to_upsert.append(

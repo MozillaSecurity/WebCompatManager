@@ -42,12 +42,12 @@ def make_bq_client(host_rows: list[dict], rank_cols: list[str]) -> MagicMock:
 
 @pytest.mark.django_db
 class TestImportCountryRanks:
-    def _run_command(self, client_mock):
+    def _run_command(self, client_mock, **options):
         with patch(
             "reportmanager.management.commands.import_country_ranks.bigquery.Client",
             return_value=client_mock,
         ):
-            call_command("import_country_ranks")
+            call_command("import_country_ranks", **options)
 
     def test_creates_ranks_for_matching_bucket(self):
         bucket = make_bucket(domain="example.com")
@@ -126,3 +126,44 @@ class TestImportCountryRanks:
         self._run_command(client)
 
         assert BucketCountryRank.objects.count() == 0
+
+    def test_looks_up_by_domain_not_domain_normalized(self):
+        """A bucket for "www.youtube.com" must be matched against that exact
+        host, not the www-stripped "youtube.com" (domain_normalized), since
+        CrUX ranks the two hosts separately and can rank them very
+        differently.
+        """
+        bucket = make_bucket(domain="www.youtube.com")
+        assert bucket.domain_normalized == "youtube.com"
+
+        client = make_bq_client(
+            host_rows=[
+                {"host": "www.youtube.com", "us_rank": 1000},
+                {"host": "youtube.com", "us_rank": 5000000},
+            ],
+            rank_cols=["us_rank"],
+        )
+        self._run_command(client)
+
+        ranks = BucketCountryRank.objects.filter(bucket=bucket)
+        assert ranks.count() == 1
+        assert ranks.get().rank == 1000
+
+    def test_partial_import_looks_up_by_domain_not_domain_normalized(self):
+        """The --domains path (used by triage for newly-encountered domains)
+        must also match the raw domain, not the www-stripped one.
+        """
+        bucket = make_bucket(domain="www.youtube.com")
+
+        client = make_bq_client(
+            host_rows=[
+                {"host": "www.youtube.com", "us_rank": 1000},
+                {"host": "youtube.com", "us_rank": 5000000},
+            ],
+            rank_cols=["us_rank"],
+        )
+        self._run_command(client, domains=["www.youtube.com"])
+
+        ranks = BucketCountryRank.objects.filter(bucket=bucket)
+        assert ranks.count() == 1
+        assert ranks.get().rank == 1000
