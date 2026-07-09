@@ -2,7 +2,7 @@ from datetime import datetime
 from itertools import batched
 from logging import getLogger
 
-from django.core.management import BaseCommand
+from django.core.management import BaseCommand, call_command
 from django.utils import timezone
 
 from reportmanager.clustering.ClusterBucketManager import (
@@ -245,6 +245,9 @@ def run_triage(job: ClusteringJob) -> None:
         LOG.info(
             f"Triage completed successfully. Created {buckets_created} cluster buckets and {fallback_buckets} domain buckets."  # noqa
         )
+
+        if domains:
+            call_command("import_country_ranks", domains=list(domains))
 
     except Exception as e:
         complete_job(job, success=False, error=str(e))
