@@ -14,6 +14,7 @@ from django.core.exceptions import FieldError, SuspiciousOperation
 from django.db.models import (
     Avg,
     Case,
+    Exists,
     ExpressionWrapper,
     F,
     FloatField,
@@ -34,12 +35,12 @@ from django.views.generic import TemplateView
 from django.views.generic.edit import CreateView, DeleteView, UpdateView
 from django.views.generic.list import ListView
 from rest_framework import mixins, status, viewsets
-from rest_framework.views import APIView
 from rest_framework.authentication import SessionAuthentication, TokenAuthentication
 from rest_framework.decorators import action
 from rest_framework.exceptions import MethodNotAllowed, ValidationError
 from rest_framework.filters import BaseFilterBackend, OrderingFilter
 from rest_framework.response import Response
+from rest_framework.views import APIView
 
 from webcompat.models import Report
 
@@ -659,7 +660,7 @@ class JsonQueryFilterBackend(BaseFilterBackend):
         querystr = request.query_params.get("query", None)
         if querystr is not None:
             try:
-                _, queryobj = json_to_query(querystr)
+                _, queryobj = json_to_query(querystr, queryset.model)
             except (RuntimeError, TypeError) as e:
                 raise InvalidArgumentException(f"error in query: {e}")
             try:
@@ -1273,11 +1274,15 @@ class BugzillaTemplateViewSet(
 #         return Response(status=status.HTTP_200_OK)
 
 
-def json_to_query(json_str):
+def json_to_query(json_str, model=None):
     """
     This method converts JSON objects into trees of Django Q objects.
     It can be used to provide the user the ability to perform complex
     queries on the database using JSON as a query string.
+
+    `model` is the model the resulting query will be filtered against. It is
+    only required for the "EXISTS" operator, which resolves its `relation`
+    against this model; other operators ignore it.
 
     The decoded JSON may only contain objects. Each object must contain
     an "op" key that describes the operation of the object. This can either
@@ -1302,6 +1307,32 @@ def json_to_query(json_str):
     except ValueError as e:
         raise RuntimeError(f"Invalid JSON: {e}")
 
+    def get_exists_obj(obj: dict) -> Q:
+        """Compile an EXISTS object into a correlated Exists() subquery.
+
+        Shape: {"op": "EXISTS", "relation": "<reverse_accessor>", <lookup>: <val>}
+
+        All lookups must match a single related row. This is required for
+        multi-field conditions on a multi-valued relation (e.g. country_ranks,
+        matching both `country` and `rank`): a flat AND of two related lookups
+        lets each match a different row and is silently wrong under negation.
+        """
+        if model is None:
+            raise RuntimeError("EXISTS query object requires a target model")
+        relation = obj.get("relation")
+        if not relation:
+            raise RuntimeError("EXISTS query object requires a 'relation'")
+        try:
+            descriptor = getattr(model, relation)
+            related_model = descriptor.rel.related_model
+            fk_name = descriptor.rel.field.name
+        except AttributeError:
+            raise RuntimeError(f"Unknown relation '{relation}' in EXISTS query object")
+
+        lookups = {k: v for k, v in obj.items() if k not in ("op", "relation")}
+        subquery = related_model.objects.filter(**{fk_name: OuterRef("pk")}, **lookups)
+        return Q(Exists(subquery))
+
     def get_query_obj(obj, key=None):
         if obj is None or isinstance(obj, str | list | int | float):
             kwargs = {key: obj}
@@ -1319,6 +1350,9 @@ def json_to_query(json_str):
 
         op = obj["op"]
         objkeys = [value for value in obj if value != "op"]
+
+        if op == "EXISTS":
+            return get_exists_obj(obj)
 
         if op == "NOT" and len(objkeys) > 1:
             raise RuntimeError("Attempted to negate multiple objects at once")
