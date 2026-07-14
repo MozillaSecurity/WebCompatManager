@@ -941,6 +941,7 @@ class BucketCountryRank(models.Model):
     country = models.CharField(max_length=50)  # BQ column name, e.g. "poland_rank"
     rank = models.IntegerField()
     updated_at = models.DateTimeField(default=timezone.now)
+    import_id = models.UUIDField(null=True, db_index=True)
 
     class Meta:
         constraints = [

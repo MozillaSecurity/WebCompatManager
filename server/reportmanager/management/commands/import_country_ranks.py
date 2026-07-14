@@ -2,13 +2,14 @@
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 from logging import getLogger
+from uuid import uuid4
 
 from django.conf import settings
+from django.core.management import BaseCommand
+from django.db import connection, transaction
 from django.utils import timezone
 from google.cloud import bigquery
 from google.oauth2 import service_account
-
-from django.core.management import BaseCommand
 
 from reportmanager.models import Bucket, BucketCountryRank
 
@@ -109,6 +110,7 @@ class Command(BaseCommand):
         LOG.info("Loaded rank data for %d hosts", len(host_ranks))
 
         now = timezone.now()
+        import_id = uuid4()
         to_upsert: list[BucketCountryRank] = []
 
         for bucket in buckets:
@@ -121,36 +123,51 @@ class Command(BaseCommand):
                             country=country,
                             rank=rank,
                             updated_at=now,
+                            import_id=import_id,
                         )
                     )
 
-        # Upsert in batches of 1000
-        upserted_count = 0
-        batch_size = 1000
-        for i in range(0, len(to_upsert), batch_size):
-            batch = to_upsert[i : i + batch_size]
-            BucketCountryRank.objects.bulk_create(
-                batch,
-                update_conflicts=True,
-                update_fields=["rank", "updated_at"],
-                unique_fields=["bucket", "country"],
-            )
-            upserted_count += len(batch)
+        # Upsert on the (bucket, country) unique constraint so existing rows
+        # are updated in place rather than recreated.
+        #
+        # An upsert needs to know which unique constraint to treat as a
+        # "conflict" (the conflict target) so it can update that row instead
+        # of erroring. SQLite require unique_fields to name it.
+        # MySQL uses ON DUPLICATE KEY UPDATE, which has no target
+        # and simply updates on whichever unique index the new row collides
+        # with, so it rejects unique_fields. For BucketCountryRank this
+        # is (bucket, country) and it's the only unique key a new row can hit,
+        # since the PK is auto-increment and never supplied.
+        upsert_kwargs: dict = {
+            "update_conflicts": True,
+            "update_fields": ["rank", "updated_at", "import_id"],
+        }
+        if connection.features.supports_update_conflicts_with_target:
+            upsert_kwargs["unique_fields"] = ["bucket", "country"]
 
-        # Only clean up stale rows on a full import. The partial (--domains)
-        # path only fills in missing data, so there's nothing to clean up.
-        if not partial:
-            deleted_count, _ = BucketCountryRank.objects.exclude(
-                updated_at=now
-            ).delete()
-        else:
-            deleted_count = 0
+        if not partial and not to_upsert:
+            LOG.error("Full import produced 0 rows — skipping cleanup")
+            return
+
+        batch_size = 1000
+        deleted_count = 0
+        with transaction.atomic():
+            for i in range(0, len(to_upsert), batch_size):
+                batch = to_upsert[i : i + batch_size]
+                BucketCountryRank.objects.bulk_create(batch, **upsert_kwargs)
+
+            # Only clean up stale rows on a full import. The partial (--domains)
+            # path only fills in missing data, so there's nothing to clean up.
+            if not partial:
+                deleted_count, _ = BucketCountryRank.objects.exclude(
+                    import_id=import_id
+                ).delete()
 
         LOG.info(
             "import_country_ranks complete: %d rank columns, %d buckets processed, "
             "%d rows upserted, %d stale rows deleted",
             len(rank_cols),
             len(buckets),
-            upserted_count,
+            len(to_upsert),
             deleted_count,
         )
