@@ -79,14 +79,38 @@ class TestImportCountryRanks:
         # Pre-create a stale row for a domain that is no longer in BQ
         BucketCountryRank.objects.create(bucket=bucket, country="germany_rank", rank=50)
 
-        # BQ data no longer contains example.com at all
+        # BQ still returns data for example.com, but only for us_rank — so the
+        # germany_rank row is stale and the us_rank row is fresh. Cleanup must
+        # delete the former and keep the latter.
+        client = make_bq_client(
+            host_rows=[{"host": "example.com", "us_rank": 1}],
+            rank_cols=["us_rank"],
+        )
+        self._run_command(client)
+
+        assert not BucketCountryRank.objects.filter(
+            bucket=bucket, country="germany_rank"
+        ).exists()
+        assert BucketCountryRank.objects.filter(
+            bucket=bucket, country="us_rank"
+        ).exists()
+
+    def test_empty_import_does_not_delete_existing_rows(self):
+        # A full import that returns no matching rows from BQ.
+        bucket = make_bucket(domain="example.com")
+        BucketCountryRank.objects.create(bucket=bucket, country="germany_rank", rank=50)
+
+        # BQ returns data only for a host that isn't a bucket domain, so
+        # to_upsert ends up empty.
         client = make_bq_client(
             host_rows=[{"host": "other.com", "germany_rank": 1}],
             rank_cols=["germany_rank"],
         )
         self._run_command(client)
 
-        assert not BucketCountryRank.objects.filter(bucket=bucket).exists()
+        assert BucketCountryRank.objects.filter(
+            bucket=bucket, country="germany_rank"
+        ).exists()
 
     def test_rank_is_updated_when_changed(self):
         bucket = make_bucket(domain="example.com")
