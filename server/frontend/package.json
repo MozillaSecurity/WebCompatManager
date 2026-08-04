@@ -40,7 +40,7 @@
     "globals": "^15.7.0",
     "jsdom": "^29.1.1",
     "mini-css-extract-plugin": "^2.10.2",
-    "postcss": "^8.5.12",
+    "postcss": "^8.5.25",
     "prettier": "^3.8.4",
     "vitest": "^4.1.7",
     "vue-loader": "^17.4.2",
