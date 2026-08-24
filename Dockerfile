@@ -14,6 +14,7 @@ RUN apt-get update && \
     apt-get install -y --no-install-recommends \
        bash \
        build-essential \
+       ca-certificates \
        git \
        libmariadb-dev \
        mariadb-client \
