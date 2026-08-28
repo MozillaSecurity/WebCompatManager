@@ -1,5 +1,5 @@
 [build-system]
-requires = ["setuptools>=64", "setuptools_scm>8"]
+requires = ["setuptools>=83.0.0", "setuptools_scm>8"]
 build-backend = "setuptools.build_meta"
 
 [project]
@@ -28,7 +28,7 @@ dependencies = [
     "jsonpath-ng",
     "jsonschema>=4.18.0",
     "python-dateutil",
-    "setuptools==82.0.0"
+    "setuptools==83.0.0"
 ]
 
 [project.optional-dependencies]
