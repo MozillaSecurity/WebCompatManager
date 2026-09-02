@@ -60,7 +60,7 @@ server = [
     "django==6.0.6",
     "django-crispy-forms==2.6",
     "django_stubs_ext==6.0.3",
-    "djangorestframework==3.17.1",
+    "djangorestframework==3.17.2",
     "google-cloud-bigquery==3.40.1",
     "pyyaml==6.0.3",
     "redis[hiredis]>=5.0.0",
