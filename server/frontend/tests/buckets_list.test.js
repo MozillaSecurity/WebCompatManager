@@ -21,9 +21,19 @@ beforeEach(async () => {
 afterEach(() => vi.resetAllMocks());
 
 const defaultQueryStr = `{
-  "op": "AND",
-  "bug__isnull": true,
-  "triage_status__isnull": true
+  "0": {
+    "op": "AND",
+    "bug__isnull": true,
+    "triage_status__isnull": true
+  },
+  "1": {
+    "0": {
+      "op": "AND",
+      "labels__label__name": "nsfw"
+    },
+    "op": "NOT"
+  },
+  "op": "AND"
 }`;
 
 test("bucket list has no buckets", async () => {
