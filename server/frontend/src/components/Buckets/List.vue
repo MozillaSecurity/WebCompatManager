@@ -190,7 +190,7 @@ export default {
       loading: false,
       pageSize: 100,
       queryError: "",
-      queryStr: "",
+      queryStr: "-label:nsfw",
       sortKeys: [...defaultSortKeys],
       totalEntries: "?",
       totalPages: 1,
