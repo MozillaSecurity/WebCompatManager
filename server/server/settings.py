@@ -134,6 +134,12 @@ BIGQUERY_CLASSIFICATION_TABLE = (
 )
 BIGQUERY_SERVICE_ACCOUNT = ""
 
+# Each day's reports in the historical telemetry tables are loaded in
+# one batch the next morning (~01:00-02:00 UTC), with desktop first and all Fenix
+# channels up to an hour later. Use 48h to be on the safe side for our import,
+# in case the load is late.
+BIGQUERY_IMPORT_LOOKBACK_HOURS = 48
+
 BIGQUERY_DOMAIN_SOURCES = [
     {
         "name": "nsfw",
