@@ -85,20 +85,8 @@ def notify_by_email():
 
 @app.task(ignore_result=True)
 def import_reports():
-    from .models import ReportEntry
-
-    max_history = timedelta(days=getattr(settings, "REPORT_STATS_MAX_HISTORY_DAYS", 14))
-    since = timezone.now() - max_history
-
-    newest_entry = ReportEntry.objects.all().order_by("-reported_at").first()
-    if newest_entry is not None:
-        since = max(
-            # dupe 60s from previous update to ensure nothing is missed
-            newest_entry.reported_at - timedelta(seconds=60),
-            since,
-        )
-
-    call_command("import_reports_from_bigquery", since=since)
+    lookback = timedelta(hours=getattr(settings, "BIGQUERY_IMPORT_LOOKBACK_HOURS", 48))
+    call_command("import_reports_from_bigquery", since=timezone.now() - lookback)
 
 
 @app.task(ignore_result=True)

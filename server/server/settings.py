@@ -134,6 +134,16 @@ BIGQUERY_CLASSIFICATION_TABLE = (
 )
 BIGQUERY_SERVICE_ACCOUNT = ""
 
+# How far back (in hours) each scheduled import re-scans BigQuery.
+# The historical tables are not updated live: each day's reports are loaded in
+# one batch the next morning (~01:00-02:00 UTC), desktop first and the Fenix
+# channels up to an hour later. When that batch lands, its oldest report (sent
+# at 00:00 the previous day) is already ~26h old, so the window must be larger
+# than that or the start of every day is missed. Use 48h to be on the safe side:
+# the previous day stays in the window all of the next day, in case the load is
+# late.
+BIGQUERY_IMPORT_LOOKBACK_HOURS = 48
+
 BIGQUERY_DOMAIN_SOURCES = [
     {
         "name": "nsfw",

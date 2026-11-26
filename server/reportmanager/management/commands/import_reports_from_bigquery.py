@@ -57,7 +57,21 @@ class Command(BaseCommand):
             ),
         )
 
+        since = options["since"]
+        if since.tzinfo is None:
+            since = since.replace(tzinfo=UTC)
+
+        existing = {
+            str(uuid)
+            for uuid in ReportEntry.objects.filter(reported_at__gte=since).values_list(
+                "uuid", flat=True
+            )
+        }
+
         for row in result:
+            if row.uuid in existing:
+                continue
+            existing.add(row.uuid)
             ml_valid_probability = transform_ml_label(row.ml_label, row.ml_probability)
 
             report_obj = Report(
